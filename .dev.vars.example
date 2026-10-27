@@ -1,0 +1,8 @@
+# Copie para .dev.vars apenas para testar no seu computador (wrangler dev).
+# NUNCA faça commit do .dev.vars. Em produção, cadastre estes valores
+# como "Secrets" no painel da Cloudflare.
+APP_PASSWORD=escolha-uma-senha-para-entrar-no-app
+SESSION_SECRET=uma-frase-longa-e-aleatoria
+THREADS_APP_SECRET=
+BLUESKY_HANDLE=seu-usuario.bsky.social
+BLUESKY_APP_PASSWORD=

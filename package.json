@@ -1,0 +1,15 @@
+{
+  "name": "nasquadras-online",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Publicação simultânea no Threads e no Bluesky para coberturas ao vivo do Nas Quadras",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nasquadras-online",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Interface (HTML/CSS/JS). As rotas de API passam primeiro pelo Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/auth/*", "/m/*"]
+  },
+
+  // Mídia enviada pelo app. Fica pública só pelo caminho /m/<chave aleatória>
+  // e é apagada automaticamente depois de 24 horas.
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "nasquadras-media" }
+  ],
+
+  // Tokens do Threads, sessão do Bluesky e histórico de posts.
+  "kv_namespaces": [
+    { "binding": "KV", "id": "440d54be039f4138b2a747e91984b6f3" }
+  ],
+
+  // Valores que não são segredo. Os segredos (senhas e tokens) são
+  // cadastrados no painel da Cloudflare — veja o README.
+  "vars": {
+    "THREADS_APP_ID": "1028301390289634"
+  },
+
+  // Uma vez por dia: renova o token do Threads e apaga mídia antiga.
+  "triggers": { "crons": ["17 9 * * *"] },
+
+  "observability": { "enabled": true }
+}
