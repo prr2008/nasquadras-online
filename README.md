@@ -4,7 +4,8 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
 
 ## O que ele faz
 
-- **Placar do jogo** com botões +1/+2/+3, período e atalhos ("Cesta de 3", "Fim do quarto", "Final") que inserem o placar no texto.
+- **Placar do jogo** digitável ou com botões +1/+2/+3, período e atalhos ("Cesta de 3", "Fim do quarto", "Final") que inserem o placar no texto.
+- **Fio da cobertura**: toque em *Iniciar fio do jogo* e o próximo post abre o fio; os seguintes saem como respostas ao anterior, no Threads e no Bluesky. A chave *Responder no fio* permite soltar um post avulso sem encerrar o fio. *Encerrar* volta aos posts soltos.
 - **Hashtags fixas** acrescentadas automaticamente (liga/desliga).
 - **Contadores** para os limites de cada rede (Threads 500, Bluesky 300). Acima de 300, o Bluesky recebe um **fio numerado** automaticamente.
 - **Fotos e vídeos**: as fotos são comprimidas no próprio celular para caber no limite do Bluesky; os envios começam assim que você escolhe o arquivo. Campo de descrição (texto alternativo) em cada mídia.
@@ -46,7 +47,7 @@ O ID do app do Threads não é segredo e já está no `wrangler.jsonc`.
 
 Em developers.facebook.com → seu app → **Casos de uso → Acessar a API do Threads → Personalizar**:
 
-1. **Permissões**: `threads_basic` e `threads_content_publish`.
+1. **Permissões**: `threads_basic`, `threads_content_publish` e `threads_manage_replies` (esta última é a que permite montar o fio).
 2. **Configurações**: em *URLs de retorno de chamada de redirecionamento*, coloque
    `https://nasquadras-online.<seu-subdominio>.workers.dev/auth/threads/callback`
    (o próprio app mostra essa URL exata ao tocar em "Threads" no topo). Nos campos de *desinstalação* e *exclusão*, pode usar a mesma URL base.
@@ -74,6 +75,7 @@ public/          interface (HTML, CSS, JS)
 src/index.js     rotas, upload de mídia, login e rotina diária
 src/threads.js   OAuth e publicação no Threads
 src/bluesky.js   sessão e publicação no Bluesky
+src/coverage.js  fio da cobertura (último post de cada rede)
 src/text.js      contagem de caracteres, fio e links/hashtags do Bluesky
 test/            testes (com as APIs simuladas)
 ```

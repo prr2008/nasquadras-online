@@ -155,3 +155,64 @@ test('Bluesky: sessão expirada é renovada e a chamada repetida', async () => {
   assert.ok(r.url.endsWith('/ok'));
   assert.equal(calls.at(-1).headers.Authorization, 'Bearer A2');
 });
+
+// ---------- Fio da cobertura ----------
+import * as coverage from '../src/coverage.js';
+
+test('Threads: resposta no fio envia reply_to_id', async () => {
+  env.KV.m.set('threads:auth', JSON.stringify({ token: 'T', userId: '99', expiresAt: Date.now() + 1e9, refreshedAt: Date.now() }));
+  mockFetch(() => ({ json: { id: 'C9' } }));
+  await threads.createContainers(env, { text: 'Lance', replyToId: 'POST1' });
+  assert.equal(calls[0].body.reply_to_id, 'POST1');
+  await threads.createContainers(env, { text: 'Solto' });
+  assert.equal(calls[1].body.reply_to_id, undefined, 'post solto não leva reply_to_id');
+});
+
+test('Threads: token antigo sem a permissão de respostas é detectado', () => {
+  assert.equal(threads.canReply({ scopes: 'threads_basic,threads_content_publish' }), false);
+  assert.equal(threads.canReply({}), false);
+  assert.equal(threads.canReply({ scopes: 'threads_basic,threads_content_publish,threads_manage_replies' }), true);
+});
+
+test('Fio: primeiro post abre, os seguintes respondem ao último (Threads e Bluesky)', async () => {
+  await coverage.start(env, 'Knicks x Spurs');
+  assert.equal(await coverage.threadsReplyTo(env), null, 'primeiro post não responde a ninguém');
+  assert.equal(await coverage.blueskyReplyTo(env), null);
+
+  await coverage.threadsAppend(env, { id: 'T1', url: 'https://threads/t1' });
+  await coverage.blueskyAppend(env, { root: { uri: 'at://b1', cid: 'c1' }, last: { uri: 'at://b1', cid: 'c1' }, rootUrl: 'https://bsky/b1', parts: 1 });
+  assert.equal(await coverage.threadsReplyTo(env), 'T1');
+
+  await coverage.threadsAppend(env, { id: 'T2', url: 'https://threads/t2' });
+  await coverage.blueskyAppend(env, { root: { uri: 'at://b1', cid: 'c1' }, last: { uri: 'at://b3', cid: 'c3' }, rootUrl: 'https://bsky/b1', parts: 2 });
+  assert.equal(await coverage.threadsReplyTo(env), 'T2', 'responde ao último, formando o fio');
+  assert.deepEqual(await coverage.blueskyReplyTo(env), { root: { uri: 'at://b1', cid: 'c1' }, parent: { uri: 'at://b3', cid: 'c3' } });
+
+  const st = await coverage.get(env);
+  assert.equal(st.active, true);
+  assert.equal(st.title, 'Knicks x Spurs');
+  assert.equal(st.threads.count, 2);
+  assert.equal(st.threads.rootUrl, 'https://threads/t1', 'link do fio aponta para o primeiro post');
+  assert.equal(st.bluesky.count, 3);
+
+  await coverage.stop(env);
+  assert.equal(await coverage.threadsReplyTo(env), null, 'fio encerrado: posts voltam a sair soltos');
+  await coverage.threadsAppend(env, { id: 'T3' });
+  assert.equal((await coverage.get(env)).threads.count, 2, 'posts soltos não contam no fio');
+
+  await coverage.start(env);
+  assert.equal(await coverage.threadsReplyTo(env), null, 'novo fio começa do zero');
+});
+
+test('Bluesky: post no fio responde ao último e mantém a raiz', async () => {
+  env.KV.m.set('bsky:session', JSON.stringify({ ...session, pds: 'https://pds.example' }));
+  mockFetch(() => ({ json: { uri: 'at://did/app.bsky.feed.post/novo', cid: 'cn' } }));
+  const replyTo = { root: { uri: 'at://did/app.bsky.feed.post/raiz', cid: 'cr' }, parent: { uri: 'at://did/app.bsky.feed.post/ult', cid: 'cu' } };
+  const r = await bluesky.post(env, { text: 'Mais um lance', replyTo });
+  const rec = calls.at(-1).body.record;
+  assert.deepEqual(rec.reply, replyTo);
+  assert.deepEqual(r.root, replyTo.root);
+  assert.deepEqual(r.last, { uri: 'at://did/app.bsky.feed.post/novo', cid: 'cn' });
+  assert.ok(r.url.endsWith('/novo'), 'link aponta para o post novo');
+  assert.ok(r.rootUrl.endsWith('/raiz'));
+});

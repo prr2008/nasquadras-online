@@ -137,14 +137,18 @@ async function buildEmbed(env, session, media) {
 
 const webUrl = (handle, uri) => `https://bsky.app/profile/${handle}/post/${uri.split('/').pop()}`;
 
-/** Publica no Bluesky. Texto acima de 300 caracteres vira um fio numerado. */
-export async function post(env, { text, media = [], langs = ['pt'] }) {
+/**
+ * Publica no Bluesky. Texto acima de 300 caracteres vira um fio numerado.
+ * Com `replyTo` ({ root, parent }), o post entra como resposta num fio existente.
+ * Devolve também `root` e `last` para o fio continuar no próximo post.
+ */
+export async function post(env, { text, media = [], langs = ['pt'], replyTo = null }) {
   return withSession(env, async (session) => {
     const parts = splitIntoThread(text || '', BLUESKY_MAX);
     const { embed, note } = await buildEmbed(env, session, media);
 
-    let root = null;
-    let parent = null;
+    let root = replyTo?.root || null;
+    let parent = replyTo?.parent || null;
     let firstUri = null;
 
     for (let i = 0; i < parts.length; i++) {
@@ -164,10 +168,18 @@ export async function post(env, { text, media = [], langs = ['pt'] }) {
         json: { repo: session.did, collection: 'app.bsky.feed.post', record },
       });
       const ref = { uri: res.uri, cid: res.cid };
-      if (!root) { root = ref; firstUri = res.uri; }
+      if (!root) root = ref;
+      if (!firstUri) firstUri = res.uri;
       parent = ref;
     }
 
-    return { url: webUrl(session.handle, firstUri), parts: parts.length, note };
+    return {
+      url: webUrl(session.handle, firstUri),
+      parts: parts.length,
+      note,
+      root,
+      last: parent,
+      rootUrl: webUrl(session.handle, root.uri),
+    };
   });
 }

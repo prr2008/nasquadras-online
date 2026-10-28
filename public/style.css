@@ -59,7 +59,12 @@ button { cursor: pointer; }
 .team { display: grid; gap: 6px; justify-items: center; min-width: 0; }
 .team-name { width: 100%; text-align: center; background: transparent; border: 0; border-bottom: 1px dashed var(--line); padding: 4px 2px; font-family: var(--display); font-size: 20px; font-weight: 600; text-transform: uppercase; }
 .team-name:focus { outline: none; border-bottom-color: var(--accent); }
-.score { font-family: var(--display); font-weight: 700; font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums; }
+.score { font-family: var(--display); font-weight: 700; font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums;
+  width: 100%; max-width: 120px; text-align: center; background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 2px 0;
+  -moz-appearance: textfield; appearance: textfield; }
+.score::-webkit-outer-spin-button, .score::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.score:hover { border-color: var(--line); }
+.score:focus { outline: none; border-color: var(--accent); background: var(--panel-2); }
 .score-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; }
 .score-btns button { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 0; font-weight: 600; font-size: 14px; }
 .score-btns button:active { background: var(--accent); color: var(--accent-ink); }
@@ -71,6 +76,18 @@ button { cursor: pointer; }
 .chips { display: flex; gap: 6px; overflow-x: auto; padding: 12px 0 4px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chips button { flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; font-size: 14px; white-space: nowrap; }
+
+/* Fio da cobertura */
+.thread-bar { margin-top: 8px; padding: 10px 12px; border-radius: var(--radius); border: 1px dashed var(--line); background: var(--panel); }
+.thread-bar.active { border-style: solid; border-color: var(--accent); }
+.thread-off, .thread-on { display: flex; align-items: center; gap: 10px; }
+.thread-off { justify-content: space-between; }
+.thread-info { flex: 1; min-width: 0; display: grid; }
+.thread-label { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.thread-off .thread-label { color: var(--muted); font-weight: 500; }
+.thread-meta { font-size: 12px; color: var(--muted); }
+.thread-meta a { color: var(--accent); }
+#thread-title { color: var(--muted); font-weight: 500; }
 
 /* Composição */
 .composer { display: grid; gap: 10px; margin-top: 8px; }

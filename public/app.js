@@ -111,13 +111,62 @@ $('#acc-bluesky').addEventListener('click', () => {
 async function refreshStatus() {
   state.status = await api('/api/status');
   renderAccounts();
+  renderThread();
 }
+
+// ---------- Fio da cobertura ----------
+function threadOn() {
+  return Boolean(state.status?.coverage?.active) && $('#thread-reply').checked;
+}
+
+function renderThread() {
+  const c = state.status?.coverage || {};
+  $('#thread-bar').classList.toggle('active', !!c.active);
+  $('#thread-bar .thread-off').hidden = !!c.active;
+  $('#thread-bar .thread-on').hidden = !c.active;
+  if (!c.active) return renderWarnings();
+  $('#thread-title').textContent = c.title ? `· ${c.title}` : '';
+  const links = [];
+  if (c.threads?.rootUrl) links.push(`<a href="${esc(c.threads.rootUrl)}" target="_blank" rel="noopener">Threads (${c.threads.count})</a>`);
+  else if (c.threads?.count) links.push(`Threads (${c.threads.count})`);
+  if (c.bluesky?.rootUrl) links.push(`<a href="${esc(c.bluesky.rootUrl)}" target="_blank" rel="noopener">Bluesky (${c.bluesky.count})</a>`);
+  const started = c.startedAt ? new Date(c.startedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  $('#thread-meta').innerHTML = links.length
+    ? `desde ${started} · ${links.join(' · ')}`
+    : 'o próximo post abre o fio';
+  renderWarnings();
+}
+
+async function refreshThread() {
+  if (!state.status) return;
+  state.status.coverage = await api('/api/coverage');
+  renderThread();
+}
+
+$('#thread-start').addEventListener('click', async () => {
+  const g = state.game;
+  const title = g.away || g.home ? `${g.away || 'Visitante'} x ${g.home || 'Mandante'}` : '';
+  state.status.coverage = await api('/api/coverage/start', { title });
+  $('#thread-reply').checked = true;
+  renderThread();
+  toast('Fio iniciado: o próximo post abre o fio, os seguintes respondem a ele.');
+});
+
+$('#thread-stop').addEventListener('click', async () => {
+  if (!confirm('Encerrar o fio? Os próximos posts sairão soltos.')) return;
+  state.status.coverage = await api('/api/coverage/stop', {});
+  renderThread();
+});
+
+$('#thread-reply').addEventListener('change', renderWarnings);
 
 // ---------- Placar ----------
 function renderGame() {
   const g = state.game;
   $('#away').value = g.away; $('#home').value = g.home;
-  $('#sa').textContent = g.sa; $('#sh').textContent = g.sh;
+  // Não sobrescreve o campo enquanto ele está sendo digitado.
+  if (document.activeElement !== $('#sa')) $('#sa').value = g.sa;
+  if (document.activeElement !== $('#sh')) $('#sh').value = g.sh;
   $('#period').value = g.period;
   store.set('game', g);
 }
@@ -132,6 +181,18 @@ document.querySelectorAll('.score-btns').forEach((box) => {
     renderGame();
   });
 });
+// Placar digitado: aceita só números; ao sair do campo, corrige vazio para 0.
+for (const id of ['sa', 'sh']) {
+  const el = $(`#${id}`);
+  el.addEventListener('focus', () => el.select());
+  el.addEventListener('input', () => {
+    const n = parseInt(el.value.replace(/\D/g, ''), 10);
+    state.game[id] = Number.isFinite(n) ? Math.min(999, n) : 0;
+    store.set('game', state.game);
+  });
+  el.addEventListener('blur', () => { el.value = state.game[id]; });
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter') el.blur(); });
+}
 $('#away').addEventListener('input', (e) => { state.game.away = e.target.value; store.set('game', state.game); });
 $('#home').addEventListener('input', (e) => { state.game.home = e.target.value; store.set('game', state.game); });
 $('#period').addEventListener('change', (e) => { state.game.period = e.target.value; renderGame(); });
@@ -217,6 +278,11 @@ function renderWarnings() {
   if (toBsky && videos && state.media.length > 1) w.push('Bluesky: só o vídeo será enviado (1 vídeo por post, sem fotos junto).');
   if (toBsky && !videos && images > 4) w.push('Bluesky: só as 4 primeiras fotos serão enviadas.');
   if (state.media.some((m) => m.duration > 300)) w.push('Threads aceita vídeos de até 5 minutos.');
+  const t = state.status?.threads;
+  if (toThreads && threadOn() && t?.connected && !t.canReply) {
+    w.push('Para o fio no Threads, toque em "Threads" no topo, desconecte e conecte de novo (nova permissão de respostas). Até lá, o Threads recebe posts soltos.');
+  }
+  if (threadOn() && toThreads !== toBsky) w.push('O fio só avança na rede selecionada.');
   $('#warnings').textContent = w.join(' ');
 }
 $('#t-threads').addEventListener('change', renderWarnings);
@@ -378,19 +444,19 @@ async function waitThreads(ids, onTick) {
   throw new Error('Threads demorou demais para processar a mídia.');
 }
 
-async function postThreads(text, media, step) {
-  step('Criando post…');
-  const r = await api('/api/threads/containers', { text, media });
+async function postThreads(text, media, step, thread) {
+  step(thread ? 'Respondendo no fio…' : 'Criando post…');
+  const r = await api('/api/threads/containers', { text, media, thread });
   let containerId = r.containerId;
   if (r.itemIds.length) {
     step('Processando mídias…');
     await waitThreads(r.itemIds);
-    containerId = (await api('/api/threads/carousel', { text, itemIds: r.itemIds })).containerId;
+    containerId = (await api('/api/threads/carousel', { text, itemIds: r.itemIds, thread })).containerId;
   }
   step(media.some((m) => m.kind === 'video') ? 'Processando vídeo…' : 'Preparando…');
   await waitThreads([containerId]);
   step('Publicando…');
-  return api('/api/threads/publish', { containerId });
+  return api('/api/threads/publish', { containerId, thread });
 }
 
 function progressRow(name) {
@@ -423,16 +489,19 @@ $('#publish').addEventListener('click', async () => {
   const result = { text };
   const jobs = [];
 
+  const inThread = threadOn();
+  const threadsInThread = inThread && state.status?.threads?.canReply !== false;
+
   if (toThreads) {
     const row = progressRow('Threads');
-    jobs.push(postThreads(text, media, row.set)
+    jobs.push(postThreads(text, media, row.set, threadsInThread)
       .then((r) => { row.ok(r.url); result.threads = r.url || 'ok'; })
       .catch((err) => { row.bad(err.message); result.threadsError = err.message; }));
   }
   if (toBsky) {
     const row = progressRow('Bluesky');
     row.set(media.length ? 'Enviando mídia…' : 'Publicando…');
-    jobs.push(api('/api/bluesky/post', { text, media })
+    jobs.push(api('/api/bluesky/post', { text, media, thread: inThread })
       .then((r) => { row.ok(r.url); result.bluesky = r.url; if (r.note) toast(r.note); })
       .catch((err) => { row.bad(err.message); result.blueskyError = err.message; }));
   }
@@ -446,6 +515,7 @@ $('#publish').addEventListener('click', async () => {
   if (anyOk) {
     api('/api/history', { text: text.slice(0, 200), threads: result.threads, bluesky: result.bluesky })
       .then((h) => renderHistory(h.items)).catch(() => {});
+    if (inThread) refreshThread().catch(() => {});
   }
   if (anyOk && !anyFail) {
     $('#text').value = '';

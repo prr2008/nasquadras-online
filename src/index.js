@@ -3,6 +3,7 @@
 import { clearCookie, isLoggedIn, safeEqual, sessionCookie } from './auth.js';
 import * as threads from './threads.js';
 import * as bluesky from './bluesky.js';
+import * as coverage from './coverage.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
@@ -111,12 +112,13 @@ async function handleApi(request, env, url) {
 
   switch (`${method} ${pathname}`) {
     case 'GET /api/status': {
-      const [t, b] = await Promise.all([threads.getAuth(env), bluesky.status(env)]);
+      const [t, b, cov] = await Promise.all([threads.getAuth(env), bluesky.status(env), coverage.get(env)]);
       return json({
         threads: t
-          ? { connected: t.expiresAt > Date.now(), username: t.username, expiresAt: t.expiresAt }
+          ? { connected: t.expiresAt > Date.now(), username: t.username, expiresAt: t.expiresAt, canReply: threads.canReply(t) }
           : { connected: false, configured: Boolean(env.THREADS_APP_SECRET) },
         bluesky: b,
+        coverage: cov,
         redirectUri: threads.redirectUri(origin),
       });
     }
@@ -125,15 +127,17 @@ async function handleApi(request, env, url) {
       return uploadMedia(request, env, origin);
 
     case 'POST /api/threads/containers': {
-      const { text = '', media } = await body(request);
+      const { text = '', media, thread } = await body(request);
       const items = normalizeMedia(origin, media);
       if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
-      return json(await threads.createContainers(env, { text, media: items }));
+      const replyToId = thread ? await coverage.threadsReplyTo(env) : null;
+      return json(await threads.createContainers(env, { text, media: items, replyToId }));
     }
 
     case 'POST /api/threads/carousel': {
-      const { text = '', itemIds = [] } = await body(request);
-      return json(await threads.createCarousel(env, { text, itemIds }));
+      const { text = '', itemIds = [], thread } = await body(request);
+      const replyToId = thread ? await coverage.threadsReplyTo(env) : null;
+      return json(await threads.createCarousel(env, { text, itemIds, replyToId }));
     }
 
     case 'POST /api/threads/status': {
@@ -142,9 +146,11 @@ async function handleApi(request, env, url) {
     }
 
     case 'POST /api/threads/publish': {
-      const { containerId } = await body(request);
+      const { containerId, thread } = await body(request);
       if (!containerId) return fail('containerId ausente.');
-      return json(await threads.publish(env, containerId));
+      const published = await threads.publish(env, containerId);
+      if (thread) await coverage.threadsAppend(env, published);
+      return json(published);
     }
 
     case 'POST /api/threads/disconnect':
@@ -152,11 +158,25 @@ async function handleApi(request, env, url) {
       return json({ ok: true });
 
     case 'POST /api/bluesky/post': {
-      const { text = '', media } = await body(request);
+      const { text = '', media, thread } = await body(request);
       const items = normalizeMedia(origin, media);
       if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
-      return json(await bluesky.post(env, { text, media: items }));
+      const replyTo = thread ? await coverage.blueskyReplyTo(env) : null;
+      const res = await bluesky.post(env, { text, media: items, replyTo });
+      if (thread) await coverage.blueskyAppend(env, res);
+      return json({ url: res.url, parts: res.parts, note: res.note });
     }
+
+    case 'GET /api/coverage':
+      return json(await coverage.get(env));
+
+    case 'POST /api/coverage/start': {
+      const { title = '' } = await body(request);
+      return json(await coverage.start(env, title));
+    }
+
+    case 'POST /api/coverage/stop':
+      return json(await coverage.stop(env));
 
     case 'GET /api/history':
       return json({ items: await history(env) });

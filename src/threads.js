@@ -4,7 +4,8 @@
 const GRAPH = 'https://graph.threads.net';
 const API = `${GRAPH}/v1.0`;
 const KV_KEY = 'threads:auth';
-const SCOPES = 'threads_basic,threads_content_publish';
+// threads_manage_replies é necessária para responder (reply_to_id) e montar o fio.
+const SCOPES = 'threads_basic,threads_content_publish,threads_manage_replies';
 
 export const redirectUri = (origin) => `${origin}/auth/threads/callback`;
 
@@ -61,6 +62,7 @@ export async function handleCallback(env, origin, code) {
     username: me.username,
     expiresAt: Date.now() + (long.expires_in || 5184000) * 1000,
     refreshedAt: Date.now(),
+    scopes: SCOPES,
   };
   await env.KV.put(KV_KEY, JSON.stringify(auth));
   return auth;
@@ -70,6 +72,9 @@ export async function getAuth(env) {
   const raw = await env.KV.get(KV_KEY);
   return raw ? JSON.parse(raw) : null;
 }
+
+/** O token foi obtido antes de o app pedir a permissão de respostas? */
+export const canReply = (auth) => Boolean(auth?.scopes?.includes('threads_manage_replies'));
 
 export async function disconnect(env) {
   await env.KV.delete(KV_KEY);
@@ -113,7 +118,7 @@ function mediaFields(item) {
  * - sem mídia ou 1 mídia: um contêiner pronto para publicar;
  * - 2 a 10 mídias: um contêiner por item (o carrossel vem no passo 2).
  */
-export async function createContainers(env, { text, media = [] }) {
+export async function createContainers(env, { text, media = [], replyToId }) {
   const auth = await requireAuth(env);
   const endpoint = `${API}/${auth.userId}/threads`;
 
@@ -121,7 +126,7 @@ export async function createContainers(env, { text, media = [] }) {
     const fields = media.length ? mediaFields(media[0]) : { media_type: 'TEXT' };
     const res = await call(endpoint, {
       method: 'POST',
-      body: form({ ...fields, text, access_token: auth.token }),
+      body: form({ ...fields, text, reply_to_id: replyToId, access_token: auth.token }),
     });
     return { containerId: res.id, itemIds: [] };
   }
@@ -138,7 +143,7 @@ export async function createContainers(env, { text, media = [] }) {
 }
 
 /** Passo 2 (só carrossel). Cria o contêiner do carrossel com os itens prontos. */
-export async function createCarousel(env, { text, itemIds }) {
+export async function createCarousel(env, { text, itemIds, replyToId }) {
   const auth = await requireAuth(env);
   const res = await call(`${API}/${auth.userId}/threads`, {
     method: 'POST',
@@ -146,6 +151,7 @@ export async function createCarousel(env, { text, itemIds }) {
       media_type: 'CAROUSEL',
       children: itemIds.join(','),
       text,
+      reply_to_id: replyToId,
       access_token: auth.token,
     }),
   });

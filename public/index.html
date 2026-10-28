@@ -40,7 +40,7 @@
     <section class="board" aria-label="Placar do jogo">
       <div class="team">
         <input id="away" class="team-name" placeholder="Visitante" maxlength="20" aria-label="Time visitante">
-        <output id="sa" class="score">0</output>
+        <input id="sa" class="score" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Pontos do visitante">
         <div class="score-btns" data-team="a">
           <button type="button" data-d="1">+1</button><button type="button" data-d="2">+2</button>
           <button type="button" data-d="3">+3</button><button type="button" data-d="-1" class="minus">−1</button>
@@ -58,7 +58,7 @@
       </div>
       <div class="team">
         <input id="home" class="team-name" placeholder="Mandante" maxlength="20" aria-label="Time mandante">
-        <output id="sh" class="score">0</output>
+        <input id="sh" class="score" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Pontos do mandante">
         <div class="score-btns" data-team="h">
           <button type="button" data-d="1">+1</button><button type="button" data-d="2">+2</button>
           <button type="button" data-d="3">+3</button><button type="button" data-d="-1" class="minus">−1</button>
@@ -75,6 +75,22 @@
       <button type="button" data-t="{fimq}">Fim do quarto</button>
       <button type="button" data-t="{final}">Final</button>
     </div>
+
+    <!-- FIO DA COBERTURA -->
+    <section id="thread-bar" class="thread-bar" aria-live="polite">
+      <div class="thread-off">
+        <span class="thread-label">Posts soltos</span>
+        <button id="thread-start" type="button" class="ghost small">🧵 Iniciar fio do jogo</button>
+      </div>
+      <div class="thread-on" hidden>
+        <div class="thread-info">
+          <span class="thread-label">🧵 Fio ativo <span id="thread-title"></span></span>
+          <span id="thread-meta" class="thread-meta"></span>
+        </div>
+        <label class="switch" title="Responder no fio"><input id="thread-reply" type="checkbox" checked><span></span></label>
+        <button id="thread-stop" type="button" class="link small">Encerrar</button>
+      </div>
+    </section>
 
     <!-- COMPOSIÇÃO -->
     <section class="composer">
