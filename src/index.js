@@ -9,6 +9,7 @@ import * as site from './site.js';
 import * as blog from './blog.js';
 import * as pages from './pages.js';
 import * as coluna from './coluna.js';
+import * as gdocs from './gdocs.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
@@ -106,6 +107,18 @@ async function handleApi(request, env, url) {
 
   if (pathname === '/api/logout' && method === 'POST') {
     return json({ ok: true }, 200, { 'Set-Cookie': clearCookie() });
+  }
+
+  // Google Docs: o script do documento entra com o código de conexão (sem cookie).
+  if (pathname.startsWith('/api/gdocs/') && request.headers.has('Authorization')) {
+    if (!(await gdocs.checkToken(env, request))) {
+      await new Promise((r) => setTimeout(r, 800));
+      return fail('Código de conexão inválido. Gere um novo no app (Blog → Google Docs).', 401);
+    }
+    const base = { site: canonical(env, url), app: url.origin };
+    if (method === 'POST' && pathname === '/api/gdocs/info') return json(await gdocs.info(env, await body(request), base));
+    if (method === 'POST' && pathname === '/api/gdocs/import') return json(await gdocs.importDoc(env, await body(request), base));
+    return fail('Rota não encontrada.', 404);
   }
 
   if (!(await isLoggedIn(request, env))) return fail('Faça login.', 401);
@@ -254,6 +267,18 @@ async function handleApi(request, env, url) {
 
     case 'GET /api/pages':
       return json({ pages: await blog.listPages(env) });
+
+    // ---------- Google Docs (código de conexão) ----------
+    case 'GET /api/gdocs':
+      return json(await gdocs.status(env));
+
+    case 'POST /api/gdocs/token':
+      // O código leva o endereço do app (sempre https fora do computador local) e o token.
+      return json({ code: `${url.origin.replace(/^http:\/\/(?!localhost|127\.)/, 'https://')}#${await gdocs.newToken(env)}` });
+
+    case 'DELETE /api/gdocs/token':
+      await gdocs.revoke(env);
+      return json({ ok: true });
 
     default: {
       const art = pathname.match(/^\/api\/blog\/(\d+)$/);

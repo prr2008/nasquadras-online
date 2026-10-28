@@ -92,3 +92,20 @@
 .col-list .info .meta { color: var(--muted); font-size: 13px; }
 .col-list .actions { display: flex; gap: 10px; font-size: 13px; }
 .col-list .actions button, .col-list .actions a { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; }
+
+/* Google Docs → blog */
+.gdocs { margin: 0 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.gdocs summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; cursor: pointer; font-weight: 600; list-style: none; }
+.gdocs summary::-webkit-details-marker { display: none; }
+.gdocs summary::after { content: '▾'; color: var(--muted); }
+.gdocs[open] summary::after { content: '▴'; }
+.gdocs summary > span:first-child { flex: 1; }
+.gdocs-body { padding: 0 14px 14px; font-size: 14px; line-height: 1.5; }
+.gdocs-body p { margin: 0 0 10px; }
+.gdocs-steps { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 10px; }
+.gdocs-steps button { margin-top: 6px; display: inline-block; }
+.gdocs-code-row { display: block; }
+.gdocs-code { display: grid; gap: 6px; margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); font-size: 13px; }
+.gdocs-code code { word-break: break-all; font-size: 12px; }
+.gdocs-tips { color: var(--muted); font-size: 13px; }
+.gdocs code { font-size: 13px; }

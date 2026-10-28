@@ -176,6 +176,65 @@ async function listArticles() {
     </a></li>`).join('') : '<li class="empty-item">Nenhum artigo ainda. Toque em "Novo artigo".</li>';
 }
 
+// ---------- Google Docs → blog ----------
+
+async function gdocsStatus() {
+  const st = await NQ().api('/api/gdocs');
+  const badge = $('#gdocs-state');
+  badge.textContent = st.connected ? 'Conectado' : 'Não conectado';
+  badge.className = `badge ${st.connected ? 'published' : ''}`;
+  badge.title = st.connected && st.lastUsed ? `Último envio: ${new Date(st.lastUsed).toLocaleString('pt-BR')}` : '';
+  $('#gdocs-revoke').hidden = !st.connected;
+  $('#gdocs-token').textContent = st.connected ? 'Gerar novo código (o atual deixa de valer)' : 'Gerar código de conexão';
+}
+
+// O script é baixado ao abrir o painel, para a cópia acontecer direto no toque
+// (o iPhone só deixa copiar logo depois do toque).
+let gdocsScript = null;
+const loadScript = () => fetch('/gdocs/NasQuadras.js', { cache: 'no-store' })
+  .then((r) => { if (!r.ok) throw new Error('Não consegui carregar o script.'); return r.text(); })
+  .then((t) => { gdocsScript = t; return t; });
+
+$('#gdocs').addEventListener('toggle', () => {
+  if (!$('#gdocs').open) return;
+  gdocsStatus().catch((e) => NQ().toast(e.message));
+  if (!gdocsScript) loadScript().catch(() => {});
+});
+
+$('#gdocs-copy-script').addEventListener('click', async () => {
+  try {
+    const text = gdocsScript || await loadScript();
+    NQ().toast((await NQ().copyText(text)) ? 'Script copiado. Cole no Apps Script.' : 'Não consegui copiar. Tente de novo.');
+  } catch (err) { NQ().toast(err.message); }
+});
+
+$('#gdocs-token').addEventListener('click', async () => {
+  const connected = !$('#gdocs-revoke').hidden;
+  if (connected && !confirm('Gerar um novo código? O documento-modelo e as cópias que usam o código atual vão parar de enviar até você colar o novo.')) return;
+  try {
+    const { code } = await NQ().api('/api/gdocs/token', {});
+    const box = $('#gdocs-code');
+    box.hidden = false;
+    box.innerHTML = `<code>${NQ().esc(code)}</code><button type="button" class="ghost small">Copiar código</button>
+      <small>Este código aparece só agora. Ele dá acesso para publicar no blog: não compartilhe. Se perder, gere outro.</small>`;
+    box.querySelector('button').addEventListener('click', async () => {
+      NQ().toast((await NQ().copyText(code)) ? 'Código copiado.' : 'Não consegui copiar. Selecione e copie.');
+    });
+    await NQ().copyText(code);
+    await gdocsStatus();
+  } catch (err) { NQ().toast(err.message); }
+});
+
+$('#gdocs-revoke').addEventListener('click', async () => {
+  if (!confirm('Desconectar? O Google Docs deixa de conseguir enviar textos até você gerar um código novo.')) return;
+  try {
+    await NQ().api('/api/gdocs/token', undefined, 'DELETE');
+    $('#gdocs-code').hidden = true;
+    await gdocsStatus();
+    NQ().toast('Google Docs desconectado.');
+  } catch (err) { NQ().toast(err.message); }
+});
+
 $('#blog-new').addEventListener('click', () => { location.hash = '#blog/novo'; });
 $('#blog-back').addEventListener('click', () => { location.hash = '#blog'; });
 

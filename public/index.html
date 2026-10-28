@@ -172,6 +172,24 @@
           <h2>Blog</h2>
           <button id="blog-new" type="button" class="primary small-btn">＋ Novo artigo</button>
         </div>
+        <details id="gdocs" class="gdocs">
+          <summary><span>📄 Publicar do Google Docs</span> <span id="gdocs-state" class="badge"></span></summary>
+          <div class="gdocs-body">
+            <p>O menu <b>Nas Quadras → Enviar para o blog…</b> dentro do Google Docs manda o texto, com intertítulos, links e fotos, direto para cá, como rascunho ou já publicado.</p>
+            <ol class="gdocs-steps">
+              <li>Crie no Google Docs um documento chamado <b>Modelo Nas Quadras</b>.</li>
+              <li>Nele, abra <b>Extensões → Apps Script</b>, apague o que houver e cole o script:
+                <button type="button" id="gdocs-copy-script" class="ghost small">Copiar script</button></li>
+              <li>Gere o código de conexão e cole-o entre as aspas da linha <code>const CONEXAO = '';</code>
+                <span class="gdocs-code-row"><button type="button" id="gdocs-token" class="ghost small">Gerar código de conexão</button></span>
+                <span id="gdocs-code" class="gdocs-code" hidden></span></li>
+              <li>Salve (ícone de disquete), volte ao documento e recarregue a página. Toque em <b>Nas Quadras → Enviar para o blog…</b> e autorize o script (em “Google não verificou este app”, toque em <i>Avançado</i> → <i>Acessar</i>).</li>
+              <li>Para cada texto novo: <b>Arquivo → Fazer uma cópia</b> do modelo. Cada cópia pede a autorização uma vez.</li>
+            </ol>
+            <p class="gdocs-tips"><b>No documento:</b> a 1ª linha com estilo <i>Título</i> vira o título; <i>Subtítulo</i> vira o resumo; <i>Título 1/2</i> e <i>3</i> viram intertítulos; parágrafo com recuo vira citação; um link do YouTube, Vimeo ou Spotify sozinho numa linha vira o player.</p>
+            <button type="button" id="gdocs-revoke" class="link small danger" hidden>Desconectar o Google Docs</button>
+          </div>
+        </details>
         <ul id="blog-list" class="doc-list"></ul>
       </div>
 
