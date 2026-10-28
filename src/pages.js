@@ -38,7 +38,7 @@ const categoryNav = (active = '') => `<nav class="tabs cats" aria-label="Categor
 
 // ---------- Início ----------
 
-export function homePage({ games, articles, origin, home = '/' }) {
+export function homePage({ games, articles, origin, home = '/', latestColumn = null }) {
   const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
   const liveBlock = live ? `<section class="live-hero">
       <a href="/c/${esc(live.slug)}" class="live-hero-link">
@@ -71,7 +71,7 @@ export function homePage({ games, articles, origin, home = '/' }) {
         ${recentGames.length ? `<div class="cards">${recentGames.map(coverageCard).join('')}</div>` : '<p class="empty">Nenhuma cobertura anterior.</p>'}
       </section>
       <section class="home-block promo">
-        <a class="promo-card" href="/coluna"><strong>Coluna Nas Quadras</strong><span>No Jornal do Brasil</span></a>
+        <a class="promo-card" href="/coluna"><strong>Coluna Nas Quadras</strong><span>${latestColumn ? `Mais recente: ${esc(latestColumn.title)}` : 'No Jornal do Brasil'}</span></a>
         <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>Música, cultura e esporte</span></a>
       </section>`,
   });
@@ -191,3 +191,38 @@ ${[...fixed,
     ...games.map((g) => url(`${origin}/c/${g.slug}`, g.updated_at))].join('\n')}
 </urlset>`;
 }
+
+// ---------- Coluna Nas Quadras (cards com link para o texto original) ----------
+
+function columnCard(c) {
+  const img = c.image_key ? `/m/${esc(c.image_key)}` : (c.image_url ? esc(c.image_url) : '');
+  return `<a class="column-card" href="${esc(c.url)}" target="_blank" rel="noopener">
+    ${img ? `<img loading="lazy" src="${img}" alt="">` : '<div class="card-ph" aria-hidden="true"></div>'}
+    <div class="column-body">
+      <span class="card-date">${esc(c.source)} · ${shortDate(c.published_at)}</span>
+      <strong>${esc(c.title)}</strong>
+      ${c.summary ? `<span class="card-excerpt">${esc(c.summary)}</span>` : ''}
+      <span class="column-cta">Ler no ${esc(c.source)} ↗</span>
+    </div>
+  </a>`;
+}
+
+export function columnPage({ columns, page, origin, admin = false, home = '/' }) {
+  const intro = page?.body_html?.trim() ? `<div class="prose column-intro">${page.body_html}</div>` : '';
+  return layout({
+    title: `${page?.title || 'Coluna Nas Quadras'} · Nas Quadras`,
+    description: 'A coluna Nas Quadras, de Pedro Rodrigues, no Jornal do Brasil: NBA, NBB e o basquete brasileiro.',
+    url: `${origin}/coluna`,
+    type: 'website',
+    nav: 'coluna',
+    home,
+    body: `<h1 class="page-title">${esc(page?.title || 'Coluna Nas Quadras')}</h1>
+      ${intro || '<p class="lede">Toda semana no Jornal do Brasil: NBA, NBB e o basquete brasileiro.</p>'}
+      ${columns.length
+        ? `<div class="column-list">${columns.map(columnCard).join('')}</div>`
+        : '<p class="empty">As colunas publicadas vão aparecer aqui.</p>'}
+      ${admin ? '<p class="admin-note"><a href="/app#coluna">Adicionar coluna no app</a></p>' : ''}`,
+  });
+}
+
+export { columnCard };

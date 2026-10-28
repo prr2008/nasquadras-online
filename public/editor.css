@@ -73,3 +73,22 @@
 .editor-wrap .ql-snow .ql-tooltip a.ql-action::after { content: 'Editar'; }
 .editor-wrap .ql-snow .ql-tooltip a.ql-remove::before { content: 'Remover'; }
 .editor-wrap .ql-snow .ql-tooltip::before { content: 'Abrir:'; }
+
+/* Coluna */
+.col-paste { margin-bottom: 4px; }
+.col-paste input { flex: 1; min-width: 0; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); font-size: 15px; color: var(--text); }
+.col-form { margin: 8px 0 18px; padding: 14px; border-radius: 14px; border: 1px solid var(--accent); background: var(--panel); }
+.col-preview { display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: start; }
+.col-preview .cover-preview { max-width: none; aspect-ratio: 4 / 3; }
+.col-fields { display: grid; gap: 10px; }
+.col-form input { padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 15px; }
+.col-form textarea { background: var(--panel-2); }
+.col-form #col-title { font-weight: 600; font-size: 16px; }
+@media (max-width: 420px) { .col-preview { grid-template-columns: 1fr; } .col-preview .cover-preview { aspect-ratio: 16 / 9; } }
+.col-list li { display: grid; grid-template-columns: 72px 1fr; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+.col-list .thumb-sm { width: 72px; height: 54px; border-radius: 8px; object-fit: cover; background: var(--panel-2); }
+.col-list .info { display: grid; gap: 2px; min-width: 0; }
+.col-list .info strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.col-list .info .meta { color: var(--muted); font-size: 13px; }
+.col-list .actions { display: flex; gap: 10px; font-size: 13px; }
+.col-list .actions button, .col-list .actions a { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; }

@@ -4,7 +4,7 @@ export const CATEGORIES = ['NBB', 'NBA', 'Seleção', 'Basquete feminino', 'Opin
 
 export const PAGES = {
   sobre: { title: 'Sobre', placeholder: 'Em breve: quem é Pedro Rodrigues e o que é o Nas Quadras.' },
-  coluna: { title: 'Coluna Nas Quadras', placeholder: 'Em breve: as colunas Nas Quadras publicadas no Jornal do Brasil.' },
+  coluna: { title: 'Coluna Nas Quadras', placeholder: 'Texto de apresentação (opcional), exibido acima das colunas. As colunas em si são adicionadas na aba Coluna.' },
   'zona-de-conforto': { title: 'Zona de Conforto', placeholder: 'Em breve: o programa Zona de Conforto — música, cultura e esporte.' },
 };
 

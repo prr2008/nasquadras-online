@@ -8,7 +8,7 @@ const siteOrigin = () => (location.hostname === 'app.nasquadras.online' ? 'https
 // ---------- Navegação entre Ao vivo / Blog / Páginas ----------
 
 function show(view) {
-  for (const v of ['live', 'blog', 'pages']) $(`#view-${v}`).hidden = v !== view;
+  for (const v of ['live', 'blog', 'coluna', 'pages']) $(`#view-${v}`).hidden = v !== view;
   document.querySelectorAll('.app-tabs a[data-view]').forEach((a) => a.classList.toggle('on', a.dataset.view === view));
 }
 
@@ -21,6 +21,10 @@ async function route() {
       if (arg === 'novo') return openArticle(null);
       if (arg) return openArticle(Number(arg));
       return listArticles();
+    }
+    if (section === 'coluna') {
+      show('coluna');
+      return listColumns();
     }
     if (section === 'paginas') {
       show('pages');
@@ -284,7 +288,10 @@ async function saveArticle(status) {
 }
 
 async function announce(a) {
-  const text = `📝 Novo no blog: ${a.title}\n\n${siteOrigin()}/blog/${a.slug}`;
+  return announceText(`📝 Novo no blog: ${a.title}\n\n${siteOrigin()}/blog/${a.slug}`);
+}
+
+async function announceText(text) {
   const st = NQ().state.status || {};
   const jobs = [];
   if (st.threads?.connected) jobs.push(NQ().postThreads(text, [], () => {}, false).then(() => 'Threads'));
@@ -377,6 +384,128 @@ $('#page-save').addEventListener('click', async () => {
     $('#page-saved').textContent = `Salva em ${new Date(page.updated_at).toLocaleString('pt-BR')}`;
     NQ().toast('Página salva.');
   } catch (err) { NQ().toast(err.message); }
+});
+
+// ---------- Coluna (links das colunas publicadas) ----------
+
+let colEditing = null; // null = nova coluna; objeto = coluna existente em edição
+let colPreview = null;
+
+const toDateInput = (ms) => new Date(ms - 3 * 3600 * 1000).toISOString().slice(0, 10); // dia em Brasília
+const fromDateInput = (v, keepMs) => {
+  // Mantém o horário original quando o dia não mudou.
+  if (keepMs && toDateInput(keepMs) === v) return keepMs;
+  return Date.parse(`${v}T12:00:00-03:00`);
+};
+
+async function listColumns() {
+  const { columns } = await NQ().api('/api/coluna');
+  $('#col-list').innerHTML = columns.length ? columns.map((c) => `
+    <li data-id="${c.id}">
+      ${c.image_key ? `<img class="thumb-sm" src="/m/${NQ().esc(c.image_key)}" alt="">` : '<div class="thumb-sm"></div>'}
+      <div class="info">
+        <strong>${NQ().esc(c.title)}</strong>
+        <span class="meta">${NQ().esc(c.source)} · ${fmtDate(c.published_at)}</span>
+        <span class="actions">
+          <a href="${NQ().esc(c.url)}" target="_blank" rel="noopener">Abrir ↗</a>
+          <button type="button" data-act="edit">Editar</button>
+          <button type="button" data-act="del">Remover</button>
+        </span>
+      </div>
+    </li>`).join('') : '<li class="empty-item" style="display:block;background:none;border:0">Nenhuma coluna ainda. Cole o link de uma coluna acima.</li>';
+  $('#col-list').columns = columns;
+}
+
+function fillColForm(d, { editing = false } = {}) {
+  $('#col-form').hidden = false;
+  $('#col-title').value = d.title || '';
+  $('#col-summary').value = d.summary || '';
+  $('#col-source').value = d.source || 'Jornal do Brasil';
+  $('#col-date').value = toDateInput(d.published_at || Date.now());
+  $('#col-link').href = d.url;
+  $('#col-link').textContent = d.url.replace(/^https?:\/\/(www\.)?/, '');
+  const img = d.image_key ? `/m/${d.image_key}` : d.image_url;
+  $('#col-img').innerHTML = img ? `<img src="${NQ().esc(img)}" alt="">` : '<span>Sem foto</span>';
+  $('#col-save').textContent = editing ? 'Salvar alterações' : 'Adicionar à Coluna';
+  $('#col-announce-row').hidden = editing;
+  $('#col-announce').checked = false;
+  $('#col-title').focus();
+}
+
+function closeColForm() {
+  $('#col-form').hidden = true;
+  colEditing = null;
+  colPreview = null;
+}
+
+$('#col-fetch').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#col-error').textContent = '';
+  const btn = $('#col-fetch-btn');
+  btn.disabled = true;
+  btn.textContent = 'Buscando…';
+  try {
+    colEditing = null;
+    colPreview = await NQ().api('/api/coluna/preview', { url: $('#col-url').value });
+    fillColForm(colPreview);
+  } catch (err) {
+    $('#col-error').textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Buscar';
+  }
+});
+
+$('#col-cancel').addEventListener('click', closeColForm);
+
+$('#col-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const base = colEditing || colPreview;
+  if (!base) return;
+  const payload = {
+    url: base.url,
+    image_url: base.image_url,
+    title: $('#col-title').value.trim(),
+    summary: $('#col-summary').value.trim(),
+    source: $('#col-source').value.trim(),
+    published_at: fromDateInput($('#col-date').value, base.published_at),
+  };
+  try {
+    if (colEditing) {
+      await NQ().api(`/api/coluna/${colEditing.id}`, payload, 'PUT');
+      NQ().toast('Coluna atualizada.');
+    } else {
+      const saved = await NQ().api('/api/coluna', payload);
+      NQ().toast('Coluna adicionada ao site.');
+      if ($('#col-announce').checked) {
+        await announceText(`📰 Nova coluna Nas Quadras no ${saved.source}: ${saved.title}\n\n${saved.url}`);
+      }
+      $('#col-url').value = '';
+    }
+    closeColForm();
+    listColumns();
+  } catch (err) { NQ().toast(err.message); }
+});
+
+$('#col-list').addEventListener('click', async (e) => {
+  const act = e.target.dataset.act;
+  if (!act) return;
+  const id = Number(e.target.closest('li').dataset.id);
+  const c = $('#col-list').columns.find((x) => x.id === id);
+  if (act === 'edit') {
+    colEditing = c;
+    colPreview = null;
+    fillColForm(c, { editing: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  if (act === 'del') {
+    if (!confirm(`Remover "${c.title}" da página Coluna? (O texto no JB não é afetado.)`)) return;
+    try {
+      await NQ().api(`/api/coluna/${id}`, undefined, 'DELETE');
+      NQ().toast('Coluna removida do site.');
+      listColumns();
+    } catch (err) { NQ().toast(err.message); }
+  }
 });
 
 // Primeira exibição (se o login já estiver feito).

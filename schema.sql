@@ -51,3 +51,19 @@ CREATE TABLE IF NOT EXISTS pages (
   body_html  TEXT NOT NULL DEFAULT '',
   updated_at INTEGER NOT NULL
 );
+
+-- Coluna Nas Quadras: links das colunas publicadas no Jornal do Brasil
+-- (título, foto e data lidos da página; a foto é copiada para o R2).
+CREATE TABLE IF NOT EXISTS columns (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  url          TEXT NOT NULL UNIQUE,
+  title        TEXT NOT NULL,
+  summary      TEXT NOT NULL DEFAULT '',
+  image_key    TEXT,                     -- cópia da foto no R2
+  image_url    TEXT,                     -- foto original (reserva)
+  source       TEXT NOT NULL DEFAULT 'Jornal do Brasil',
+  published_at INTEGER NOT NULL,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS columns_by_date ON columns (published_at DESC);

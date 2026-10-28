@@ -41,6 +41,7 @@
     <nav class="app-tabs" aria-label="Seções do app">
       <a href="#ao-vivo" data-view="live">Ao vivo</a>
       <a href="#blog" data-view="blog">Blog</a>
+      <a href="#coluna" data-view="coluna">Coluna</a>
       <a href="#paginas" data-view="pages">Páginas</a>
       <a href="/inicio" target="_blank" rel="noopener" class="site-link">Ver site ↗</a>
     </nav>
@@ -209,6 +210,38 @@
           <button type="button" id="blog-delete" class="link small danger" hidden>Excluir artigo</button>
         </div>
       </form>
+    </section>
+
+    <!-- COLUNA (links das colunas publicadas no JB) -->
+    <section id="view-coluna" class="view" hidden>
+      <div class="view-head"><h2>Coluna Nas Quadras</h2></div>
+      <form id="col-fetch" class="paste-row col-paste" autocomplete="off">
+        <input id="col-url" type="url" inputmode="url" placeholder="Cole o link completo da coluna no JB" aria-label="Link da coluna" required>
+        <button type="submit" id="col-fetch-btn" class="primary small-btn">Buscar</button>
+      </form>
+      <p id="col-error" class="error"></p>
+
+      <form id="col-form" class="doc-form col-form" hidden autocomplete="off">
+        <div class="col-preview">
+          <div id="col-img" class="cover-preview"><span>Sem foto</span></div>
+          <div class="col-fields">
+            <label>Título<textarea id="col-title" rows="2" maxlength="200" required></textarea></label>
+            <div class="row-2">
+              <label>Publicada em<input id="col-date" type="date" required></label>
+              <label>Veículo<input id="col-source" maxlength="60"></label>
+            </div>
+          </div>
+        </div>
+        <label>Resumo <small>(início do texto; pode editar)</small><textarea id="col-summary" rows="3" maxlength="400"></textarea></label>
+        <a id="col-link" class="link small" target="_blank" rel="noopener"></a>
+        <label class="check" id="col-announce-row"><input type="checkbox" id="col-announce"> Divulgar no Threads e no Bluesky (título + link)</label>
+        <div class="doc-actions">
+          <button type="button" id="col-cancel" class="ghost">Cancelar</button>
+          <button type="submit" id="col-save" class="primary">Adicionar à Coluna</button>
+        </div>
+      </form>
+
+      <ul id="col-list" class="doc-list col-list"></ul>
     </section>
 
     <!-- PÁGINAS FIXAS -->

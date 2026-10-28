@@ -8,6 +8,7 @@ import * as lnb from './lnb.js';
 import * as site from './site.js';
 import * as blog from './blog.js';
 import * as pages from './pages.js';
+import * as coluna from './coluna.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
@@ -239,6 +240,18 @@ async function handleApi(request, env, url) {
     case 'POST /api/blog':
       return json(await blog.createArticle(env, await body(request)));
 
+    // ---------- Coluna (links das colunas no JB) ----------
+    case 'GET /api/coluna':
+      return json({ columns: await coluna.list(env) });
+
+    case 'POST /api/coluna/preview': {
+      const { url: link } = await body(request);
+      return json(await coluna.fetchPreview(coluna.validUrl(link)));
+    }
+
+    case 'POST /api/coluna':
+      return json(await coluna.add(env, await body(request)));
+
     case 'GET /api/pages':
       return json({ pages: await blog.listPages(env) });
 
@@ -258,6 +271,15 @@ async function handleApi(request, env, url) {
           return (await blog.deleteArticle(env, id)) ? json({ ok: true }) : fail('Artigo não encontrado.', 404);
         }
       }
+      const col = pathname.match(/^\/api\/coluna\/(\d+)$/);
+      if (col && method === 'PUT') {
+        const c = await coluna.update(env, Number(col[1]), await body(request));
+        return c ? json(c) : fail('Coluna não encontrada.', 404);
+      }
+      if (col && method === 'DELETE') {
+        return (await coluna.remove(env, Number(col[1]))) ? json({ ok: true }) : fail('Coluna não encontrada.', 404);
+      }
+
       const pg = pathname.match(/^\/api\/pages\/([a-z-]+)$/);
       if (pg && method === 'PUT') return json(await blog.savePage(env, pg[1], await body(request)));
 
@@ -353,10 +375,10 @@ async function handleMainSite(request, env, url) {
 
   if ((p === '/' && isSiteHost(url)) || p === '/inicio') {
     if (p === '/inicio' && isSiteHost(url)) return Response.redirect(`${url.origin}/`, 301);
-    const [games, articles] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 })]);
+    const [games, articles, cols] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 1)]);
     const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
     const withLive = live ? await withLiveScore(live) : null;
-    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home }));
+    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, latestColumn: cols[0] || null }));
   }
 
   if (p === '/blog') return html(pages.blogIndexPage({ articles: await blog.listPublished(env), origin, home }));
@@ -377,7 +399,12 @@ async function handleMainSite(request, env, url) {
     return html(pages.articlePage({ a, origin, admin, related, home }));
   }
 
-  const fixed = p.match(/^\/(sobre|coluna|zona-de-conforto)$/);
+  if (p === '/coluna') {
+    const [columns, page, admin] = await Promise.all([coluna.list(env), blog.getPage(env, 'coluna'), isLoggedIn(request, env)]);
+    return html(pages.columnPage({ columns, page, origin, admin, home }));
+  }
+
+  const fixed = p.match(/^\/(sobre|zona-de-conforto)$/);
   if (fixed) {
     const [page, admin] = await Promise.all([blog.getPage(env, fixed[1]), isLoggedIn(request, env)]);
     return html(pages.staticPage({ page, slug: fixed[1], origin, admin, home }));
@@ -445,8 +472,8 @@ export default {
       // Mídia publicada no site fica guardada; o resto sai depois de 24h.
       let keep;
       try {
-        const [a, b] = await Promise.all([site.referencedKeys(env), blog.referencedKeys(env)]);
-        keep = new Set([...a, ...b]);
+        const [a, b, c] = await Promise.all([site.referencedKeys(env), blog.referencedKeys(env), coluna.referencedKeys(env)]);
+        keep = new Set([...a, ...b, ...c]);
       } catch (err) { console.error('site keys', err); return; }
       let cursor;
       const cutoff = Date.now() - MEDIA_TTL_MS;
