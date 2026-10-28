@@ -23,11 +23,15 @@
     { "binding": "KV", "id": "440d54be039f4138b2a747e91984b6f3" }
   ],
 
-  // Valores que não são segredo. Os segredos (senhas e tokens) são
-  // cadastrados no painel da Cloudflare — veja o README.
+  // Valores que não são segredo ficam aqui, no repositório. Os segredos
+  // (senhas e tokens) são cadastrados no painel da Cloudflare como "Secret"
+  // — veja o README. Cada deploy pelo GitHub aplica exatamente estes vars.
   "vars": {
-    "THREADS_APP_ID": "1028301390289634"
+    "THREADS_APP_ID": "1028301390289634",
+    "BLUESKY_HANDLE": "prr2008.bsky.social"
   },
+  // Não apaga variáveis criadas pelo painel quando o GitHub publica uma versão nova.
+  "keep_vars": true,
 
   // Uma vez por dia: renova o token do Threads e apaga mídia antiga.
   "triggers": { "crons": ["17 9 * * *"] },

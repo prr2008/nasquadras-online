@@ -38,10 +38,9 @@ No Worker: **Settings → Variables and Secrets → Add**, sempre com o tipo **S
 | `APP_PASSWORD` | Uma senha que você vai usar para entrar no app |
 | `SESSION_SECRET` | Uma frase longa e aleatória qualquer (só o servidor usa) |
 | `THREADS_APP_SECRET` | A "Chave secreta do app" do Threads, no painel da Meta |
-| `BLUESKY_HANDLE` | Seu usuário, ex.: `seunome.bsky.social` |
 | `BLUESKY_APP_PASSWORD` | A senha de app criada no Bluesky (nunca a senha principal) |
 
-O ID do app do Threads não é segredo e já está no `wrangler.jsonc`.
+O ID do app do Threads e o usuário do Bluesky (`BLUESKY_HANDLE`) não são segredos e ficam no `wrangler.jsonc`. Variáveis comuns criadas só no painel podem sumir num deploy; por isso, tudo que não é segredo fica no repositório.
 
 ### 3. Configurar o app na Meta
 
