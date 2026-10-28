@@ -245,6 +245,7 @@ async function handleApi(request, env, url) {
           threads: entry.threads || null,
           bluesky: entry.bluesky || null,
           site: typeof entry.site === 'string' && entry.site.startsWith(origin) ? entry.site : null,
+          x: entry.x ? true : null,
         }),
       });
     }
@@ -274,6 +275,13 @@ async function handleApi(request, env, url) {
     // ---------- Agendamento ----------
     case 'GET /api/schedule':
       return json({ ...(await schedule.list(env)), buffer: buffer.configured(env) });
+
+    case 'POST /api/buffer/post': {
+      const { text = '', media } = await body(request);
+      const items = normalizeMedia(origin.replace(/^http:\/\/(?!localhost|127\.)/, 'https://'), media);
+      if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
+      return json({ id: await buffer.postNow(env, { text: text.trim(), media: items }) });
+    }
 
     case 'GET /api/buffer/check':
       return json(await buffer.check(env));

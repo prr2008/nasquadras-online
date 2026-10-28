@@ -230,8 +230,8 @@ export async function publish(env, row) {
   const status = failed.length ? (ok.length ? 'partial' : 'error') : 'sent';
   await env.DB.prepare('UPDATE scheduled SET status = ?, result = ?, updated_at = ? WHERE id = ?')
     .bind(status, JSON.stringify(result), Date.now(), row.id).run();
-  if (ok.length) {
-    await appendHistory(env, { text: `⏰ ${row.text}`.slice(0, 200), threads: result.threads || null, bluesky: result.bluesky || null, site: result.site || null });
+  if (ok.length || row.buffer_id) {
+    await appendHistory(env, { text: `⏰ ${row.text || row.x_text}`.slice(0, 200), threads: result.threads || null, bluesky: result.bluesky || null, site: result.site || null, x: row.buffer_id ? true : null });
   }
   return { status, result };
 }

@@ -96,6 +96,11 @@ test('Buffer: agenda no canal do X com horário e foto', async () => {
     channelId: 'chan1', text: 'Botafogo x Caxias', assets: [{ image: { url: 'https://app/m/a.jpg' } }],
     schedulingType: 'automatic', mode: 'customScheduled', dueAt: '2026-10-28T22:45:00.000Z',
   });
+  mockFetch(() => ({ json: { data: { createPost: { post: { id: 'buf2' } } } } }));
+  assert.equal(await buffer.postNow(env, { text: 'Cesta de 3!', media: [{ kind: 'image', url: 'https://a/1.jpg' }, { kind: 'video', url: 'https://a/v.mp4' }] }), 'buf2');
+  assert.equal(calls[0].body.variables.input.mode, 'shareNow');
+  assert.equal(calls[0].body.variables.input.dueAt, undefined);
+  assert.deepEqual(calls[0].body.variables.input.assets, [{ video: { url: 'https://a/v.mp4' } }]);
   mockFetch(() => ({ json: { data: { createPost: { message: 'Limite de posts agendados' } } } }));
   await assert.rejects(buffer.schedulePost(env, { text: 'x', dueAt: Date.now() }), /Limite de posts agendados/);
   mockFetch(() => ({ status: 401, json: {} }));

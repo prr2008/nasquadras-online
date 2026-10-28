@@ -146,14 +146,26 @@
         <label class="target"><input type="checkbox" id="t-threads" checked><span>Threads</span></label>
         <label class="target"><input type="checkbox" id="t-bluesky" checked><span>Bluesky</span></label>
         <label class="target"><input type="checkbox" id="t-site" checked><span>Site</span></label>
+        <label class="target" id="t-x-wrap" title="Publica no X pelo Buffer"><input type="checkbox" id="t-x"><span>X</span></label>
+      </div>
+
+      <!-- VERSÃO PARA O X (aparece quando o texto passa de 280 ou ao tocar em "Editar texto do X") -->
+      <button id="x-edit" type="button" class="link small x-edit" hidden>✏️ Editar texto do X</button>
+      <div id="x-box" class="x-box" hidden>
+        <div class="x-head"><strong>Versão para o X</strong> <small>(vai pelo Buffer)</small></div>
+        <textarea id="x-text" rows="3" aria-label="Texto para o X"></textarea>
+        <div class="x-foot">
+          <button id="x-reset" type="button" class="link small">Usar o texto do post</button>
+          <span id="x-count" class="count">X 0/280</span>
+        </div>
       </div>
 
       <p id="warnings" class="warnings" aria-live="polite"></p>
 
       <div class="actions">
         <button id="publish" type="button" class="primary publish">Publicar</button>
-        <button id="copy" type="button" class="ghost copy" title="Copiar o texto para colar no X (Twitter)">📋 Copiar</button>
         <button id="sched-open" type="button" class="ghost copy" title="Agendar este post">⏰ Agendar</button>
+        <button id="copy" type="button" class="ghost copy" title="Copiar o texto do post">📋 Copiar</button>
       </div>
 
       <!-- AGENDAR -->
@@ -175,12 +187,7 @@
         </label>
         <p class="sched-note" id="sched-thread-note"></p>
         <p class="sched-note">Destinos: <span id="sched-targets"></span> <small>(use as opções acima para mudar)</small></p>
-        <label class="check sched-check"><input type="checkbox" id="sched-x"> <span>X (Twitter), pela fila do Buffer</span></label>
-        <div id="sched-x-box" class="sched-x" hidden>
-          <textarea id="sched-x-text" rows="4" aria-label="Texto para o X"></textarea>
-          <span id="sched-x-count" class="count">X 0/280</span>
-        </div>
-        <p id="sched-x-off" class="sched-note" hidden>Para mandar ao X pelo Buffer, cadastre a chave <code>BUFFER_API_KEY</code> na Cloudflare.</p>
+        <p id="sched-x-note" class="sched-note" hidden>O X vai para a fila do Buffer no mesmo horário, com a versão para o X.</p>
         <button id="sched-save" type="button" class="primary">Agendar</button>
       </div>
       <div id="progress" class="progress" aria-live="polite"></div>

@@ -456,12 +456,53 @@ function onTextChange() {
     cb.textContent = `Bluesky ${n}/${BLUESKY_MAX}`;
     cb.className = `count ${n > BLUESKY_MAX - 30 ? 'near' : ''}`;
   }
-  const nx = xLength(finalText());
+  const nx = xLength(xOn() ? xText() : finalText());
   const cx = $('#count-x');
   cx.textContent = `X ${nx}/${X_MAX}`;
   cx.className = `count ${nx > X_MAX ? 'over' : nx > X_MAX - 20 ? 'near' : ''}`;
+  renderX();
   renderWarnings();
 }
+
+// ---------- X pelo Buffer ----------
+// O texto do X acompanha o do post até ser editado à mão na "Versão para o X".
+let xTouched = false;
+let xOpened = false;
+state.buffer = false; // vira true quando a chave do Buffer está ok (schedule.js)
+
+function xOn() {
+  return state.buffer && $('#t-x').checked;
+}
+
+function xText() {
+  return xTouched ? $('#x-text').value.trim() : finalText();
+}
+
+function renderX() {
+  $('#t-x').disabled = !state.buffer;
+  $('#t-x-wrap').title = state.buffer ? 'Publica no X pelo Buffer' : 'Cadastre BUFFER_API_KEY na Cloudflare para publicar no X';
+  const on = xOn();
+  if (!xTouched) $('#x-text').value = finalText();
+  const n = xLength(xText());
+  const show = on && (xOpened || xTouched || n > X_MAX);
+  $('#x-box').hidden = !show;
+  $('#x-edit').hidden = !on || show;
+  const c = $('#x-count');
+  c.textContent = `X ${n}/${X_MAX}`;
+  c.className = `count ${n > X_MAX ? 'over' : n > X_MAX - 20 ? 'near' : ''}`;
+}
+
+function resetX() {
+  xTouched = false;
+  xOpened = false;
+  renderX();
+}
+
+$('#t-x').checked = store.get('tx', false);
+$('#t-x').addEventListener('change', () => { store.set('tx', $('#t-x').checked); onTextChange(); });
+$('#x-text').addEventListener('input', () => { xTouched = true; onTextChange(); });
+$('#x-edit').addEventListener('click', () => { xOpened = true; renderX(); $('#x-text').focus(); });
+$('#x-reset').addEventListener('click', () => { resetX(); onTextChange(); });
 
 // ---------- Copiar (para colar no X/Twitter) ----------
 /** Contagem do X: links valem 23 caracteres e emojis valem 2. */
@@ -531,6 +572,11 @@ function renderWarnings() {
   }
   if (threadOn() && toThreads !== toBsky) w.push('O fio só avança na rede selecionada.');
   if ($('#t-site').checked && !state.status?.coverage?.active) w.push('Para publicar no site, toque em "Iniciar cobertura do jogo".');
+  if (xOn()) {
+    if (xLength(xText()) > X_MAX) w.push(`X: deixe a versão para o X com até ${X_MAX} caracteres.`);
+    if (videos && state.media.length > 1) w.push('X: só o vídeo será enviado.');
+    else if (images > 4) w.push('X: só as 4 primeiras fotos serão enviadas.');
+  }
   $('#warnings').textContent = w.join(' ');
 }
 $('#t-threads').addEventListener('change', renderWarnings);
@@ -727,7 +773,10 @@ $('#publish').addEventListener('click', async () => {
   const toBsky = $('#t-bluesky').checked;
   // O site recebe o post só com uma cobertura ativa (cada cobertura é uma página).
   const toSite = $('#t-site').checked && Boolean(state.status?.coverage?.active);
-  if (!toThreads && !toBsky && !toSite) return toast('Escolha pelo menos um destino.');
+  const toX = xOn();
+  const xt = toX ? xText() : '';
+  if (!toThreads && !toBsky && !toSite && !toX) return toast('Escolha pelo menos um destino.');
+  if (toX && xLength(xt) > X_MAX) return toast(`A versão para o X passa de ${X_MAX} caracteres.`);
   if (state.media.some((m) => m.status === 'uploading' || m.status === 'preparing')) return toast('Aguarde o envio das mídias terminar.');
   if (state.media.some((m) => m.status === 'failed')) return toast('Remova as mídias com erro antes de publicar.');
   const media = state.media.map(({ key, kind, mime, width, height, alt }) => ({ key, kind, mime, width, height, alt }));
@@ -765,14 +814,22 @@ $('#publish').addEventListener('click', async () => {
       .catch((err) => { row.bad(err.message); result.siteError = err.message; }));
   }
 
+  if (toX) {
+    const row = progressRow('X');
+    row.set('Enviando ao Buffer…');
+    jobs.push(api('/api/buffer/post', { text: xt, media })
+      .then(() => { row.ok(null); row.set('Enviado pelo Buffer ✓'); result.x = true; })
+      .catch((err) => { row.bad(err.message); result.xError = err.message; }));
+  }
+
   await Promise.all(jobs);
   state.busy = false;
   $('#publish').disabled = false;
 
-  const anyOk = result.threads || result.bluesky || result.site;
-  const anyFail = result.threadsError || result.blueskyError || result.siteError;
+  const anyOk = result.threads || result.bluesky || result.site || result.x;
+  const anyFail = result.threadsError || result.blueskyError || result.siteError || result.xError;
   if (anyOk) {
-    api('/api/history', { text: text.slice(0, 200), threads: result.threads, bluesky: result.bluesky, site: result.site })
+    api('/api/history', { text: (result.threads || result.bluesky || result.site ? text : xt).slice(0, 200), threads: result.threads, bluesky: result.bluesky, site: result.site, x: result.x })
       .then((h) => renderHistory(h.items)).catch(() => {});
     if (inThread) refreshThread().catch(() => {});
   }
@@ -781,6 +838,7 @@ $('#publish').addEventListener('click', async () => {
     $('#text').value = '';
     state.media = [];
     renderMedia();
+    resetX();
     onTextChange();
     navigator.vibrate?.([20, 40, 20]);
     toast('Publicado!');
@@ -796,6 +854,7 @@ function renderHistory(items = []) {
         ${h.threads && h.threads !== 'ok' ? `<a href="${esc(h.threads)}" target="_blank" rel="noopener">Threads ↗</a>` : h.threads ? '<span>Threads ✓</span>' : ''}
         ${h.bluesky ? `<a href="${esc(h.bluesky)}" target="_blank" rel="noopener">Bluesky ↗</a>` : ''}
         ${h.site ? `<a href="${esc(h.site)}" target="_blank" rel="noopener">Site ↗</a>` : ''}
+        ${h.x ? '<span>X ✓</span>' : ''}
       </div>
     </li>`).join('');
 }
@@ -803,7 +862,7 @@ function renderHistory(items = []) {
 // Funções compartilhadas com o editor do blog (editor.js).
 window.NQ = {
   api, toast, esc, compressImage, postThreads, threadOn, state, lnbRefresh, copyText,
-  finalText, xLength, X_MAX, glen, renderMedia, renderWarnings, onTextChange, refreshThread, renderHistory,
+  finalText, xLength, X_MAX, glen, xOn, xText, renderX, resetX, renderMedia, renderWarnings, onTextChange, refreshThread, renderHistory,
 };
 
 // ---------- Início ----------

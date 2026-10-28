@@ -7,7 +7,6 @@ const NQ = () => window.NQ;
 let rows = { pending: [], done: [] };
 let bufferOn = false;
 let editingId = null;
-let xTouched = false;
 
 const pad = (n) => String(n).padStart(2, '0');
 const toLocalInput = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -20,8 +19,9 @@ function targets() {
 
 function renderTargets() {
   const t = targets();
-  const names = [t.threads && 'Threads', t.bluesky && 'Bluesky', t.site && 'Site', $('#sched-x').checked && 'X (Buffer)'].filter(Boolean);
+  const names = [t.threads && 'Threads', t.bluesky && 'Bluesky', t.site && 'Site', NQ().xOn() && 'X (Buffer)'].filter(Boolean);
   $('#sched-targets').textContent = names.join(', ') || 'nenhum';
+  $('#sched-x-note').hidden = !NQ().xOn();
 }
 
 function renderThreadNote() {
@@ -34,13 +34,6 @@ function renderThreadNote() {
   }[mode];
 }
 
-function renderXCount() {
-  const n = NQ().xLength($('#sched-x-text').value);
-  const el = $('#sched-x-count');
-  el.textContent = `X ${n}/${NQ().X_MAX}`;
-  el.classList.toggle('over', n > NQ().X_MAX);
-}
-
 function defaultTitle() {
   const g = NQ().state.game || {};
   return g.away || g.home ? `${g.away || 'Mandante'} x ${g.home || 'Visitante'}` : '';
@@ -48,7 +41,6 @@ function defaultTitle() {
 
 function openPanel(row = null) {
   editingId = row?.id || null;
-  xTouched = Boolean(row);
   $('#sched-heading').textContent = row ? 'Editar agendamento' : 'Agendar post';
   $('#sched-save').textContent = row ? 'Salvar alterações' : 'Agendar';
   const last = rows.pending.filter((r) => r.id !== editingId).at(-1);
@@ -59,14 +51,8 @@ function openPanel(row = null) {
   const hasStart = rows.pending.some((r) => r.thread === 'start' && r.id !== editingId);
   $('#sched-thread').value = row?.thread || (hasStart ? 'reply' : 'start');
   $('#sched-title').value = row?.title || defaultTitle();
-  $('#sched-x').disabled = !bufferOn;
-  $('#sched-x-off').hidden = bufferOn;
-  $('#sched-x').checked = bufferOn && (row ? row.x_text != null : false);
-  $('#sched-x-box').hidden = !$('#sched-x').checked;
-  $('#sched-x-text').value = row?.x_text ?? NQ().finalText();
   renderThreadNote();
   renderTargets();
-  renderXCount();
   $('#sched-panel').hidden = false;
   $('#sched-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -82,28 +68,16 @@ $('#sched-open').addEventListener('click', () => {
 });
 $('#sched-close').addEventListener('click', closePanel);
 $('#sched-thread').addEventListener('change', renderThreadNote);
-$('#sched-x').addEventListener('change', () => {
-  $('#sched-x-box').hidden = !$('#sched-x').checked;
-  if ($('#sched-x').checked && !xTouched) $('#sched-x-text').value = NQ().finalText();
-  renderXCount(); renderTargets();
-});
-$('#sched-x-text').addEventListener('input', () => { xTouched = true; renderXCount(); });
-['#t-threads', '#t-bluesky', '#t-site'].forEach((id) => $(id).addEventListener('change', renderTargets));
-// O texto do X acompanha o do post até ser editado à mão.
-$('#text').addEventListener('input', () => {
-  if ($('#sched-panel').hidden || xTouched) return;
-  $('#sched-x-text').value = NQ().finalText(); renderXCount();
-});
-
+['#t-threads', '#t-bluesky', '#t-site', '#t-x'].forEach((id) => $(id).addEventListener('change', renderTargets));
 $('#sched-save').addEventListener('click', async () => {
   const st = NQ().state;
   if (st.media.some((m) => m.status === 'uploading' || m.status === 'preparing')) return NQ().toast('Aguarde o envio das mídias terminar.');
   if (st.media.some((m) => m.status === 'failed')) return NQ().toast('Remova as mídias com erro antes de agendar.');
   const runAt = new Date($('#sched-at').value).getTime();
   if (!Number.isFinite(runAt)) return NQ().toast('Escolha a data e a hora.');
-  const xOn = $('#sched-x').checked;
-  const xText = $('#sched-x-text').value.trim();
-  if (xOn && NQ().xLength(xText) > NQ().X_MAX) return NQ().toast(`O texto do X passa de ${NQ().X_MAX} caracteres.`);
+  const xOn = NQ().xOn();
+  const xText = NQ().xText();
+  if (xOn && NQ().xLength(xText) > NQ().X_MAX) return NQ().toast(`A versão para o X passa de ${NQ().X_MAX} caracteres.`);
   const payload = {
     runAt,
     text: NQ().finalText(),
@@ -123,6 +97,7 @@ $('#sched-save').addEventListener('click', async () => {
     $('#text').value = '';
     st.media = [];
     NQ().renderMedia();
+    NQ().resetX();
     NQ().onTextChange();
     NQ().toast(`Agendado para ${fmtWhen(saved.run_at)}.${saved.buffer_id ? ' O X foi para a fila do Buffer.' : ''}`, 5000);
     await refresh();
@@ -182,6 +157,7 @@ async function refresh() {
   const hadDue = rows.pending.some((r) => r.run_at <= Date.now());
   rows = { pending: data.pending, done: data.done };
   bufferOn = data.buffer;
+  if (!bufferChecked) { NQ().state.buffer = bufferOn; NQ().renderX(); }
   render();
   // Algo saiu desde a última olhada: atualiza o fio e o histórico.
   if (hadDue || data.done.some((r) => r.updated_at > lastPendingDue)) {
@@ -223,7 +199,11 @@ $('#sched-list').addEventListener('click', async (e) => {
       $('#t-threads').checked = !!row.targets.threads;
       $('#t-bluesky').checked = !!row.targets.bluesky;
       $('#t-site').checked = !!row.targets.site;
-      NQ().renderMedia(); NQ().onTextChange(); NQ().renderWarnings();
+      $('#t-x').checked = row.x_text != null;
+      NQ().renderMedia(); NQ().onTextChange();
+      // Versão do X diferente do texto do post: abre a caixa com ela.
+      if (row.x_text != null && row.x_text !== row.text) { $('#x-text').value = row.x_text; $('#x-text').dispatchEvent(new Event('input')); }
+      NQ().renderWarnings();
       openPanel(row);
       return;
     }
@@ -239,11 +219,10 @@ async function checkBuffer() {
   if (bufferChecked || !bufferOn) return;
   bufferChecked = true;
   const r = await NQ().api('/api/buffer/check');
-  if (!r.ok) {
-    bufferOn = false;
-    $('#sched-x-off').textContent = `Buffer indisponível: ${r.error}`;
-    NQ().toast(`Buffer: ${r.error}`, 7000);
-  }
+  NQ().state.buffer = r.ok;
+  NQ().renderX();
+  NQ().renderWarnings();
+  if (!r.ok) NQ().toast(`Buffer: ${r.error}`, 7000);
 }
 
 window.addEventListener('nq:ready', () => {

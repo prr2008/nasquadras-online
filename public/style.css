@@ -152,7 +152,9 @@ textarea:focus, input:focus-visible, select:focus-visible { outline: 2px solid v
 
 .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: var(--radius); padding: 14px; font-weight: 700; font-size: 17px; }
 .primary:disabled { opacity: .5; }
-.actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.actions .publish { grid-column: 1 / -1; }
+.actions .copy { padding: 12px 10px; }
 .copy { font-weight: 700; font-size: 16px; padding: 0 18px; border-radius: var(--radius); }
 .copy.done { border-color: var(--ok); color: var(--ok); }
 .publish { font-family: var(--display); font-size: 22px; letter-spacing: .04em; text-transform: uppercase; padding: 14px; }
@@ -213,3 +215,12 @@ dialog .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .sched-err { display: block; color: var(--bad, #ff6b6b); margin-top: 2px; }
 .sched-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .sched-actions .danger { color: var(--bad, #ff6b6b); }
+
+/* ---------- X pelo Buffer ---------- */
+.target input:disabled + span { opacity: .4; }
+.x-edit { justify-self: start; margin-top: -4px; }
+.x-box { display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+.x-head { font-size: 14px; }
+.x-head small { color: var(--muted); }
+.x-box textarea { min-height: 0; }
+.x-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

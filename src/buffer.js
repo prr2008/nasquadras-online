@@ -34,28 +34,34 @@ export async function check(env) {
   }
 }
 
-/** Agenda no X pelo Buffer. Fotos/vídeo precisam de URL pública. */
-export async function schedulePost(env, { text, dueAt, media = [] }) {
-  const assets = media.slice(0, 4).map((m) => (m.kind === 'video' ? { video: { url: m.url } } : { image: { url: m.url } }));
+// O X aceita até 4 fotos ou 1 vídeo por post.
+function assetsFor(media) {
+  const video = media.find((m) => m.kind === 'video');
+  if (video) return [{ video: { url: video.url } }];
+  return media.slice(0, 4).map((m) => ({ image: { url: m.url } }));
+}
+
+async function createPost(env, input) {
   const data = await gql(env, `
     mutation CreatePost($input: CreatePostInput!) {
       createPost(input: $input) {
         ... on PostActionSuccess { post { id dueAt } }
         ... on MutationError { message }
       }
-    }`, {
-    input: {
-      channelId: env.BUFFER_X_CHANNEL,
-      text,
-      assets,
-      schedulingType: 'automatic',
-      mode: 'customScheduled',
-      dueAt: new Date(dueAt).toISOString(),
-    },
-  });
+    }`, { input: { channelId: env.BUFFER_X_CHANNEL, schedulingType: 'automatic', ...input } });
   const r = data?.createPost;
   if (!r?.post?.id) throw new Error(`Buffer: ${r?.message || 'não aceitou o post.'}`);
   return r.post.id;
+}
+
+/** Agenda no X pelo Buffer. Fotos/vídeo precisam de URL pública. */
+export async function schedulePost(env, { text, dueAt, media = [] }) {
+  return createPost(env, { text, assets: assetsFor(media), mode: 'customScheduled', dueAt: new Date(dueAt).toISOString() });
+}
+
+/** Publica no X agora, pelo Buffer (botão Publicar do Ao vivo). */
+export async function postNow(env, { text, media = [] }) {
+  return createPost(env, { text, assets: assetsFor(media), mode: 'shareNow' });
 }
 
 /** Remove da fila do Buffer (ao cancelar ou editar o agendamento). */
