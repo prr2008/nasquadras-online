@@ -275,6 +275,9 @@ async function handleApi(request, env, url) {
     case 'GET /api/schedule':
       return json({ ...(await schedule.list(env)), buffer: buffer.configured(env) });
 
+    case 'GET /api/buffer/check':
+      return json(await buffer.check(env));
+
     case 'POST /api/schedule':
       return json(await schedule.create(env, await body(request), origin));
 

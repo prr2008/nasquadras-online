@@ -21,6 +21,19 @@ async function gql(env, query, variables) {
   return data.data;
 }
 
+/** Confere a chave e o canal do X sem publicar nada. */
+export async function check(env) {
+  if (!configured(env)) return { ok: false, error: 'BUFFER_API_KEY não cadastrada.' };
+  try {
+    const data = await gql(env, `query Check { channel(input: { id: ${JSON.stringify(env.BUFFER_X_CHANNEL)} }) { id service name } }`);
+    const ch = data?.channel;
+    if (!ch) return { ok: false, error: 'Canal do X não encontrado no Buffer.' };
+    return { ok: true, service: ch.service, name: ch.name };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 /** Agenda no X pelo Buffer. Fotos/vídeo precisam de URL pública. */
 export async function schedulePost(env, { text, dueAt, media = [] }) {
   const assets = media.slice(0, 4).map((m) => (m.kind === 'video' ? { video: { url: m.url } } : { image: { url: m.url } }));

@@ -233,8 +233,21 @@ $('#sched-list').addEventListener('click', async (e) => {
   await refresh().catch(() => {});
 });
 
+// Confere a conexão com o Buffer uma vez por sessão.
+let bufferChecked = false;
+async function checkBuffer() {
+  if (bufferChecked || !bufferOn) return;
+  bufferChecked = true;
+  const r = await NQ().api('/api/buffer/check');
+  if (!r.ok) {
+    bufferOn = false;
+    $('#sched-x-off').textContent = `Buffer indisponível: ${r.error}`;
+    NQ().toast(`Buffer: ${r.error}`, 7000);
+  }
+}
+
 window.addEventListener('nq:ready', () => {
-  refresh().catch(() => {});
+  refresh().then(checkBuffer).catch(() => {});
   setInterval(() => { if (!document.hidden && !$('#app').hidden) refresh().catch(() => {}); }, 30_000);
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && window.NQ) refresh().catch(() => {}); });
