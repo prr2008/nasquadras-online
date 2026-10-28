@@ -18,6 +18,10 @@
   "routes": [
     { "pattern": "app.nasquadras.online", "custom_domain": true }
   ],
+  // Mantém também o endereço nasquadras-online.<conta>.workers.dev (com rotas
+  // configuradas, a Cloudflare o desliga se isto não estiver explícito).
+  "workers_dev": true,
+  "preview_urls": true,
 
   // Site público das coberturas: jogos e posts (esquema em schema.sql).
   "d1_databases": [
