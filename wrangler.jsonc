@@ -9,11 +9,16 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/auth/*", "/m/*"]
+    "run_worker_first": ["/api/*", "/auth/*", "/m/*", "/c", "/c/*"]
   },
 
-  // Mídia enviada pelo app. Fica pública só pelo caminho /m/<chave aleatória>
-  // e é apagada automaticamente depois de 24 horas.
+  // Site público das coberturas: jogos e posts (esquema em schema.sql).
+  "d1_databases": [
+    { "binding": "DB", "database_name": "nasquadras-site", "database_id": "64ef9ee0-3c46-4a32-baec-64e0b753ca7a" }
+  ],
+
+  // Mídia enviada pelo app. Fica pública só pelo caminho /m/<chave aleatória>.
+  // A que não foi para o site é apagada automaticamente depois de 24 horas.
   "r2_buckets": [
     { "binding": "MEDIA", "bucket_name": "nasquadras-media" }
   ],

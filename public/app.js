@@ -132,6 +132,7 @@ function renderThread() {
   else if (c.threads?.count) links.push(`Threads (${c.threads.count})`);
   if (c.bluesky?.rootUrl) links.push(`<a href="${esc(c.bluesky.rootUrl)}" target="_blank" rel="noopener">Bluesky (${c.bluesky.count})</a>`);
   const started = c.startedAt ? new Date(c.startedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  if (c.slug) links.push(`<a href="/c/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Página no site ↗</a>`);
   $('#thread-meta').innerHTML = links.length
     ? `desde ${started} · ${links.join(' · ')}`
     : 'o próximo post abre o fio';
@@ -147,14 +148,14 @@ async function refreshThread() {
 $('#thread-start').addEventListener('click', async () => {
   const g = state.game;
   const title = g.away || g.home ? `${g.away || 'Mandante'} x ${g.home || 'Visitante'}` : '';
-  state.status.coverage = await api('/api/coverage/start', { title });
+  state.status.coverage = await api('/api/coverage/start', { title, lnbId: state.lnb?.id || null });
   $('#thread-reply').checked = true;
   renderThread();
-  toast('Fio iniciado: o próximo post abre o fio, os seguintes respondem a ele.');
+  toast('Cobertura iniciada: o próximo post abre o fio e a página do jogo no site.');
 });
 
 $('#thread-stop').addEventListener('click', async () => {
-  if (!confirm('Encerrar o fio? Os próximos posts sairão soltos.')) return;
+  if (!confirm('Encerrar a cobertura? Os próximos posts sairão soltos e a página do site fica como encerrada.')) return;
   state.status.coverage = await api('/api/coverage/stop', {});
   renderThread();
 });
@@ -529,10 +530,12 @@ function renderWarnings() {
     w.push('Para o fio no Threads, toque em "Threads" no topo, desconecte e conecte de novo (nova permissão de respostas). Até lá, o Threads recebe posts soltos.');
   }
   if (threadOn() && toThreads !== toBsky) w.push('O fio só avança na rede selecionada.');
+  if ($('#t-site').checked && !state.status?.coverage?.active) w.push('Para publicar no site, toque em "Iniciar cobertura do jogo".');
   $('#warnings').textContent = w.join(' ');
 }
 $('#t-threads').addEventListener('change', renderWarnings);
 $('#t-bluesky').addEventListener('change', renderWarnings);
+$('#t-site').addEventListener('change', renderWarnings);
 
 // ---------- Mídia ----------
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -722,7 +725,9 @@ $('#publish').addEventListener('click', async () => {
   const text = finalText();
   const toThreads = $('#t-threads').checked;
   const toBsky = $('#t-bluesky').checked;
-  if (!toThreads && !toBsky) return toast('Escolha pelo menos uma rede.');
+  // O site recebe o post só com uma cobertura ativa (cada cobertura é uma página).
+  const toSite = $('#t-site').checked && Boolean(state.status?.coverage?.active);
+  if (!toThreads && !toBsky && !toSite) return toast('Escolha pelo menos um destino.');
   if (state.media.some((m) => m.status === 'uploading' || m.status === 'preparing')) return toast('Aguarde o envio das mídias terminar.');
   if (state.media.some((m) => m.status === 'failed')) return toast('Remova as mídias com erro antes de publicar.');
   const media = state.media.map(({ key, kind, mime, width, height, alt }) => ({ key, kind, mime, width, height, alt }));
@@ -752,14 +757,22 @@ $('#publish').addEventListener('click', async () => {
       .catch((err) => { row.bad(err.message); result.blueskyError = err.message; }));
   }
 
+  if (toSite) {
+    const row = progressRow('Site');
+    row.set('Publicando…');
+    jobs.push(api('/api/site/post', { text, media, game: state.game, lnbId: state.lnb?.id || null })
+      .then((r) => { row.ok(r.url); result.site = r.url; })
+      .catch((err) => { row.bad(err.message); result.siteError = err.message; }));
+  }
+
   await Promise.all(jobs);
   state.busy = false;
   $('#publish').disabled = false;
 
-  const anyOk = result.threads || result.bluesky;
-  const anyFail = result.threadsError || result.blueskyError;
+  const anyOk = result.threads || result.bluesky || result.site;
+  const anyFail = result.threadsError || result.blueskyError || result.siteError;
   if (anyOk) {
-    api('/api/history', { text: text.slice(0, 200), threads: result.threads, bluesky: result.bluesky })
+    api('/api/history', { text: text.slice(0, 200), threads: result.threads, bluesky: result.bluesky, site: result.site })
       .then((h) => renderHistory(h.items)).catch(() => {});
     if (inThread) refreshThread().catch(() => {});
   }
@@ -782,6 +795,7 @@ function renderHistory(items = []) {
         <span>${new Date(h.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
         ${h.threads && h.threads !== 'ok' ? `<a href="${esc(h.threads)}" target="_blank" rel="noopener">Threads ↗</a>` : h.threads ? '<span>Threads ✓</span>' : ''}
         ${h.bluesky ? `<a href="${esc(h.bluesky)}" target="_blank" rel="noopener">Bluesky ↗</a>` : ''}
+        ${h.site ? `<a href="${esc(h.site)}" target="_blank" rel="noopener">Site ↗</a>` : ''}
       </div>
     </li>`).join('');
 }

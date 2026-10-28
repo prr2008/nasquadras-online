@@ -5,6 +5,7 @@ import * as threads from './threads.js';
 import * as bluesky from './bluesky.js';
 import * as coverage from './coverage.js';
 import * as lnb from './lnb.js';
+import * as site from './site.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
@@ -172,12 +173,35 @@ async function handleApi(request, env, url) {
       return json(await coverage.get(env));
 
     case 'POST /api/coverage/start': {
-      const { title = '' } = await body(request);
-      return json(await coverage.start(env, title));
+      const { title = '', lnbId = null } = await body(request);
+      const cov = await coverage.start(env, title);
+      // Cada cobertura ganha uma página no site.
+      const slug = await site.ensureGame(env, { title: cov.title || 'Cobertura', startedAt: cov.startedAt, lnbId });
+      await coverage.setSlug(env, slug);
+      return json(await coverage.get(env));
     }
 
-    case 'POST /api/coverage/stop':
+    case 'POST /api/coverage/stop': {
+      const m = await coverage.meta(env);
+      if (m?.slug) await site.setGameStatus(env, m.slug, 'ended');
       return json(await coverage.stop(env));
+    }
+
+    // ---------- Site ----------
+    case 'POST /api/site/post': {
+      const { text = '', media, game = null, lnbId = null } = await body(request);
+      const items = normalizeMedia(origin, media);
+      if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
+      const m = await coverage.meta(env);
+      if (!m?.active) return fail('Inicie a cobertura do jogo para publicar no site.');
+      let slug = m.slug;
+      if (!slug) { // fio aberto antes de o site existir
+        slug = await site.ensureGame(env, { title: m.title || 'Cobertura', startedAt: m.startedAt || Date.now(), lnbId });
+        await coverage.setSlug(env, slug);
+      }
+      const res = await site.addPost(env, slug, { text, media: items, game, lnbId });
+      return json({ ...res, url: `${origin}/c/${slug}` });
+    }
 
     // ---------- Dados da LNB ----------
     case 'GET /api/lnb/today':
@@ -201,12 +225,18 @@ async function handleApi(request, env, url) {
           text: String(entry.text || '').slice(0, 200),
           threads: entry.threads || null,
           bluesky: entry.bluesky || null,
+          site: typeof entry.site === 'string' && entry.site.startsWith(origin) ? entry.site : null,
         }),
       });
     }
 
-    default:
+    default: {
+      const del = pathname.match(/^\/api\/site\/post\/(\d+)$/);
+      if (del && method === 'DELETE') {
+        return (await site.deletePost(env, Number(del[1]))) ? json({ ok: true }) : fail('Post não encontrado.', 404);
+      }
       return fail('Rota não encontrada.', 404);
+    }
   }
 }
 
@@ -239,6 +269,55 @@ async function handleAuth(request, env, url) {
   return new Response('Not found', { status: 404 });
 }
 
+const html = (body, status = 200, extra = {}) => new Response(body, {
+  status,
+  headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', ...extra },
+});
+
+/** Placar ao vivo: se a página está ligada a um jogo da LNB, usa o dado mais recente. */
+async function withLiveScore(g) {
+  if (!g.lnb_id || g.status !== 'live' || g.period === 'FINAL') return g;
+  try {
+    const live = await lnb.getGame(g.lnb_id);
+    const period = live.status === 'final' ? 'FINAL' : live.period > 4 ? 'OT' : `${Math.max(1, live.period)}Q`;
+    return { ...g, home: live.home.name, away: live.away.name, home_score: live.home.score, away_score: live.away.score, period };
+  } catch {
+    return g;
+  }
+}
+
+async function handleSite(request, env, url) {
+  if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+  const parts = url.pathname.split('/').filter(Boolean); // ['c', slug, 'fotos']
+  const origin = url.origin;
+
+  if (parts.length === 1) return html(site.indexPage(await site.listGames(env), origin));
+
+  const slug = decodeURIComponent(parts[1] || '');
+  const game = await site.getGame(env, slug);
+  if (!game || parts.length > 3 || (parts[2] && parts[2] !== 'fotos')) return html(site.notFoundPage(), 404);
+
+  const [g, posts] = await Promise.all([withLiveScore(game), site.getPosts(env, slug)]);
+  if (parts[2] === 'fotos') return html(site.galleryPage(g, posts, origin));
+  const admin = await isLoggedIn(request, env);
+  return html(site.gamePage(g, posts, origin, { admin }));
+}
+
+/** Atualizações da página ao vivo: posts novos (já em HTML) e o placar. */
+async function handlePublicApi(request, env, url) {
+  const m = url.pathname.match(/^\/api\/public\/c\/([^/]+)$/);
+  if (!m || request.method !== 'GET') return fail('Rota não encontrada.', 404);
+  const game = await site.getGame(env, decodeURIComponent(m[1]));
+  if (!game) return fail('Cobertura não encontrada.', 404);
+  const since = Number(url.searchParams.get('since')) || 0;
+  const [g, posts, admin] = await Promise.all([withLiveScore(game), site.getPosts(env, game.slug, since), isLoggedIn(request, env)]);
+  return json({
+    board: site.boardHtml(g),
+    live: g.status === 'live' && g.period !== 'FINAL',
+    posts: posts.map((p) => ({ id: p.id, html: site.postHtml(p, { admin }) })),
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -247,6 +326,8 @@ export default {
         return await serveMedia(request, env, url.pathname.slice(3));
       }
       if (url.pathname.startsWith('/auth/')) return await handleAuth(request, env, url);
+      if (url.pathname === '/c' || url.pathname.startsWith('/c/')) return await handleSite(request, env, url);
+      if (url.pathname.startsWith('/api/public/')) return await handlePublicApi(request, env, url);
       if (url.pathname.startsWith('/api/')) return await handleApi(request, env, url);
       return env.ASSETS.fetch(request);
     } catch (err) {
@@ -260,11 +341,14 @@ export default {
     ctx.waitUntil((async () => {
       try { await threads.refreshToken(env); } catch (err) { console.error('refresh threads', err); }
 
+      // Mídia publicada no site fica guardada; o resto sai depois de 24h.
+      let keep;
+      try { keep = await site.referencedKeys(env); } catch (err) { console.error('site keys', err); return; }
       let cursor;
       const cutoff = Date.now() - MEDIA_TTL_MS;
       do {
         const page = await env.MEDIA.list({ cursor, limit: 1000 });
-        const old = page.objects.filter((o) => o.uploaded.getTime() < cutoff).map((o) => o.key);
+        const old = page.objects.filter((o) => o.uploaded.getTime() < cutoff && !keep.has(o.key)).map((o) => o.key);
         if (old.length) await env.MEDIA.delete(old);
         cursor = page.truncated ? page.cursor : undefined;
       } while (cursor);

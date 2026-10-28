@@ -16,6 +16,7 @@ export async function get(env) {
     active: Boolean(meta?.active),
     title: meta?.title || '',
     startedAt: meta?.startedAt || null,
+    slug: meta?.slug || null,
     threads: threads ? { count: threads.count, rootUrl: threads.rootUrl } : { count: 0 },
     bluesky: bluesky ? { count: bluesky.count, rootUrl: bluesky.rootUrl } : { count: 0 },
   };
@@ -26,6 +27,18 @@ export async function start(env, title = '') {
   await Promise.all([env.KV.delete(NET.threads), env.KV.delete(NET.bluesky)]);
   await env.KV.put(META, JSON.stringify({ active: true, title: String(title).slice(0, 80), startedAt: Date.now() }));
   return get(env);
+}
+
+/** Dados brutos do fio atual (título, início, página do site). */
+export async function meta(env) {
+  return read(env, META);
+}
+
+/** Liga o fio atual à página dele no site. */
+export async function setSlug(env, slug) {
+  const m = await read(env, META);
+  if (!m) return;
+  await env.KV.put(META, JSON.stringify({ ...m, slug }));
 }
 
 /** Encerra o fio: os próximos posts saem soltos. */
