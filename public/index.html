@@ -125,8 +125,9 @@
           <span aria-hidden="true">＋</span> Foto / vídeo
         </label>
         <div class="counters">
-          <span id="count-threads" class="count">0/500</span>
-          <span id="count-bluesky" class="count">0/300</span>
+          <span id="count-threads" class="count">Threads 0/500</span>
+          <span id="count-bluesky" class="count">Bluesky 0/300</span>
+          <span id="count-x" class="count" title="Limite do X (Twitter)">X 0/280</span>
         </div>
       </div>
 
@@ -137,7 +138,10 @@
 
       <p id="warnings" class="warnings" aria-live="polite"></p>
 
-      <button id="publish" type="button" class="primary publish">Publicar</button>
+      <div class="actions">
+        <button id="publish" type="button" class="primary publish">Publicar</button>
+        <button id="copy" type="button" class="ghost copy" title="Copiar o texto para colar no X (Twitter)">📋 Copiar</button>
+      </div>
       <div id="progress" class="progress" aria-live="polite"></div>
     </section>
 

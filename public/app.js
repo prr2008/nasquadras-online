@@ -3,6 +3,7 @@
 const $ = (sel) => document.querySelector(sel);
 const THREADS_MAX = 500;
 const BLUESKY_MAX = 300;
+const X_MAX = 280; // só para o contador: o X recebe o texto pelo botão Copiar
 const IMAGE_TARGET_BYTES = 950 * 1024;   // cabe no limite de imagem do Bluesky
 const IMAGE_MAX_SIDE = 2048;
 const VIDEO_MAX_BYTES = 100 * 1024 * 1024;
@@ -443,19 +444,71 @@ function onTextChange() {
   store.set('draft', $('#text').value);
   const n = glen(finalText());
   const ct = $('#count-threads');
-  ct.textContent = `${n}/${THREADS_MAX}`;
+  ct.textContent = `Threads ${n}/${THREADS_MAX}`;
   ct.className = `count ${n > THREADS_MAX ? 'over' : n > THREADS_MAX - 40 ? 'near' : ''}`;
   const cb = $('#count-bluesky');
   if (n > BLUESKY_MAX) {
     const parts = Math.ceil(n / (BLUESKY_MAX - 20));
-    cb.textContent = `${n}/${BLUESKY_MAX} · fio de ~${parts}`;
+    cb.textContent = `Bluesky ${n}/${BLUESKY_MAX} · fio de ~${parts}`;
     cb.className = 'count thread';
   } else {
-    cb.textContent = `${n}/${BLUESKY_MAX}`;
+    cb.textContent = `Bluesky ${n}/${BLUESKY_MAX}`;
     cb.className = `count ${n > BLUESKY_MAX - 30 ? 'near' : ''}`;
   }
+  const nx = xLength(finalText());
+  const cx = $('#count-x');
+  cx.textContent = `X ${nx}/${X_MAX}`;
+  cx.className = `count ${nx > X_MAX ? 'over' : nx > X_MAX - 20 ? 'near' : ''}`;
   renderWarnings();
 }
+
+// ---------- Copiar (para colar no X/Twitter) ----------
+/** Contagem do X: links valem 23 caracteres e emojis valem 2. */
+function xLength(text) {
+  const withoutUrls = text.replace(/https?:\/\/\S+/g, '');
+  const urls = (text.match(/https?:\/\/\S+/g) || []).length;
+  let n = urls * 23;
+  for (const { segment } of seg.segment(withoutUrls)) n += /\p{Extended_Pictographic}/u.test(segment) ? 2 : 1;
+  return n;
+}
+
+let lastPublishedText = '';
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Alternativa para navegadores que bloqueiam a área de transferência.
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.setAttribute('readonly', '');
+    tmp.style.position = 'fixed';
+    tmp.style.opacity = '0';
+    document.body.append(tmp);
+    tmp.select();
+    tmp.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    tmp.remove();
+    return ok;
+  }
+}
+
+$('#copy').addEventListener('click', async () => {
+  // Sem texto na caixa (ex.: logo depois de publicar), copia o último post publicado.
+  const text = finalText() || lastPublishedText;
+  if (!text) return toast('Nada para copiar ainda.');
+  if (!(await copyText(text))) return toast('Não consegui copiar. Selecione o texto e copie manualmente.');
+  const btn = $('#copy');
+  btn.classList.add('done');
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => { btn.classList.remove('done'); btn.textContent = '📋 Copiar'; }, 1800);
+  const nx = xLength(text);
+  const extra = state.media.length ? ' Fotos e vídeos precisam ser anexados direto no X.' : '';
+  toast(nx > X_MAX
+    ? `Copiado, mas passa do limite do X (${nx}/${X_MAX}).${extra}`
+    : `Copiado! Cole no X.${extra}`);
+});
 $('#text').value = store.get('draft', '');
 $('#text').addEventListener('input', onTextChange);
 
@@ -711,6 +764,7 @@ $('#publish').addEventListener('click', async () => {
     if (inThread) refreshThread().catch(() => {});
   }
   if (anyOk && !anyFail) {
+    lastPublishedText = text;
     $('#text').value = '';
     state.media = [];
     renderMedia();
