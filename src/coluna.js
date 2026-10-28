@@ -51,7 +51,12 @@ export async function fetchPreview(url) {
 
   const meta = {};
   let title = '';
-  const paras = [];
+  const body = [];     // texto da coluna no JB (.materia-corpo)
+  const generic = [];  // outros sites (<article>), usado só se o JB não for reconhecido
+  const collect = (list) => ({
+    element() { if (list.length < 4) list.push(''); },
+    text(t) { if (list.length && list.length <= 4) list[list.length - 1] += t.text; },
+  });
 
   const rewriter = new HTMLRewriter()
     .on('meta', {
@@ -66,17 +71,14 @@ export async function fetchPreview(url) {
     })
     .on('title', { text(t) { title += t.text; } })
     // Texto do corpo: JB (.materia-corpo) e páginas genéricas (<article>).
-    .on('.materia-corpo p, article p', {
-      element() { if (paras.length < 4) paras.push(''); },
-      text(t) {
-        if (paras.length && paras.length <= 4) paras[paras.length - 1] += t.text;
-      },
-    });
+    .on('.materia-corpo p', collect(body))
+    .on('article p', collect(generic));
   await rewriter.transform(res).arrayBuffer();
 
   const desc = decode(meta['og:description'] || meta.description || '');
   // Resumo: o primeiro parágrafo, ou os primeiros juntos se ele for curto demais.
-  const clean = paras.map(decode).filter((x) => x.length > 0);
+  const pick = (list) => list.map(decode).filter((x) => x.length > 40);
+  const clean = pick(body).length ? pick(body) : pick(generic);
   let bodyText = clean[0] || '';
   for (let i = 1; i < clean.length && bodyText.length < 120; i++) bodyText += ` ${clean[i]}`;
   const summary = desc.replace(/\./g, '').trim().length >= 20 ? desc : bodyText;
