@@ -801,7 +801,10 @@ function renderHistory(items = []) {
 }
 
 // Funções compartilhadas com o editor do blog (editor.js).
-window.NQ = { api, toast, esc, compressImage, postThreads, threadOn, state, lnbRefresh, copyText };
+window.NQ = {
+  api, toast, esc, compressImage, postThreads, threadOn, state, lnbRefresh, copyText,
+  finalText, xLength, X_MAX, glen, renderMedia, renderWarnings, onTextChange, refreshThread, renderHistory,
+};
 
 // ---------- Início ----------
 async function boot() {

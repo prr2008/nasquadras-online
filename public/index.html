@@ -153,8 +153,43 @@
       <div class="actions">
         <button id="publish" type="button" class="primary publish">Publicar</button>
         <button id="copy" type="button" class="ghost copy" title="Copiar o texto para colar no X (Twitter)">📋 Copiar</button>
+        <button id="sched-open" type="button" class="ghost copy" title="Agendar este post">⏰ Agendar</button>
+      </div>
+
+      <!-- AGENDAR -->
+      <div id="sched-panel" class="sched-panel" hidden>
+        <div class="sched-head">
+          <strong id="sched-heading">Agendar post</strong>
+          <button type="button" id="sched-close" class="link small">Fechar</button>
+        </div>
+        <label class="sched-field">Data e hora <input type="datetime-local" id="sched-at"></label>
+        <label class="sched-field">Fio da cobertura
+          <select id="sched-thread">
+            <option value="start">Abrir a cobertura do jogo (1º post do fio)</option>
+            <option value="reply">Responder no fio da cobertura</option>
+            <option value="none">Post solto</option>
+          </select>
+        </label>
+        <label class="sched-field" id="sched-title-row">Título da cobertura
+          <input id="sched-title" maxlength="80" placeholder="Botafogo x Caxias do Sul">
+        </label>
+        <p class="sched-note" id="sched-thread-note"></p>
+        <p class="sched-note">Destinos: <span id="sched-targets"></span> <small>(use as opções acima para mudar)</small></p>
+        <label class="check sched-check"><input type="checkbox" id="sched-x"> <span>X (Twitter), pela fila do Buffer</span></label>
+        <div id="sched-x-box" class="sched-x" hidden>
+          <textarea id="sched-x-text" rows="4" aria-label="Texto para o X"></textarea>
+          <span id="sched-x-count" class="count">X 0/280</span>
+        </div>
+        <p id="sched-x-off" class="sched-note" hidden>Para mandar ao X pelo Buffer, cadastre a chave <code>BUFFER_API_KEY</code> na Cloudflare.</p>
+        <button id="sched-save" type="button" class="primary">Agendar</button>
       </div>
       <div id="progress" class="progress" aria-live="polite"></div>
+    </section>
+
+    <!-- AGENDADOS -->
+    <section id="sched-wrap" class="history sched-list" hidden>
+      <h2>Agendados</h2>
+      <ol id="sched-list"></ol>
     </section>
 
     <!-- HISTÓRICO -->
@@ -300,6 +335,7 @@
 
   <script src="/vendor/quill/quill.js" defer></script>
   <script src="/app.js" type="module"></script>
+  <script src="/schedule.js" type="module"></script>
   <script src="/editor.js" type="module"></script>
 </body>
 </html>

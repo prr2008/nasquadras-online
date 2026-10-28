@@ -67,3 +67,24 @@ CREATE TABLE IF NOT EXISTS columns (
   updated_at   INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS columns_by_date ON columns (published_at DESC);
+
+-- Posts agendados no app (Ao vivo → Agendar). A rotina de cada minuto publica
+-- os que venceram; a versão do X vai para a fila do Buffer (buffer_id).
+CREATE TABLE IF NOT EXISTS scheduled (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_at     INTEGER NOT NULL,
+  text       TEXT NOT NULL DEFAULT '',
+  media      TEXT NOT NULL DEFAULT '[]',   -- JSON: [{ key, kind, mime, width, height, alt }]
+  targets    TEXT NOT NULL DEFAULT '{}',   -- JSON: { threads, bluesky, site }
+  thread     TEXT NOT NULL DEFAULT 'none', -- start (abre a cobertura) | reply | none
+  title      TEXT,                         -- título da cobertura, quando abre o fio
+  lnb_id     TEXT,
+  origin     TEXT NOT NULL,                -- endereço público do app (URLs das mídias)
+  x_text     TEXT,                         -- texto para o X (via Buffer)
+  buffer_id  TEXT,
+  status     TEXT NOT NULL DEFAULT 'pending', -- pending | sending | sent | partial | error | canceled
+  result     TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS scheduled_due ON scheduled (status, run_at);

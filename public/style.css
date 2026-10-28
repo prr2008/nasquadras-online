@@ -192,3 +192,24 @@ dialog .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .score { font-size: 42px; }
   .score-btns { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---------- Agendamento ---------- */
+.sched-panel { display: grid; gap: 10px; margin-top: 12px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--accent); }
+.sched-head { display: flex; justify-content: space-between; align-items: center; }
+.sched-field { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+.sched-field input, .sched-field select { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 16px; color-scheme: dark; }
+.sched-note { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+.sched-check { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.sched-check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.sched-x { display: grid; gap: 4px; }
+.sched-x textarea { min-height: 0; }
+.sched-x .count { justify-self: end; }
+.sched-list ol { list-style: none; padding: 0; }
+.sched-item { display: grid; gap: 4px; }
+.sched-when { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.sched-when span { color: var(--muted); font-size: 13px; }
+.sched-text { white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.sched-item.sent, .sched-item.partial, .sched-item.error { opacity: .8; }
+.sched-err { display: block; color: var(--bad, #ff6b6b); margin-top: 2px; }
+.sched-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.sched-actions .danger { color: var(--bad, #ff6b6b); }

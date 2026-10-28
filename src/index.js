@@ -10,9 +10,12 @@ import * as blog from './blog.js';
 import * as pages from './pages.js';
 import * as coluna from './coluna.js';
 import * as gdocs from './gdocs.js';
+import * as schedule from './schedule.js';
+import * as buffer from './buffer.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
+const DAILY_CRON = '17 9 * * *'; // igual ao wrangler.jsonc
 const KEY_RE = /^[0-9]{13}-[0-9a-f-]{36}\.(jpg|png|webp|gif|mp4|mov|webm)$/;
 const EXT = {
   'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
@@ -268,6 +271,13 @@ async function handleApi(request, env, url) {
     case 'GET /api/pages':
       return json({ pages: await blog.listPages(env) });
 
+    // ---------- Agendamento ----------
+    case 'GET /api/schedule':
+      return json({ ...(await schedule.list(env)), buffer: buffer.configured(env) });
+
+    case 'POST /api/schedule':
+      return json(await schedule.create(env, await body(request), origin));
+
     // ---------- Google Docs (código de conexão) ----------
     case 'GET /api/gdocs':
       return json(await gdocs.status(env));
@@ -303,6 +313,20 @@ async function handleApi(request, env, url) {
       }
       if (col && method === 'DELETE') {
         return (await coluna.remove(env, Number(col[1]))) ? json({ ok: true }) : fail('Coluna não encontrada.', 404);
+      }
+
+      const sch = pathname.match(/^\/api\/schedule\/(\d+)(\/now)?$/);
+      if (sch) {
+        const id = Number(sch[1]);
+        if (sch[2] && method === 'POST') return json(await schedule.claimAndPublish(env, id, { now: true }));
+        if (!sch[2] && method === 'PUT') {
+          const r = await schedule.update(env, id, await body(request), origin);
+          return r ? json(r) : fail('Agendamento não encontrado.', 404);
+        }
+        if (!sch[2] && method === 'DELETE') {
+          const r = await schedule.cancel(env, id);
+          return r ? json(r) : fail('Agendamento não encontrado.', 404);
+        }
       }
 
       const pg = pathname.match(/^\/api\/pages\/([a-z-]+)$/);
@@ -490,15 +514,19 @@ export default {
   },
 
   // Rotina diária: renova o token do Threads e apaga mídia com mais de 24h.
-  async scheduled(_event, env, ctx) {
+  async scheduled(event, env, ctx) {
+    // A cada minuto: publica os posts agendados que venceram.
+    ctx.waitUntil(schedule.runDue(env).catch((err) => console.error('agendados', err)));
+    if (event.cron !== DAILY_CRON) return;
+
     ctx.waitUntil((async () => {
       try { await threads.refreshToken(env); } catch (err) { console.error('refresh threads', err); }
 
       // Mídia publicada no site fica guardada; o resto sai depois de 24h.
       let keep;
       try {
-        const [a, b, c] = await Promise.all([site.referencedKeys(env), blog.referencedKeys(env), coluna.referencedKeys(env)]);
-        keep = new Set([...a, ...b, ...c]);
+        const [a, b, c, d] = await Promise.all([site.referencedKeys(env), blog.referencedKeys(env), coluna.referencedKeys(env), schedule.referencedKeys(env)]);
+        keep = new Set([...a, ...b, ...c, ...d]);
       } catch (err) { console.error('site keys', err); return; }
       let cursor;
       const cutoff = Date.now() - MEDIA_TTL_MS;

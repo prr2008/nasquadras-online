@@ -44,13 +44,16 @@
   // — veja o README. Cada deploy pelo GitHub aplica exatamente estes vars.
   "vars": {
     "THREADS_APP_ID": "1028301390289634",
-    "BLUESKY_HANDLE": "prr2008.bsky.social"
+    "BLUESKY_HANDLE": "prr2008.bsky.social",
+    // Canal do X (@prr2008) no Buffer: os posts agendados para o X vão para lá.
+    "BUFFER_X_CHANNEL": "68d5bf2f64332ee3985c74c8"
   },
   // Não apaga variáveis criadas pelo painel quando o GitHub publica uma versão nova.
   "keep_vars": true,
 
-  // Uma vez por dia: renova o token do Threads e apaga mídia antiga.
-  "triggers": { "crons": ["17 9 * * *"] },
+  // A cada minuto: publica os posts agendados. Uma vez por dia (9h17 UTC):
+  // renova o token do Threads e apaga mídia antiga.
+  "triggers": { "crons": ["* * * * *", "17 9 * * *"] },
 
   "observability": { "enabled": true }
 }

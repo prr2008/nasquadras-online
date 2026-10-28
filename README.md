@@ -12,6 +12,7 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
 - **Editor visual no app** (abas *Blog* e *Páginas*): título, categoria, capa, resumo e texto com intertítulos, negrito, links, citações, listas, fotos e vídeos do YouTube/Spotify/Vimeo. Rascunho, pré-visualização, publicar, voltar para rascunho e excluir; divulgação opcional no Threads e no Bluesky ao publicar. O HTML é limpo no servidor antes de ir para o site.
 - **Google Docs → blog**: um script no documento-modelo do Google Docs (`public/gdocs/NasQuadras.js`) cria o menu *Nas Quadras → Enviar para o blog…*, com painel para categoria, resumo, capa e divulgação. O texto (título, subtítulo, intertítulos, negrito/itálico, links, listas, citações e fotos) vai como rascunho ou publicado; reenviar o mesmo documento atualiza o mesmo artigo. A conexão usa um código gerado no app (aba *Blog → Publicar do Google Docs*); só o resumo SHA-256 dele fica guardado.
 - **Coluna Nas Quadras** (`/coluna`): na aba *Coluna* do app, cole o link completo de uma coluna publicada (JB ou outro site); o app lê título, foto, data e o início do texto, você revisa e adiciona. A página mostra os cards com link para o texto original; a foto é copiada para o R2. Divulgação opcional no Threads e no Bluesky.
+- **Agendamento** (botão *⏰ Agendar* no Ao vivo): escolha data e hora e se o post **abre a cobertura do jogo** (vira o 1º do fio no Threads e no Bluesky e cria a página no site), **responde no fio** ou sai solto. Uma rotina roda a cada minuto e publica os que venceram, em ordem. A lista *Agendados* permite editar, cancelar ou publicar agora. Marcando *X*, a versão para o X (até 280 caracteres) vai para a fila do **Buffer** no mesmo horário; cancelar ou editar no app também atualiza o Buffer.
 - **Hashtags fixas** acrescentadas automaticamente (liga/desliga).
 - **Contadores** para os limites de cada rede (Threads 500, Bluesky 300). Acima de 300, o Bluesky recebe um **fio numerado** automaticamente.
 - **Fotos e vídeos**: as fotos são comprimidas no próprio celular para caber no limite do Bluesky; os envios começam assim que você escolhe o arquivo. Campo de descrição (texto alternativo) em cada mídia.
@@ -20,7 +21,7 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
   - Limite de 100 MB por arquivo.
 - **Links e hashtags clicáveis** no Bluesky.
 - **Histórico** dos últimos posts com links.
-- **Rotina diária** que renova o acesso ao Threads (o token dura 60 dias) e apaga do R2 a mídia com mais de 24 horas.
+- **Rotina a cada minuto** que publica os posts agendados, e **rotina diária** que renova o acesso ao Threads (o token dura 60 dias) e apaga do R2 a mídia com mais de 24 horas.
 
 ## Configuração (uma vez só)
 
@@ -45,6 +46,7 @@ No Worker: **Settings → Variables and Secrets → Add**, sempre com o tipo **S
 | `SESSION_SECRET` | Uma frase longa e aleatória qualquer (só o servidor usa) |
 | `THREADS_APP_SECRET` | A "Chave secreta do app" do Threads, no painel da Meta |
 | `BLUESKY_APP_PASSWORD` | A senha de app criada no Bluesky (nunca a senha principal) |
+| `BUFFER_API_KEY` | (opcional) Chave da API do Buffer, em publish.buffer.com → Settings → API. Só para mandar os agendados ao X |
 
 O ID do app do Threads e o usuário do Bluesky (`BLUESKY_HANDLE`) não são segredos e ficam no `wrangler.jsonc`. Variáveis comuns criadas só no painel podem sumir num deploy; por isso, tudo que não é segredo fica no repositório.
 
@@ -84,6 +86,8 @@ src/threads.js   OAuth e publicação no Threads
 src/bluesky.js   sessão e publicação no Bluesky
 src/site.js      site: layout, menu e páginas das coberturas
 src/pages.js     site: início, blog, artigo, páginas fixas, RSS e sitemap
+src/schedule.js  posts agendados: cadastro e publicação pela rotina de cada minuto
+src/buffer.js    Buffer (API GraphQL): fila do X
 src/gdocs.js     Google Docs: código de conexão e importação do documento
 src/coluna.js    coluna: leitura do link (Open Graph), cópia da foto e cadastro
 src/blog.js      blog e páginas fixas: banco D1 e limpeza do HTML do editor
