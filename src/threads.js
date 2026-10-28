@@ -13,7 +13,12 @@ async function call(url, init = {}) {
   const res = await fetch(url, init);
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.error) {
-    const msg = data.error?.error_user_msg || data.error?.message || `HTTP ${res.status}`;
+    let msg = data.error?.error_user_msg || data.error?.message || `HTTP ${res.status}`;
+    // A Meta repete o segredo recebido na mensagem de erro; nunca deixar isso vazar.
+    if (/client_secret/i.test(msg)) {
+      msg = 'chave secreta do app (THREADS_APP_SECRET) inválida. Copie a "Threads app secret" do painel da Meta e atualize na Cloudflare.';
+    }
+    msg = msg.replace(/\b[0-9a-f]{24,}\b/gi, '•••');
     throw new Error(`Threads: ${msg}`);
   }
   return data;

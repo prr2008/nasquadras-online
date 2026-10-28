@@ -216,3 +216,12 @@ test('Bluesky: post no fio responde ao último e mantém a raiz', async () => {
   assert.ok(r.url.endsWith('/novo'), 'link aponta para o post novo');
   assert.ok(r.rootUrl.endsWith('/raiz'));
 });
+
+test('Threads: erro de client_secret não expõe o segredo', async () => {
+  mockFetch(() => ({ status: 400, json: { error: { message: 'Invalid client_secret: 4f00e18d1a318601b0efb195d0de7732' } } }));
+  await assert.rejects(threads.handleCallback(env, 'https://app.example', 'CODE'), (err) => {
+    assert.ok(!err.message.includes('4f00e18d'), 'o segredo não pode aparecer');
+    assert.match(err.message, /THREADS_APP_SECRET/);
+    return true;
+  });
+});

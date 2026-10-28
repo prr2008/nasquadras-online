@@ -218,7 +218,8 @@ async function handleAuth(request, env, url) {
       await threads.handleCallback(env, url.origin, (code || '').replace(/#_$/, ''));
       return back('threads=ok');
     } catch (err) {
-      return back(`threads=erro&msg=${encodeURIComponent(err.message)}`);
+      console.error('threads oauth callback:', err.message);
+      return back(`threads=erro&msg=${encodeURIComponent(err.message.replace(/^Threads:\s*/, ''))}`);
     }
   }
 
