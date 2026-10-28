@@ -4,6 +4,7 @@ import { clearCookie, isLoggedIn, safeEqual, sessionCookie } from './auth.js';
 import * as threads from './threads.js';
 import * as bluesky from './bluesky.js';
 import * as coverage from './coverage.js';
+import * as lnb from './lnb.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
@@ -177,6 +178,18 @@ async function handleApi(request, env, url) {
 
     case 'POST /api/coverage/stop':
       return json(await coverage.stop(env));
+
+    // ---------- Dados da LNB ----------
+    case 'GET /api/lnb/today':
+      return json({ games: await lnb.listToday() });
+
+    case 'GET /api/lnb/game':
+      return json(await lnb.getGame(url.searchParams.get('id')));
+
+    case 'POST /api/lnb/resolve': {
+      const { input = '' } = await body(request);
+      return json({ id: await lnb.resolveMatchId(input) });
+    }
 
     case 'GET /api/history':
       return json({ items: await history(env) });
