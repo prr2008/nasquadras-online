@@ -145,7 +145,7 @@ async function refreshThread() {
 
 $('#thread-start').addEventListener('click', async () => {
   const g = state.game;
-  const title = g.away || g.home ? `${g.away || 'Visitante'} x ${g.home || 'Mandante'}` : '';
+  const title = g.away || g.home ? `${g.away || 'Mandante'} x ${g.home || 'Visitante'}` : '';
   state.status.coverage = await api('/api/coverage/start', { title });
   $('#thread-reply').checked = true;
   renderThread();
@@ -204,7 +204,7 @@ $('#reset-game').addEventListener('click', () => {
 
 function scoreLine() {
   const g = state.game;
-  return `🏀 ${g.away || 'Visitante'} ${g.sa} x ${g.sh} ${g.home || 'Mandante'} | ${PERIOD_LABEL[g.period]}`;
+  return `🏀 ${g.away || 'Mandante'} ${g.sa} x ${g.sh} ${g.home || 'Visitante'} | ${PERIOD_LABEL[g.period]}`;
 }
 
 function insertAtCursor(snippet) {
@@ -230,6 +230,199 @@ $('#templates').addEventListener('click', (e) => {
     t = `FIM DE JOGO!\n${scoreLine()}\n`;
   }
   insertAtCursor(t);
+});
+
+// ---------- Jogo vinculado à LNB (placar automático) ----------
+const LNB_POLL_MS = 30000;
+state.lnb = store.get('lnb', null); // { id, label }
+state.lnbGame = null;
+let lnbTimer = null;
+
+const ORD = (n) => `${n}º`;
+
+/** Converte o período da LNB para o seletor do placar. */
+function periodValue(g) {
+  if (g.status === 'final') return 'FINAL';
+  if (g.status === 'scheduled') return '1Q';
+  if (g.period > 4) return 'OT';
+  if (g.period === 2 && g.clock === '00:00') return 'INT';
+  return `${Math.max(1, g.period)}Q`;
+}
+
+function renderLnb() {
+  const linked = Boolean(state.lnb);
+  $('#lnb-link').classList.toggle('on', linked);
+  $('#lnb-status').hidden = !linked;
+  $('#lnb-chips').hidden = !state.lnbGame;
+  if (!linked) return;
+  const g = state.lnbGame;
+  const box = $('#lnb-status');
+  box.classList.toggle('live', g?.status === 'live');
+  box.classList.toggle('final', g?.status === 'final');
+  box.classList.toggle('error', Boolean(state.lnbError));
+  if (state.lnbError) {
+    $('#lnb-text').textContent = `LNB: ${state.lnbError}`;
+  } else if (g) {
+    const when = new Date(g.fetchedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const clock = g.status === 'live' && g.clock ? ` ${g.clock}` : '';
+    const st = g.status === 'live' ? 'Ao vivo' : g.status === 'final' ? 'Encerrado' : 'Não começou';
+    $('#lnb-text').textContent = `${st} · ${g.label}${clock} · atualizado ${when}`;
+  } else {
+    $('#lnb-text').textContent = 'Buscando dados na LNB…';
+  }
+}
+
+function applyLnbGame(g) {
+  state.lnbGame = g;
+  state.lnbError = null;
+  state.game.away = g.home.name; // à esquerda: mandante
+  state.game.home = g.away.name; // à direita: visitante
+  state.game.sa = g.home.score;
+  state.game.sh = g.away.score;
+  state.game.period = periodValue(g);
+  renderGame();
+  renderLnb();
+}
+
+async function lnbRefresh() {
+  if (!state.lnb) return;
+  try {
+    applyLnbGame(await api(`/api/lnb/game?id=${encodeURIComponent(state.lnb.id)}`));
+  } catch (err) {
+    state.lnbError = err.message;
+    renderLnb();
+  }
+}
+
+function lnbStartPolling() {
+  clearInterval(lnbTimer);
+  if (!state.lnb) return;
+  lnbRefresh();
+  lnbTimer = setInterval(() => {
+    // Só consulta com a tela visível; quando o jogo acaba, para sozinho.
+    if (document.visibilityState === 'visible' && state.lnbGame?.status !== 'final') lnbRefresh();
+  }, LNB_POLL_MS);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.lnb && state.lnbGame?.status !== 'final') lnbRefresh();
+});
+
+async function linkGame(id, label = '') {
+  state.lnb = { id: String(id), label };
+  state.lnbGame = null;
+  store.set('lnb', state.lnb);
+  $('#account-dialog').close();
+  renderLnb();
+  lnbStartPolling();
+}
+
+$('#lnb-unlink').addEventListener('click', () => {
+  clearInterval(lnbTimer);
+  state.lnb = null;
+  state.lnbGame = null;
+  state.lnbError = null;
+  store.set('lnb', null);
+  renderLnb();
+  toast('Jogo desvinculado. O placar volta a ser manual.');
+});
+$('#lnb-refresh').addEventListener('click', lnbRefresh);
+
+$('#lnb-link').addEventListener('click', async () => {
+  openDialog('Vincular jogo da LNB', `
+    <p class="small" style="color:var(--muted);margin-top:0">O placar passa a ser atualizado sozinho a cada 30 segundos.</p>
+    <ul id="lnb-games" class="game-list"><li class="small" style="color:var(--muted)">Carregando jogos de hoje…</li></ul>
+    <p class="small" style="color:var(--muted)">Ou cole o link da página do jogo no site da LNB:</p>
+    <div class="paste-row">
+      <input id="lnb-input" type="url" inputmode="url" placeholder="https://lnb.com.br/partidas/…" aria-label="Link do jogo na LNB">
+      <button type="button" id="lnb-go" class="ghost small">Vincular</button>
+    </div>
+    <p id="lnb-err" class="error"></p>`);
+
+  $('#lnb-go').onclick = async () => {
+    $('#lnb-err').textContent = '';
+    try {
+      const { id } = await api('/api/lnb/resolve', { input: $('#lnb-input').value });
+      linkGame(id);
+    } catch (err) { $('#lnb-err').textContent = err.message; }
+  };
+
+  try {
+    const { games } = await api('/api/lnb/today');
+    const list = $('#lnb-games');
+    if (!games.length) { list.innerHTML = '<li class="small" style="color:var(--muted)">Nenhum jogo hoje na LNB.</li>'; return; }
+    list.innerHTML = games.map((g) => {
+      const score = g.status === 'scheduled' ? g.start : `${g.homeScore} x ${g.awayScore}`;
+      const st = g.status === 'live' ? `● ${g.label} ${g.clock}` : g.status === 'final' ? 'Encerrado' : 'Hoje';
+      return `<li><button type="button" data-id="${esc(g.id)}" data-label="${esc(`${g.home} x ${g.away}`)}">
+        <strong>${esc(g.home)} ${esc(score)} ${esc(g.away)}</strong>
+        <span class="st ${g.status === 'live' ? 'live' : ''}">${esc(st)}</span></button></li>`;
+    }).join('');
+    list.onclick = (e) => {
+      const b = e.target.closest('button[data-id]');
+      if (b) linkGame(b.dataset.id, b.dataset.label);
+    };
+  } catch (err) {
+    $('#lnb-games').innerHTML = `<li class="error">${esc(err.message)}</li>`;
+  }
+});
+
+// Textos montados com os dados reais do jogo.
+function lnbSnippet(kind) {
+  const g = state.lnbGame;
+  if (!g) return '';
+  const H = g.home.short;
+  const A = g.away.short;
+  const fmt = (list, unit) => list.map((p) => `${p.name} ${p.value}${unit}`).join(', ');
+  switch (kind) {
+    case 'parciais': {
+      const qs = g.quarters.map((q) => `${q.home}-${q.away}`).join(' | ');
+      return `📊 Parciais (${H} x ${A}): ${qs}\n`;
+    }
+    case 'cestinhas': {
+      const h = g.leaders.home.pts[0];
+      const a = g.leaders.away.pts[0];
+      const parts = [h && `${h.name} (${H}) ${h.value} pts`, a && `${a.name} (${A}) ${a.value} pts`].filter(Boolean);
+      return parts.length ? `🏆 Cestinhas: ${parts.join(' e ')}\n` : '';
+    }
+    case 'destaques': {
+      const line = (side, short) => {
+        const L = g.leaders[side];
+        const bits = [
+          L.pts[0] && `${L.pts[0].name} ${L.pts[0].value} pts`,
+          L.reb[0] && `${L.reb[0].name} ${L.reb[0].value} reb`,
+          L.ast[0] && `${L.ast[0].name} ${L.ast[0].value} ast`,
+        ].filter(Boolean);
+        return `${short}: ${bits.join(' · ')}`;
+      };
+      return `⭐ Destaques\n${line('home', H)}\n${line('away', A)}\n`;
+    }
+    case 'quarto': {
+      const q = g.quarterLeaders.period;
+      const part = g.quarters.find((x) => x.q === q);
+      const name = q > 4 ? 'da prorrogação' : `do ${ORD(q)} quarto`;
+      const head = part ? `${H} ${part.home} x ${part.away} ${A}` : `${H} x ${A}`;
+      const h = fmt(g.quarterLeaders.home, ' pts');
+      const a = fmt(g.quarterLeaders.away, ' pts');
+      return `⏱️ Parcial ${name}: ${head}\n${h ? `${H}: ${h}\n` : ''}${a ? `${A}: ${a}\n` : ''}`;
+    }
+    case 'ultima': {
+      const p = g.plays.find((x) => x.scoring);
+      if (!p) return '';
+      const q = p.period > 4 ? 'prorr.' : `${ORD(p.period)}Q`;
+      return `🏀 ${p.text} (${p.team ? `${p.team} · ` : ''}${p.score}, ${q} ${p.clock})\n`;
+    }
+    default:
+      return '';
+  }
+}
+
+$('#lnb-chips').addEventListener('click', (e) => {
+  const kind = e.target.closest('button')?.dataset.lnb;
+  if (!kind) return;
+  const text = lnbSnippet(kind);
+  if (text) insertAtCursor(text);
+  else toast('Ainda não há dados para esse atalho.');
 });
 
 // ---------- Texto e contadores ----------
@@ -552,6 +745,8 @@ async function boot() {
   showApp();
   renderGame();
   onTextChange();
+  renderLnb();
+  lnbStartPolling();
   api('/api/history').then((h) => renderHistory(h.items)).catch(() => {});
 
   const q = new URLSearchParams(location.search);

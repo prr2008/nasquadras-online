@@ -39,8 +39,8 @@
     <!-- PLACAR -->
     <section class="board" aria-label="Placar do jogo">
       <div class="team">
-        <input id="away" class="team-name" placeholder="Visitante" maxlength="20" aria-label="Time visitante">
-        <input id="sa" class="score" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Pontos do visitante">
+        <input id="away" class="team-name" placeholder="Mandante" maxlength="24" aria-label="Time mandante">
+        <input id="sa" class="score" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Pontos do mandante">
         <div class="score-btns" data-team="a">
           <button type="button" data-d="1">+1</button><button type="button" data-d="2">+2</button>
           <button type="button" data-d="3">+3</button><button type="button" data-d="-1" class="minus">−1</button>
@@ -54,17 +54,33 @@
           <option value="OT">Prorr.</option><option value="FINAL">Final</option>
         </select>
         <button id="insert-score" type="button" class="ghost small">Inserir placar</button>
+        <button id="lnb-link" type="button" class="ghost small lnb-btn">📡 LNB</button>
         <button id="reset-game" type="button" class="link small">Zerar</button>
       </div>
       <div class="team">
-        <input id="home" class="team-name" placeholder="Mandante" maxlength="20" aria-label="Time mandante">
-        <input id="sh" class="score" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Pontos do mandante">
+        <input id="home" class="team-name" placeholder="Visitante" maxlength="24" aria-label="Time visitante">
+        <input id="sh" class="score" type="number" inputmode="numeric" min="0" max="999" value="0" aria-label="Pontos do visitante">
         <div class="score-btns" data-team="h">
           <button type="button" data-d="1">+1</button><button type="button" data-d="2">+2</button>
           <button type="button" data-d="3">+3</button><button type="button" data-d="-1" class="minus">−1</button>
         </div>
       </div>
     </section>
+
+    <!-- JOGO VINCULADO À LNB -->
+    <div id="lnb-status" class="lnb-status" hidden aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="lnb-text"></span>
+      <button id="lnb-refresh" type="button" class="link small" title="Atualizar agora">↻</button>
+      <button id="lnb-unlink" type="button" class="link small">Desvincular</button>
+    </div>
+    <div class="chips data-chips" id="lnb-chips" hidden aria-label="Atalhos com dados da LNB">
+      <button type="button" data-lnb="parciais">📊 Parciais</button>
+      <button type="button" data-lnb="cestinhas">🏆 Cestinhas</button>
+      <button type="button" data-lnb="destaques">⭐ Destaques</button>
+      <button type="button" data-lnb="quarto">⏱️ Do quarto</button>
+      <button type="button" data-lnb="ultima">🏀 Última cesta</button>
+    </div>
 
     <!-- ATALHOS -->
     <div class="chips" id="templates" aria-label="Atalhos de texto">
