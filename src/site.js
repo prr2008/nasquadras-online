@@ -132,7 +132,21 @@ export async function referencedKeys(env) {
 
 // ---------- HTML ----------
 
-function layout({ title, description = '', image = '', url = '', body, live = false }) {
+export const NAV = [
+  ['inicio', 'Início', '/'],
+  ['coberturas', 'Coberturas', '/c'],
+  ['blog', 'Blog', '/blog'],
+  ['coluna', 'Coluna', '/coluna'],
+  ['zona', 'Zona de Conforto', '/zona-de-conforto'],
+  ['sobre', 'Sobre', '/sobre'],
+];
+
+export const SOCIAL = [
+  ['Threads', 'https://www.threads.net/@prr2008'],
+  ['Bluesky', 'https://bsky.app/profile/prr2008.bsky.social'],
+];
+
+export function layout({ title, description = '', image = '', url = '', body, live = false, nav = 'coberturas', type = 'article', head = '', home = '/' }) {
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -141,12 +155,15 @@ function layout({ title, description = '', image = '', url = '', body, live = fa
 <meta name="theme-color" content="#0f1115">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
-<meta property="og:type" content="article">
+<meta property="og:type" content="${esc(type)}">
 <meta property="og:site_name" content="Nas Quadras">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 ${url ? `<meta property="og:url" content="${esc(url)}">` : ''}
+${url ? `<link rel="canonical" href="${esc(url)}">` : ''}
 ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">` : '<meta name="twitter:card" content="summary">'}
+<link rel="alternate" type="application/rss+xml" title="Nas Quadras — Blog" href="/rss.xml">
+${head}
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23ff7a1a'/%3E%3Cpath d='M4 32h56M32 4v56M12 12c10 10 10 30 0 40M52 12c-10 10-10 30 0 40' stroke='%230f1115' stroke-width='3' fill='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -155,12 +172,20 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 </head>
 <body${live ? ' data-live="1"' : ''}>
 <header class="site-head">
-  <a class="brand" href="/c"><span class="ball" aria-hidden="true"></span>Nas Quadras <em>coberturas</em></a>
+  <div class="head-row">
+    <a class="brand" href="${home}"><span class="ball" aria-hidden="true"></span>Nas Quadras</a>
+    <nav class="menu" aria-label="Menu principal">
+      ${NAV.map(([key, label, href]) => `<a href="${key === 'inicio' ? home : href}"${key === nav ? ' aria-current="page"' : ''}>${label}</a>`).join('')}
+    </nav>
+  </div>
 </header>
 <main class="wrap">
 ${body}
 </main>
-<footer class="site-foot">Cobertura de <strong>Pedro Rodrigues</strong> · Nas Quadras</footer>
+<footer class="site-foot">
+  <div><strong>Nas Quadras</strong> · basquete por Pedro Rodrigues</div>
+  <div class="foot-links">${SOCIAL.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener me">${n}</a>`).join('')}<a href="/rss.xml">RSS</a></div>
+</footer>
 <script src="/site.js" defer></script>
 </body>
 </html>`;
@@ -207,7 +232,7 @@ export function boardHtml(g) {
   return scoreboard(g);
 }
 
-export function indexPage(games, origin) {
+export function indexPage(games, origin, { home = '/' } = {}) {
   const cards = games.map((g) => {
     const score = g.home ? `${esc(g.home)} <b>${g.home_score ?? 0}</b> x <b>${g.away_score ?? 0}</b> ${esc(g.away)}` : esc(g.title);
     const live = g.status === 'live' && g.period !== 'FINAL';
@@ -225,12 +250,14 @@ export function indexPage(games, origin) {
     title: 'Coberturas ao vivo · Nas Quadras',
     description: 'Coberturas ao vivo de basquete por Pedro Rodrigues.',
     url: `${origin}/c`,
+    type: 'website',
+    home,
     body: `<h1 class="page-title">Coberturas</h1>
       ${games.length ? `<div class="cards">${cards}</div>` : '<p class="empty">Nenhuma cobertura publicada ainda.</p>'}`,
   });
 }
 
-export function gamePage(g, posts, origin, { admin = false } = {}) {
+export function gamePage(g, posts, origin, { admin = false, home = '/' } = {}) {
   const live = g.status === 'live' && g.period !== 'FINAL';
   const photos = posts.reduce((n, p) => n + p.media.length, 0);
   const desc = g.home
@@ -242,6 +269,7 @@ export function gamePage(g, posts, origin, { admin = false } = {}) {
     image: g.cover_key ? `${origin}/m/${g.cover_key}` : '',
     url: `${origin}/c/${g.slug}`,
     live,
+    home,
     body: `<div class="game" data-slug="${esc(g.slug)}" data-last="${posts[0]?.id || 0}" data-admin="${admin ? 1 : 0}">
       <p class="crumbs"><a href="/c">Coberturas</a> · ${esc(fmtDate(g.started_at))}</p>
       <h1 class="page-title">${esc(g.title)}</h1>
@@ -253,7 +281,7 @@ export function gamePage(g, posts, origin, { admin = false } = {}) {
   });
 }
 
-export function galleryPage(g, posts, origin) {
+export function galleryPage(g, posts, origin, { home = '/' } = {}) {
   const items = posts.flatMap((p) => p.media.map((m) => ({ ...m, at: p.created_at })));
   const grid = items.map((m) => (m.kind === 'video'
     ? `<figure><video controls playsinline preload="metadata" src="/m/${esc(m.key)}"></video><figcaption>${fmtTime(m.at)}${m.alt ? ` · ${esc(m.alt)}` : ''}</figcaption></figure>`
@@ -263,6 +291,7 @@ export function galleryPage(g, posts, origin) {
     description: `Fotos da cobertura ${g.title} (${fmtShortDate(g.started_at)}).`,
     image: g.cover_key ? `${origin}/m/${g.cover_key}` : '',
     url: `${origin}/c/${g.slug}/fotos`,
+    home,
     body: `<p class="crumbs"><a href="/c">Coberturas</a> · <a href="/c/${esc(g.slug)}">${esc(g.title)}</a></p>
       <h1 class="page-title">Fotos</h1>
       <nav class="tabs"><a href="/c/${esc(g.slug)}">Posts</a><a class="on" href="/c/${esc(g.slug)}/fotos">Fotos (${items.length})</a></nav>
@@ -270,9 +299,11 @@ export function galleryPage(g, posts, origin) {
   });
 }
 
-export function notFoundPage() {
+export function notFoundPage({ home = '/' } = {}) {
   return layout({
     title: 'Página não encontrada · Nas Quadras',
-    body: '<h1 class="page-title">Página não encontrada</h1><p class="empty"><a href="/c">Ver todas as coberturas</a></p>',
+    nav: '',
+    home,
+    body: `<h1 class="page-title">Página não encontrada</h1><p class="empty"><a href="${home}">Voltar ao início</a></p>`,
   });
 }

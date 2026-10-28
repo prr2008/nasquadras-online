@@ -6,6 +6,8 @@ import * as bluesky from './bluesky.js';
 import * as coverage from './coverage.js';
 import * as lnb from './lnb.js';
 import * as site from './site.js';
+import * as blog from './blog.js';
+import * as pages from './pages.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
@@ -230,7 +232,35 @@ async function handleApi(request, env, url) {
       });
     }
 
+    // ---------- Blog (editor do app) ----------
+    case 'GET /api/blog':
+      return json({ articles: await blog.listAllArticles(env), categories: blog.CATEGORIES });
+
+    case 'POST /api/blog':
+      return json(await blog.createArticle(env, await body(request)));
+
+    case 'GET /api/pages':
+      return json({ pages: await blog.listPages(env) });
+
     default: {
+      const art = pathname.match(/^\/api\/blog\/(\d+)$/);
+      if (art) {
+        const id = Number(art[1]);
+        if (method === 'GET') {
+          const a = await blog.getArticleById(env, id);
+          return a ? json(a) : fail('Artigo não encontrado.', 404);
+        }
+        if (method === 'PUT') {
+          const a = await blog.updateArticle(env, id, await body(request));
+          return a ? json(a) : fail('Artigo não encontrado.', 404);
+        }
+        if (method === 'DELETE') {
+          return (await blog.deleteArticle(env, id)) ? json({ ok: true }) : fail('Artigo não encontrado.', 404);
+        }
+      }
+      const pg = pathname.match(/^\/api\/pages\/([a-z-]+)$/);
+      if (pg && method === 'PUT') return json(await blog.savePage(env, pg[1], await body(request)));
+
       const del = pathname.match(/^\/api\/site\/post\/(\d+)$/);
       if (del && method === 'DELETE') {
         return (await site.deletePost(env, Number(del[1]))) ? json({ ok: true }) : fail('Post não encontrado.', 404);
@@ -286,21 +316,84 @@ async function withLiveScore(g) {
   }
 }
 
+// ---------- Site principal (nasquadras.online) ----------
+
+const SITE_HOSTS = new Set(['nasquadras.online']);
+const isSiteHost = (url) => SITE_HOSTS.has(url.hostname);
+/** No domínio principal o início é "/"; nos outros endereços "/" é o app e o site fica em "/inicio". */
+const homeOf = (url) => (isSiteHost(url) ? '/' : '/inicio');
+/** Endereço oficial usado em links de compartilhamento, RSS e sitemap. */
+const canonical = (env, url) => (env.SITE_URL || url.origin).replace(/\/$/, '');
+
 async function handleSite(request, env, url) {
   if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
   const parts = url.pathname.split('/').filter(Boolean); // ['c', slug, 'fotos']
-  const origin = url.origin;
+  const origin = canonical(env, url);
+  const home = homeOf(url);
 
-  if (parts.length === 1) return html(site.indexPage(await site.listGames(env), origin));
+  if (parts.length === 1) return html(site.indexPage(await site.listGames(env), origin, { home }));
 
   const slug = decodeURIComponent(parts[1] || '');
   const game = await site.getGame(env, slug);
-  if (!game || parts.length > 3 || (parts[2] && parts[2] !== 'fotos')) return html(site.notFoundPage(), 404);
+  if (!game || parts.length > 3 || (parts[2] && parts[2] !== 'fotos')) return html(site.notFoundPage({ home }), 404);
 
   const [g, posts] = await Promise.all([withLiveScore(game), site.getPosts(env, slug)]);
-  if (parts[2] === 'fotos') return html(site.galleryPage(g, posts, origin));
+  if (parts[2] === 'fotos') return html(site.galleryPage(g, posts, origin, { home }));
   const admin = await isLoggedIn(request, env);
-  return html(site.gamePage(g, posts, origin, { admin }));
+  return html(site.gamePage(g, posts, origin, { admin, home }));
+}
+
+const xmlRes = (body, type) => new Response(body, { headers: { 'Content-Type': `${type}; charset=utf-8`, 'Cache-Control': 'public, max-age=600' } });
+
+/** Páginas do site principal. Devolve null quando o caminho não é do site. */
+async function handleMainSite(request, env, url) {
+  const p = url.pathname.replace(/\/+$/, '') || '/';
+  const origin = canonical(env, url);
+  const home = homeOf(url);
+
+  if ((p === '/' && isSiteHost(url)) || p === '/inicio') {
+    if (p === '/inicio' && isSiteHost(url)) return Response.redirect(`${url.origin}/`, 301);
+    const [games, articles] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 })]);
+    const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
+    const withLive = live ? await withLiveScore(live) : null;
+    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home }));
+  }
+
+  if (p === '/blog') return html(pages.blogIndexPage({ articles: await blog.listPublished(env), origin, home }));
+
+  const cat = p.match(/^\/blog\/categoria\/([a-z0-9-]+)$/);
+  if (cat) {
+    const category = blog.CATEGORIES.find((c) => blog.categorySlug(c) === cat[1]);
+    if (!category) return html(site.notFoundPage({ home }), 404);
+    return html(pages.blogIndexPage({ articles: await blog.listPublished(env, { category }), origin, category, home }));
+  }
+
+  const art = p.match(/^\/blog\/([a-z0-9-]+)$/);
+  if (art) {
+    const admin = await isLoggedIn(request, env);
+    const a = await blog.getArticleBySlug(env, art[1], { includeDrafts: admin });
+    if (!a) return html(site.notFoundPage({ home }), 404);
+    const related = (await blog.listPublished(env, { category: a.category, limit: 4 })).filter((x) => x.id !== a.id).slice(0, 3);
+    return html(pages.articlePage({ a, origin, admin, related, home }));
+  }
+
+  const fixed = p.match(/^\/(sobre|coluna|zona-de-conforto)$/);
+  if (fixed) {
+    const [page, admin] = await Promise.all([blog.getPage(env, fixed[1]), isLoggedIn(request, env)]);
+    return html(pages.staticPage({ page, slug: fixed[1], origin, admin, home }));
+  }
+
+  if (p === '/rss.xml') {
+    return xmlRes(pages.rssFeed({ articles: await blog.listPublished(env, { limit: 30, withBody: true }), origin }), 'application/rss+xml');
+  }
+  if (p === '/sitemap.xml') {
+    const [articles, games] = await Promise.all([blog.listPublished(env, { limit: 1000 }), site.listGames(env, 1000)]);
+    return xmlRes(pages.sitemap({ articles, games, origin }), 'application/xml');
+  }
+  if (p === '/robots.txt') {
+    return xmlRes(`User-agent: *\nDisallow: /api/\nDisallow: /app\nSitemap: ${origin}/sitemap.xml\n`, 'text/plain');
+  }
+  return null;
 }
 
 /** Atualizações da página ao vivo: posts novos (já em HTML) e o placar. */
@@ -326,7 +419,15 @@ export default {
         return await serveMedia(request, env, url.pathname.slice(3));
       }
       if (url.pathname.startsWith('/auth/')) return await handleAuth(request, env, url);
+      if (url.hostname === 'www.nasquadras.online') {
+        return Response.redirect(`https://nasquadras.online${url.pathname}${url.search}`, 301);
+      }
       if (url.pathname === '/c' || url.pathname.startsWith('/c/')) return await handleSite(request, env, url);
+      if (url.pathname === '/app') return env.ASSETS.fetch(new Request(new URL('/', url), request));
+      if (request.method === 'GET' && !url.pathname.startsWith('/api/')) {
+        const page = await handleMainSite(request, env, url);
+        if (page) return page;
+      }
       if (url.pathname.startsWith('/api/public/')) return await handlePublicApi(request, env, url);
       if (url.pathname.startsWith('/api/')) return await handleApi(request, env, url);
       return env.ASSETS.fetch(request);
@@ -343,7 +444,10 @@ export default {
 
       // Mídia publicada no site fica guardada; o resto sai depois de 24h.
       let keep;
-      try { keep = await site.referencedKeys(env); } catch (err) { console.error('site keys', err); return; }
+      try {
+        const [a, b] = await Promise.all([site.referencedKeys(env), blog.referencedKeys(env)]);
+        keep = new Set([...a, ...b]);
+      } catch (err) { console.error('site keys', err); return; }
       let cursor;
       const cutoff = Date.now() - MEDIA_TTL_MS;
       do {

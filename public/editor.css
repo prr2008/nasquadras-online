@@ -1,0 +1,75 @@
+/* Abas do app e editor visual (Blog e Páginas). Usa as variáveis de style.css. */
+
+.app-tabs { display: flex; gap: 4px; margin: 0 0 12px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.app-tabs a { flex: 1; text-align: center; padding: 8px 6px; border-radius: 9px; color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; }
+.app-tabs a.on { background: var(--panel-2); color: var(--text); }
+.app-tabs .site-link { flex: none; font-weight: 500; color: var(--accent); }
+
+.view-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 12px; }
+.view-head h2 { font-family: var(--display); font-size: 24px; text-transform: uppercase; margin: 0; }
+.small-btn { padding: 9px 14px; font-size: 15px; }
+
+.doc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.doc-list a { display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.doc-list a:hover { border-color: var(--accent); }
+.doc-list .meta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.empty-item { color: var(--muted); padding: 12px 0; }
+
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--panel-2); color: var(--muted); }
+.badge.published { background: rgba(60, 207, 142, .15); color: var(--ok); }
+.badge.draft { background: rgba(255, 194, 75, .12); color: var(--warn); }
+
+.doc-form { display: grid; gap: 12px; }
+.doc-form label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+.doc-form label small { font-weight: 400; }
+.doc-form select, .doc-form textarea { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); font-size: 15px; color: var(--text); }
+.doc-form textarea { min-height: 0; resize: vertical; }
+.doc-form .title-input { min-height: 0; border-radius: 0; width: 100%; resize: none; overflow: hidden; color: var(--text); padding: 10px 2px; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+  font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1.1; }
+.doc-form .title-input:focus { outline: none; border-bottom-color: var(--accent); }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+@media (max-width: 420px) { .row-2 { grid-template-columns: 1fr; } }
+.cover-box { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+.cover-preview { max-width: 260px; aspect-ratio: 16 / 9; border-radius: 10px; border: 1px dashed var(--line); background: var(--panel); display: grid; place-items: center; overflow: hidden; font-size: 13px; }
+.cover-preview img { width: 100%; height: 100%; object-fit: cover; }
+.cover-actions { display: flex; align-items: center; gap: 8px; }
+.check { display: flex !important; grid-template-columns: none; align-items: center; gap: 8px; color: var(--text) !important; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.saved-note { margin: 0; font-size: 13px; color: var(--muted); min-height: 1em; }
+.doc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.doc-actions .primary { flex: 1; }
+.doc-actions.secondary { justify-content: space-between; }
+.danger { color: var(--bad) !important; }
+
+/* Quill no tema escuro do app */
+.editor-wrap { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.editor-wrap .ql-toolbar.ql-snow { border: 0; border-bottom: 1px solid var(--line); position: sticky; top: 52px; z-index: 3; background: var(--panel); border-radius: 12px 12px 0 0; flex-wrap: wrap; }
+.editor-wrap .ql-container.ql-snow { border: 0; height: auto; font: 17px/1.65 var(--body); color: var(--text); }
+.editor-wrap .ql-editor { min-height: 320px; padding: 16px; }
+.editor-wrap .ql-editor.ql-blank::before { color: var(--muted); font-style: normal; left: 16px; }
+.editor-wrap .ql-editor h2 { font-family: var(--display); font-size: 28px; }
+.editor-wrap .ql-editor h3 { font-size: 20px; }
+.editor-wrap .ql-editor blockquote { border-left: 3px solid var(--accent); color: #d6dae2; font-style: italic; }
+.editor-wrap .ql-editor img { max-width: 100%; border-radius: 10px; }
+.editor-wrap .ql-editor .ql-video { width: 100%; aspect-ratio: 16 / 9; height: auto; border-radius: 10px; }
+.editor-wrap .ql-editor a { color: var(--accent); }
+.editor-wrap .ql-snow .ql-stroke { stroke: var(--muted); }
+.editor-wrap .ql-snow .ql-fill { fill: var(--muted); }
+.editor-wrap .ql-snow .ql-picker { color: var(--muted); }
+.editor-wrap .ql-snow button:hover .ql-stroke, .editor-wrap .ql-snow .ql-active .ql-stroke { stroke: var(--accent); }
+.editor-wrap .ql-snow button:hover .ql-fill, .editor-wrap .ql-snow .ql-active .ql-fill { fill: var(--accent); }
+.editor-wrap .ql-snow .ql-picker-options { background: var(--panel-2); border-color: var(--line); }
+.editor-wrap .ql-snow .ql-tooltip { background: var(--panel-2); border-color: var(--line); color: var(--text); box-shadow: 0 6px 18px rgba(0,0,0,.4); z-index: 4; }
+.editor-wrap .ql-snow .ql-tooltip input[type=text] { background: var(--panel); color: var(--text); border-color: var(--line); }
+.editor-wrap .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+.editor-wrap .ql-snow .ql-picker.ql-header .ql-picker-item::before { content: 'Texto'; }
+.editor-wrap .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+.editor-wrap .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before { content: 'Intertítulo'; }
+.editor-wrap .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+.editor-wrap .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before { content: 'Subtítulo'; }
+.editor-wrap .ql-snow .ql-picker.ql-header { width: 110px; }
+.editor-wrap .ql-snow .ql-tooltip[data-mode=link]::before { content: 'Link:'; }
+.editor-wrap .ql-snow .ql-tooltip.ql-editing a.ql-action::after { content: 'Salvar'; }
+.editor-wrap .ql-snow .ql-tooltip a.ql-action::after { content: 'Editar'; }
+.editor-wrap .ql-snow .ql-tooltip a.ql-remove::before { content: 'Remover'; }
+.editor-wrap .ql-snow .ql-tooltip::before { content: 'Abrir:'; }

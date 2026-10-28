@@ -27,3 +27,27 @@ CREATE TABLE IF NOT EXISTS posts (
 
 CREATE INDEX IF NOT EXISTS posts_by_game ON posts (game_slug, id);
 CREATE INDEX IF NOT EXISTS games_by_start ON games (started_at DESC);
+
+-- Blog: artigos escritos no editor visual do app.
+CREATE TABLE IF NOT EXISTS articles (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug         TEXT NOT NULL UNIQUE,     -- endereço: /blog/<slug>
+  title        TEXT NOT NULL,
+  summary      TEXT NOT NULL DEFAULT '',
+  body_html    TEXT NOT NULL DEFAULT '', -- HTML já limpo pelo servidor
+  cover_key    TEXT,                     -- foto de capa no R2
+  category     TEXT NOT NULL DEFAULT 'Opinião',
+  status       TEXT NOT NULL DEFAULT 'draft', -- draft | published
+  published_at INTEGER,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS articles_pub ON articles (status, published_at DESC);
+
+-- Páginas fixas editáveis no app: sobre, coluna, zona-de-conforto.
+CREATE TABLE IF NOT EXISTS pages (
+  slug       TEXT PRIMARY KEY,
+  title      TEXT NOT NULL,
+  body_html  TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL
+);

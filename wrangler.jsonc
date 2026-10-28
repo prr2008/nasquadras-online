@@ -5,11 +5,12 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Interface (HTML/CSS/JS). As rotas de API passam primeiro pelo Worker.
+  // Arquivos estáticos do app e do site (HTML/CSS/JS).
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/auth/*", "/m/*", "/c", "/c/*"]
+    // Tudo passa pelo Worker: ele decide entre site, app e arquivos estáticos.
+    "run_worker_first": true
   },
 
   // Site público das coberturas: jogos e posts (esquema em schema.sql).

@@ -800,6 +800,9 @@ function renderHistory(items = []) {
     </li>`).join('');
 }
 
+// Funções compartilhadas com o editor do blog (editor.js).
+window.NQ = { api, toast, esc, compressImage, postThreads, threadOn, state, lnbRefresh };
+
 // ---------- Início ----------
 async function boot() {
   try {
@@ -811,6 +814,7 @@ async function boot() {
     return;
   }
   showApp();
+  window.dispatchEvent(new Event('nq:ready'));
   renderGame();
   onTextChange();
   renderLnb();
