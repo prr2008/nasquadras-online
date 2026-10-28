@@ -892,3 +892,13 @@ async function boot() {
 }
 
 boot();
+
+// No computador: Ctrl+Enter (ou ⌘+Enter) publica direto da caixa de texto.
+for (const id of ['#text', '#x-text']) {
+  $(id).addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !state.busy) {
+      e.preventDefault();
+      $('#publish').click();
+    }
+  });
+}

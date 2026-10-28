@@ -224,3 +224,32 @@ dialog .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .x-head small { color: var(--muted); }
 .x-box textarea { min-height: 0; }
 .x-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* ---------- Computador (telas largas) ---------- */
+@media (min-width: 1000px) {
+  .screen { max-width: 1240px; padding: 16px 28px 48px; }
+  #login.screen { max-width: 560px; }
+  .app-tabs { max-width: 720px; }
+
+  /* Ao vivo: compositor à esquerda; agendados e histórico numa coluna fixa à direita. */
+  #view-live:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 28px; align-items: start; }
+  .live-main { display: grid; gap: 10px; min-width: 0; }
+  .live-main > * { margin-top: 0; }
+  .live-side { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; padding-right: 4px; }
+  .live-side .history h2 { margin-top: 0; }
+  .live-side .sched-list + .history h2 { margin-top: 24px; }
+  #text { min-height: 200px; }
+  .media-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .actions { grid-template-columns: 2fr 1fr 1fr; }
+  .actions .publish { grid-column: auto; }
+
+  /* Blog, Coluna e Páginas: largura confortável para ler e escrever. */
+  #view-blog, #view-coluna, #view-pages { max-width: 920px; margin: 0 auto; }
+}
+@media (min-width: 1400px) {
+  .screen { max-width: 1360px; }
+  #view-live:not([hidden]) { grid-template-columns: minmax(0, 1fr) 440px; }
+}
+
+/* Textos longos sem espaço (links, hashtags) quebram em vez de alargar a página. */
+.history li, .sched-text, .doc-list strong { overflow-wrap: anywhere; }

@@ -47,6 +47,7 @@
     </nav>
 
     <div id="view-live" class="view">
+    <div class="live-main">
     <!-- PLACAR -->
     <section class="board" aria-label="Placar do jogo">
       <div class="team">
@@ -163,7 +164,7 @@
       <p id="warnings" class="warnings" aria-live="polite"></p>
 
       <div class="actions">
-        <button id="publish" type="button" class="primary publish">Publicar</button>
+        <button id="publish" type="button" class="primary publish" title="Publicar (Ctrl+Enter)">Publicar</button>
         <button id="sched-open" type="button" class="ghost copy" title="Agendar este post">⏰ Agendar</button>
         <button id="copy" type="button" class="ghost copy" title="Copiar o texto do post">📋 Copiar</button>
       </div>
@@ -193,6 +194,10 @@
       <div id="progress" class="progress" aria-live="polite"></div>
     </section>
 
+    </div><!-- /live-main -->
+
+    <!-- No computador, agendados e histórico ficam numa coluna ao lado. -->
+    <aside class="live-side">
     <!-- AGENDADOS -->
     <section id="sched-wrap" class="history sched-list" hidden>
       <h2>Agendados</h2>
@@ -204,6 +209,7 @@
       <h2>Últimos posts</h2>
       <ol id="history"></ol>
     </section>
+    </aside>
 
     </div><!-- /view-live -->
 
