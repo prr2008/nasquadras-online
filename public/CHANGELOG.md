@@ -6,6 +6,7 @@ Registro das mudanças no app e no site a partir da versão 1.0. A versão mais 
 
 - **Início com destaques:** logo abaixo da apresentação (e do aviso de jogo ao vivo), **Coberturas** e **Coluna Nas Quadras** aparecem lado a lado no computador e em sequência no celular. Em cada uma, o mais recente vem grande, com foto (placar final e número de posts na cobertura; resumo e link para o JB na coluna), e os anteriores numa lista logo abaixo.
 - O blog vem em seguida (6 textos mais recentes), com Zona de Conforto e Siga na lateral.
+- Cobertura aberta com o título padrão ("Cobertura") passa a aparecer com o nome dos times ("Botafogo x Caxias do Sul").
 
 ## 1.9 — 29/10/2026
 

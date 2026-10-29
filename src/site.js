@@ -55,8 +55,14 @@ const parseMedia = (m) => { try { return JSON.parse(m || '[]'); } catch { return
 
 // ---------- Dados ----------
 
+/** Cobertura aberta com o título padrão ("Cobertura"): usa o nome dos times. */
+export function withTitle(g) {
+  if (g && g.home && g.away && /^\s*cobertura\s*$/i.test(g.title || '')) return { ...g, title: `${g.home} x ${g.away}` };
+  return g;
+}
+
 export async function getGame(env, slug) {
-  return env.DB.prepare('SELECT * FROM games WHERE slug = ?').bind(slug).first();
+  return withTitle(await env.DB.prepare('SELECT * FROM games WHERE slug = ?').bind(slug).first());
 }
 
 /** Cria (ou reaproveita) a página de uma cobertura. */
@@ -112,7 +118,7 @@ export async function listGames(env, limit = 60) {
     `SELECT g.*, (SELECT COUNT(*) FROM posts p WHERE p.game_slug = g.slug) AS n_posts
      FROM games g ORDER BY g.started_at DESC LIMIT ?`,
   ).bind(limit).all();
-  return results;
+  return results.map(withTitle);
 }
 
 export async function getPosts(env, slug, sinceId = 0) {

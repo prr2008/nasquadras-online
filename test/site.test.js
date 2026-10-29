@@ -79,3 +79,10 @@ test('índice e galeria', () => {
   assert.match(gal, /Fotos \(1\)/);
   assert.match(gal, /<figcaption>22:33 · Rachel &quot;arremessa&quot;<\/figcaption>/);
 });
+
+test('cobertura com título padrão usa o nome dos times', async () => {
+  const { withTitle } = await import('../src/site.js');
+  assert.equal(withTitle({ title: 'Cobertura', home: 'Botafogo', away: 'Caxias do Sul' }).title, 'Botafogo x Caxias do Sul');
+  assert.equal(withTitle({ title: 'Flamengo x Franca', home: 'Flamengo', away: 'Franca' }).title, 'Flamengo x Franca');
+  assert.equal(withTitle({ title: 'Cobertura', home: null, away: null }).title, 'Cobertura');
+});
