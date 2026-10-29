@@ -15,6 +15,7 @@ import * as wpimport from './wpimport.js';
 import * as gdocs from './gdocs.js';
 import * as schedule from './schedule.js';
 import * as buffer from './buffer.js';
+import * as indexnow from './indexnow.js';
 import { applyMentions, compose, getMentions, saveMentions } from './compose.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
@@ -582,6 +583,8 @@ async function handleMainSite(request, env, url) {
     const [articles, games] = await Promise.all([blog.listPublished(env, { limit: 1000 }), site.listGames(env, 1000)]);
     return xmlRes(pages.sitemap({ articles, games, origin }), 'application/xml');
   }
+  const key = indexnow.keyFile(env, p);
+  if (key) return new Response(key, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   if (p === '/robots.txt') {
     return xmlRes(`User-agent: *\nDisallow: /api/\nDisallow: /app\nSitemap: ${origin}/sitemap.xml\n`, 'text/plain');
   }
@@ -642,6 +645,11 @@ export default {
   async scheduled(event, env, ctx) {
     // A cada minuto: publica os posts agendados que venceram.
     ctx.waitUntil(schedule.runDue(env).catch((err) => console.error('agendados', err)));
+    // A cada 10 minutos: avisa os buscadores (IndexNow) do que mudou no site.
+    if (new Date(event.scheduledTime).getUTCMinutes() % 10 === 3) {
+      const origin = (env.SITE_URL || 'https://nasquadras.online').replace(/\/$/, '');
+      ctx.waitUntil(indexnow.run(env, origin).catch((err) => console.error('indexnow', err)));
+    }
     if (event.cron !== DAILY_CRON) return;
 
     ctx.waitUntil((async () => {

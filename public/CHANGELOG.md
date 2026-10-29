@@ -2,6 +2,12 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.13 — 29/10/2026
+
+- **Buscadores avisados na hora (IndexNow):** a cada 10 minutos, o app avisa o Bing (e Yandex, Seznam, Naver e outros) das páginas novas ou alteradas: textos do blog, coberturas e posts novos nelas, coluna, Zona de Conforto e Sobre. Nada muda no jeito de publicar. Na primeira vez, o site inteiro foi enviado.
+- **Crawler Hints** ligado na Cloudflare (Caching → Configuration).
+- O Google não usa o IndexNow; para ele continua valendo o mapa do site no Search Console.
+
 ## 1.12 — 29/10/2026
 
 - **Site no endereço principal:** o site saiu do Squarespace e agora responde em **nasquadras.online** (o **www** redireciona para lá). O app continua em **app.nasquadras.online**.
