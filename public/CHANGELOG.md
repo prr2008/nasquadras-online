@@ -2,6 +2,14 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.7 — 29/10/2026
+
+- **Zona de Conforto com as edições do programa:** a página do site lista as edições, das mais recentes para as mais antigas, cada uma com o **player do Spotify** tocável, número, data, tema e resumo. No computador, em duas colunas.
+- **Nova aba Zona no app:** cole o link da playlist no Spotify e o app lê o nome, a capa, o número e a data da edição (de nomes como "Ep. 6 · 26/05/2026" ou "11 de agosto 2026"). Você revisa, acrescenta tema e resumo e adiciona. Dá para editar e remover.
+- Aviso quando a playlist parece **privada** (o player não toca para os visitantes).
+- O Início mostra a playlist mais recente no cartão do Zona de Conforto.
+- A apresentação do programa continua editável em **Páginas → Zona de Conforto**.
+
 ## 1.6 — 29/10/2026
 
 Site adaptado ao computador (o app já estava desde a 1.4).

@@ -8,7 +8,7 @@ const siteOrigin = () => (location.hostname === 'app.nasquadras.online' ? 'https
 // ---------- Navegação entre Ao vivo / Blog / Páginas ----------
 
 function show(view) {
-  for (const v of ['live', 'blog', 'coluna', 'pages']) $(`#view-${v}`).hidden = v !== view;
+  for (const v of ['live', 'blog', 'coluna', 'zona', 'pages']) $(`#view-${v}`).hidden = v !== view;
   document.querySelectorAll('.app-tabs a[data-view]').forEach((a) => a.classList.toggle('on', a.dataset.view === view));
 }
 
@@ -21,6 +21,10 @@ async function route() {
       if (arg === 'novo') return openArticle(null);
       if (arg) return openArticle(Number(arg));
       return listArticles();
+    }
+    if (section === 'zona') {
+      show('zona');
+      return listEpisodes();
     }
     if (section === 'coluna') {
       show('coluna');
@@ -563,6 +567,122 @@ $('#col-list').addEventListener('click', async (e) => {
       await NQ().api(`/api/coluna/${id}`, undefined, 'DELETE');
       NQ().toast('Coluna removida do site.');
       listColumns();
+    } catch (err) { NQ().toast(err.message); }
+  }
+});
+
+// ---------- Zona de Conforto (edições com a playlist do Spotify) ----------
+
+let epEditing = null;
+let epPreview = null;
+const epLabel = (e) => [e.number ? `Ep. ${e.number}` : '', e.aired_at ? fmtDate(e.aired_at) : ''].filter(Boolean).join(' · ') || e.playlist_name || 'Edição';
+
+async function listEpisodes() {
+  const { episodes } = await NQ().api('/api/zona');
+  const esc = NQ().esc;
+  $('#ep-list').innerHTML = episodes.length ? episodes.map((e) => `
+    <li data-id="${e.id}">
+      ${e.image_url ? `<img class="thumb-sm" src="${esc(e.image_url)}" alt="">` : '<div class="thumb-sm"></div>'}
+      <div class="info">
+        <strong>${esc(epLabel(e))}${e.title ? ` — ${esc(e.title)}` : ''}</strong>
+        <span class="meta">${esc(e.playlist_name || '')}</span>
+        <span class="actions">
+          <a href="https://open.spotify.com/playlist/${esc(e.playlist_id)}" target="_blank" rel="noopener">Spotify ↗</a>
+          <button type="button" data-act="edit">Editar</button>
+          <button type="button" data-act="del">Remover</button>
+        </span>
+      </div>
+    </li>`).join('') : '<li class="empty-item" style="display:block;background:none;border:0">Nenhuma edição ainda. Cole o link de uma playlist acima.</li>';
+  $('#ep-list').episodes = episodes;
+}
+
+function fillEpForm(d, { editing = false } = {}) {
+  $('#ep-form').hidden = false;
+  $('#ep-name').textContent = d.playlist_name || 'Playlist sem nome (privada?)';
+  $('#ep-number').value = d.number || '';
+  $('#ep-date').value = d.aired_at ? toDateInput(d.aired_at) : '';
+  $('#ep-title').value = d.title || '';
+  $('#ep-summary').value = d.summary || '';
+  const url = d.playlist_url || `https://open.spotify.com/playlist/${d.playlist_id}`;
+  $('#ep-link').href = url;
+  $('#ep-link').textContent = url.replace(/^https?:\/\//, '');
+  $('#ep-img').innerHTML = d.image_url ? `<img src="${NQ().esc(d.image_url)}" alt="">` : '<span>Sem capa</span>';
+  $('#ep-private').hidden = editing || d.public !== false;
+  $('#ep-save').textContent = editing ? 'Salvar alterações' : 'Adicionar edição';
+  $('#ep-title').focus();
+}
+
+function closeEpForm() {
+  $('#ep-form').hidden = true;
+  epEditing = null;
+  epPreview = null;
+}
+
+$('#ep-fetch').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#ep-error').textContent = '';
+  const btn = $('#ep-fetch-btn');
+  btn.disabled = true;
+  btn.textContent = 'Buscando…';
+  try {
+    epEditing = null;
+    epPreview = await NQ().api('/api/zona/preview', { url: $('#ep-url').value });
+    fillEpForm(epPreview);
+  } catch (err) {
+    $('#ep-error').textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Buscar';
+  }
+});
+
+$('#ep-cancel').addEventListener('click', closeEpForm);
+
+$('#ep-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const base = epEditing || epPreview;
+  if (!base) return;
+  const date = $('#ep-date').value;
+  const payload = {
+    playlist_url: base.playlist_url || `https://open.spotify.com/playlist/${base.playlist_id}`,
+    playlist_name: base.playlist_name,
+    image_url: base.image_url,
+    number: $('#ep-number').value,
+    aired_at: date ? fromDateInput(date, base.aired_at) : null,
+    title: $('#ep-title').value.trim(),
+    summary: $('#ep-summary').value.trim(),
+  };
+  try {
+    if (epEditing) {
+      await NQ().api(`/api/zona/${epEditing.id}`, payload, 'PUT');
+      NQ().toast('Edição atualizada.');
+    } else {
+      await NQ().api('/api/zona', payload);
+      NQ().toast('Edição adicionada ao site.');
+      $('#ep-url').value = '';
+    }
+    closeEpForm();
+    listEpisodes();
+  } catch (err) { NQ().toast(err.message); }
+});
+
+$('#ep-list').addEventListener('click', async (e) => {
+  const act = e.target.dataset.act;
+  if (!act) return;
+  const id = Number(e.target.closest('li').dataset.id);
+  const ep = $('#ep-list').episodes.find((x) => x.id === id);
+  if (act === 'edit') {
+    epEditing = ep;
+    epPreview = null;
+    fillEpForm(ep, { editing: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  if (act === 'del') {
+    if (!confirm(`Remover "${epLabel(ep)}" da página Zona de Conforto? (A playlist no Spotify não é afetada.)`)) return;
+    try {
+      await NQ().api(`/api/zona/${id}`, undefined, 'DELETE');
+      NQ().toast('Edição removida do site.');
+      listEpisodes();
     } catch (err) { NQ().toast(err.message); }
   }
 });

@@ -9,6 +9,7 @@ import * as site from './site.js';
 import * as blog from './blog.js';
 import * as pages from './pages.js';
 import * as coluna from './coluna.js';
+import * as zona from './zona.js';
 import * as gdocs from './gdocs.js';
 import * as schedule from './schedule.js';
 import * as buffer from './buffer.js';
@@ -274,6 +275,18 @@ async function handleApi(request, env, url) {
     case 'POST /api/coluna':
       return json(await coluna.add(env, await body(request)));
 
+    // ---------- Zona de Conforto (edições com playlist) ----------
+    case 'GET /api/zona':
+      return json({ episodes: await zona.list(env) });
+
+    case 'POST /api/zona/preview': {
+      const { url: link } = await body(request);
+      return json(await zona.fetchPreview(link));
+    }
+
+    case 'POST /api/zona':
+      return json(await zona.add(env, await body(request)));
+
     case 'GET /api/pages':
       return json({ pages: await blog.listPages(env) });
 
@@ -353,6 +366,15 @@ async function handleApi(request, env, url) {
           const r = await schedule.cancel(env, id);
           return r ? json(r) : fail('Agendamento não encontrado.', 404);
         }
+      }
+
+      const ep = pathname.match(/^\/api\/zona\/(\d+)$/);
+      if (ep && method === 'PUT') {
+        const e = await zona.update(env, Number(ep[1]), await body(request));
+        return e ? json(e) : fail('Edição não encontrada.', 404);
+      }
+      if (ep && method === 'DELETE') {
+        return (await zona.remove(env, Number(ep[1]))) ? json({ ok: true }) : fail('Edição não encontrada.', 404);
       }
 
       const pg = pathname.match(/^\/api\/pages\/([a-z-]+)$/);
@@ -450,10 +472,10 @@ async function handleMainSite(request, env, url) {
 
   if ((p === '/' && isSiteHost(url)) || p === '/inicio') {
     if (p === '/inicio' && isSiteHost(url)) return Response.redirect(`${url.origin}/`, 301);
-    const [games, articles, cols] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 1)]);
+    const [games, articles, cols, eps] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 1), zona.list(env, 1)]);
     const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
     const withLive = live ? await withLiveScore(live) : null;
-    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, latestColumn: cols[0] || null }));
+    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, latestColumn: cols[0] || null, latestEpisode: eps[0] || null }));
   }
 
   if (p === '/blog') return html(pages.blogIndexPage({ articles: await blog.listPublished(env), origin, home }));
@@ -479,7 +501,12 @@ async function handleMainSite(request, env, url) {
     return html(pages.columnPage({ columns, page, origin, admin, home }));
   }
 
-  const fixed = p.match(/^\/(sobre|zona-de-conforto)$/);
+  if (p === '/zona-de-conforto') {
+    const [episodes, page, admin] = await Promise.all([zona.list(env), blog.getPage(env, 'zona-de-conforto'), isLoggedIn(request, env)]);
+    return html(pages.zonaPage({ page, episodes, origin, admin, home }));
+  }
+
+  const fixed = p.match(/^\/(sobre)$/);
   if (fixed) {
     const [page, admin] = await Promise.all([blog.getPage(env, fixed[1]), isLoggedIn(request, env)]);
     return html(pages.staticPage({ page, slug: fixed[1], origin, admin, home }));

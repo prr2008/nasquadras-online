@@ -109,3 +109,12 @@
 .gdocs-code code { word-break: break-all; font-size: 12px; }
 .gdocs-tips { color: var(--muted); font-size: 13px; }
 .gdocs code { font-size: 13px; }
+
+/* Zona de Conforto */
+.ep-name { margin: 0; font-weight: 600; color: var(--text); }
+.warn-box { margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--warn); background: rgba(255, 194, 75, .08); color: var(--warn); font-size: 14px; }
+@media (max-width: 480px) {
+  .app-tabs { overflow-x: auto; scrollbar-width: none; }
+  .app-tabs::-webkit-scrollbar { display: none; }
+  .app-tabs a { white-space: nowrap; font-size: 13px; padding: 8px 6px; }
+}

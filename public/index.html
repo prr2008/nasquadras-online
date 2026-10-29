@@ -42,6 +42,7 @@
       <a href="#ao-vivo" data-view="live">Ao vivo</a>
       <a href="#blog" data-view="blog">Blog</a>
       <a href="#coluna" data-view="coluna">Coluna</a>
+      <a href="#zona" data-view="zona">Zona</a>
       <a href="#paginas" data-view="pages">Páginas</a>
       <a href="/inicio" target="_blank" rel="noopener" class="site-link">Ver site ↗</a>
     </nav>
@@ -279,6 +280,39 @@
       </form>
     </section>
 
+    <!-- ZONA DE CONFORTO (edições com a playlist do Spotify) -->
+    <section id="view-zona" class="view" hidden>
+      <div class="view-head"><h2>Zona de Conforto</h2></div>
+      <form id="ep-fetch" class="paste-row col-paste" autocomplete="off">
+        <input id="ep-url" type="url" inputmode="url" placeholder="Cole o link da playlist da edição no Spotify" aria-label="Link da playlist" required>
+        <button type="submit" id="ep-fetch-btn" class="primary small-btn">Buscar</button>
+      </form>
+      <p id="ep-error" class="error"></p>
+
+      <form id="ep-form" class="doc-form col-form" hidden autocomplete="off">
+        <div class="col-preview">
+          <div id="ep-img" class="cover-preview"><span>Sem capa</span></div>
+          <div class="col-fields">
+            <p id="ep-name" class="ep-name"></p>
+            <div class="row-2">
+              <label>Nº da edição <small>(opcional)</small><input id="ep-number" type="number" min="1" max="9999" inputmode="numeric"></label>
+              <label>Foi ao ar em<input id="ep-date" type="date"></label>
+            </div>
+          </div>
+        </div>
+        <p id="ep-private" class="warn-box" hidden>O Spotify não mostrou os dados desta playlist: ela provavelmente está <strong>privada</strong>. No app do Spotify, toque em ⋯ → <em>Tornar pública</em>; senão o player não toca para os visitantes do site.</p>
+        <label>Tema da edição <small>(opcional)</small><input id="ep-title" maxlength="140" placeholder="Ex.: 60 anos de Pet Sounds"></label>
+        <label>Resumo <small>(opcional)</small><textarea id="ep-summary" rows="3" maxlength="600" placeholder="Os blocos, os convidados, o que rolou no programa"></textarea></label>
+        <a id="ep-link" class="link small" target="_blank" rel="noopener"></a>
+        <div class="doc-actions">
+          <button type="button" id="ep-cancel" class="ghost">Cancelar</button>
+          <button type="submit" id="ep-save" class="primary">Adicionar edição</button>
+        </div>
+      </form>
+
+      <ul id="ep-list" class="doc-list col-list"></ul>
+    </section>
+
     <!-- COLUNA (links das colunas publicadas no JB) -->
     <section id="view-coluna" class="view" hidden>
       <div class="view-head"><h2>Coluna Nas Quadras</h2></div>
@@ -332,7 +366,7 @@
     </section>
 
     <footer class="foot">
-      <button id="changelog-open" type="button" class="link small">Novidades · v1.6</button>
+      <button id="changelog-open" type="button" class="link small">Novidades · v1.7</button>
       <button id="logout" type="button" class="link small">Sair</button>
     </footer>
   </main>

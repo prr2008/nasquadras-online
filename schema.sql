@@ -88,3 +88,18 @@ CREATE TABLE IF NOT EXISTS scheduled (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS scheduled_due ON scheduled (status, run_at);
+
+-- Zona de Conforto: edições do programa com a playlist do Spotify de cada uma.
+CREATE TABLE IF NOT EXISTS episodes (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  playlist_id   TEXT NOT NULL UNIQUE,       -- ID da playlist no Spotify
+  number        INTEGER,                    -- número da edição (opcional)
+  aired_at      INTEGER,                    -- data em que foi ao ar
+  title         TEXT NOT NULL DEFAULT '',   -- tema da edição (opcional)
+  summary       TEXT NOT NULL DEFAULT '',
+  playlist_name TEXT NOT NULL DEFAULT '',   -- nome da playlist no Spotify
+  image_url     TEXT,                       -- capa da playlist (Spotify)
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS episodes_by_date ON episodes (aired_at DESC);

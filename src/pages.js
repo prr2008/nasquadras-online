@@ -2,6 +2,7 @@
 
 import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL } from './site.js';
 import { CATEGORIES, PAGES, categorySlug, excerpt, readingMinutes } from './blog.js';
+import { episodeLabel } from './zona.js';
 
 const TZ = 'America/Sao_Paulo';
 const shortDate = (ms) => new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(ms)).replace('.', '');
@@ -38,7 +39,7 @@ const categoryNav = (active = '') => `<nav class="tabs cats" aria-label="Categor
 
 // ---------- Início ----------
 
-export function homePage({ games, articles, origin, home = '/', latestColumn = null }) {
+export function homePage({ games, articles, origin, home = '/', latestColumn = null, latestEpisode = null }) {
   const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
   const liveBlock = live ? `<section class="live-hero">
       <a href="/c/${esc(live.slug)}" class="live-hero-link">
@@ -78,7 +79,7 @@ export function homePage({ games, articles, origin, home = '/', latestColumn = n
         <a class="promo-card${latestColumn?.image_key ? ' has-img' : ''}" href="/coluna">
           ${latestColumn?.image_key ? `<img src="/m/${esc(latestColumn.image_key)}" alt="" loading="lazy">` : ''}
           <strong>Coluna Nas Quadras</strong><span>${latestColumn ? `Mais recente: ${esc(latestColumn.title)}` : 'No Jornal do Brasil'}</span></a>
-        <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>Música, cultura e esporte</span></a>
+        <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>${latestEpisode ? `Playlist mais recente: ${esc(episodeLabel(latestEpisode))}` : 'Música, cultura e esporte'}</span></a>
       </section>
       <section class="home-block follow">
         <h2>Siga</h2>
@@ -241,3 +242,40 @@ export function columnPage({ columns, page, origin, admin = false, home = '/' })
 }
 
 export { columnCard };
+
+// ---------- Zona de Conforto ----------
+
+function episodeCard(e) {
+  const id = esc(e.playlist_id);
+  return `<article class="episode" id="ep-${e.id}">
+    <header>
+      <span class="card-date">${esc(episodeLabel(e))}</span>
+      ${e.title ? `<h2>${esc(e.title)}</h2>` : ''}
+      ${e.summary ? `<p class="card-excerpt">${esc(e.summary)}</p>` : ''}
+    </header>
+    <iframe class="spotify" src="https://open.spotify.com/embed/playlist/${id}?utm_source=generator&amp;theme=0"
+      title="Playlist: ${esc(e.playlist_name || episodeLabel(e))}" loading="lazy"
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+    <a class="column-cta" href="https://open.spotify.com/playlist/${id}" target="_blank" rel="noopener">Abrir no Spotify ↗</a>
+  </article>`;
+}
+
+export function zonaPage({ page, episodes, origin, admin = false, home = '/' }) {
+  const intro = page?.body_html?.trim()
+    ? `<div class="prose column-intro">${page.body_html}</div>`
+    : '<p class="lede">Música, cultura e esporte. Às terças na rádio web Internova, com reprise aos sábados. Aqui ficam as playlists de cada edição.</p>';
+  return layout({
+    title: `${page?.title || 'Zona de Conforto'} · Nas Quadras`,
+    description: 'Zona de Conforto: música, cultura e esporte com Pedro Rodrigues. As playlists de cada edição do programa.',
+    url: `${origin}/zona-de-conforto`,
+    type: 'website',
+    nav: 'zona',
+    home,
+    body: `<h1 class="page-title">${esc(page?.title || 'Zona de Conforto')}</h1>
+      ${intro}
+      ${episodes.length
+        ? `<h2 class="section-title">Edições</h2><div class="episodes">${episodes.map(episodeCard).join('')}</div>`
+        : '<p class="empty">As playlists das edições vão aparecer aqui.</p>'}
+      ${admin ? '<p class="admin-note"><a href="/app#zona">Adicionar edição no app</a> · <a href="/app#paginas/zona-de-conforto">Editar apresentação</a></p>' : ''}`,
+  });
+}
