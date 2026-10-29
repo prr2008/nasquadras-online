@@ -1,6 +1,6 @@
 // Páginas do site principal: Início, Blog, artigo, categoria, páginas fixas, RSS e sitemap.
 
-import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL } from './site.js';
+import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL, SUBSTACK } from './site.js';
 import { CATEGORIES, PAGES, categorySlug, excerpt, readingMinutes } from './blog.js';
 import { episodeLabel } from './zona.js';
 
@@ -121,6 +121,7 @@ export function homePage({ games, articles, origin, home = '/', columns = [], la
       <section class="home-block promo">
         <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>${latestEpisode ? `Playlist mais recente: ${esc(episodeLabel(latestEpisode))}` : 'Música, cultura e esporte'}</span></a>
       </section>
+      ${newsletterBox()}
       <section class="home-block follow">
         <h2>Siga</h2>
         <ul>
@@ -158,6 +159,16 @@ function socialScripts(html) {
   return out.join('');
 }
 
+/** Caixa de inscrição na newsletter (formulário oficial do Substack). */
+export function newsletterBox({ title = 'Newsletter', text = 'Receba os textos, as coberturas e as playlists do Zona de Conforto no seu e-mail. É de graça.' } = {}) {
+  return `<section class="home-block newsletter" id="newsletter">
+    <h2>${esc(title)}</h2>
+    <p>${esc(text)}</p>
+    <iframe src="${SUBSTACK}/embed" title="Inscrição na newsletter de Pedro Rodrigues no Substack" loading="lazy" scrolling="no" frameborder="0"></iframe>
+    <a class="newsletter-link" href="${SUBSTACK}" target="_blank" rel="noopener">Ver as edições no Substack ↗</a>
+  </section>`;
+}
+
 export function articlePage({ a, origin, admin = false, related = [], home = '/' }) {
   const draft = a.status !== 'published';
   const when = a.published_at ? fmtDate(a.published_at) : 'Rascunho';
@@ -193,6 +204,7 @@ export function articlePage({ a, origin, admin = false, related = [], home = '/'
       ${admin ? `<p class="admin-note"><a href="/app#blog/${a.id}">Editar no app</a></p>` : ''}
     </article>
     ${socialScripts(a.body_html)}
+    ${draft ? '' : newsletterBox({ title: 'Gostou? Assine a newsletter' })}
     ${related.length ? `<section class="home-block"><header class="block-head"><h2>Leia também</h2></header><div class="cards">${related.map(articleCard).join('')}</div></section>` : ''}`,
   });
 }
@@ -215,7 +227,8 @@ export function staticPage({ page, slug, origin, admin = false, home = '/' }) {
       <h1 class="article-title">${esc(page.title)}</h1>
       <div class="article-body prose">${body}</div>
       ${admin ? `<p class="admin-note"><a href="/app#paginas/${slug}">Editar no app</a></p>` : ''}
-    </article>`,
+    </article>
+    ${slug === 'sobre' ? newsletterBox() : ''}`,
   });
 }
 

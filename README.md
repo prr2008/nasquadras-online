@@ -20,6 +20,7 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
 - **Hashtags fixas** (liga/desliga), aplicadas conforme a rede: no Threads, a 1ª vira o *tema* do post (`topic_tag`) e o texto sai limpo; no Bluesky, saem no post solto, no 1º post do fio e a partir do fim de jogo; no X, sempre; no site, nunca.
 - **Menções por rede** (*@ Menções*): apelidos que viram o perfil certo em cada rede (ou o nome, sem perfil). No Bluesky, menções a perfis existentes viram link.
 - **Card de link no Bluesky**: post sem foto/vídeo ganha a prévia do 1º link (oEmbed para o YouTube).
+- **Newsletter (Substack)**: caixa com o formulário oficial de inscrição (`SUBSTACK/embed`) no Início, no fim dos textos do blog e no Sobre; Substack nos links *Siga* e no rodapé. O Substack não tem API pública de publicação, então a newsletter é escrita lá.
 - **IndexNow** (Bing, Yandex, Seznam, Naver…): a cada 10 minutos, a rotina compara o banco com a última verificação e envia os endereços novos ou alterados (artigos, coberturas e posts novos, coluna, Zona, páginas fixas) para `api.indexnow.org`. A chave pública (`INDEXNOW_KEY`) fica em `/<chave>.txt`. O Crawler Hints da Cloudflare também está ligado.
 - **Novidades**: registro de versões em `public/CHANGELOG.md`, aberto pelo link *Novidades* no rodapé do app.
 - **Contadores** para os limites de cada rede (Threads 500, Bluesky 300). Acima de 300, o Bluesky recebe um **fio numerado** automaticamente.

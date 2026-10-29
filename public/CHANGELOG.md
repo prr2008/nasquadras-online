@@ -2,6 +2,11 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.14 — 29/10/2026
+
+- **Newsletter no site:** caixa de inscrição do Substack (oficial e gratuita) no Início, ao lado do Zona de Conforto, no fim de cada texto do blog e na página Sobre. Quem se inscreve entra direto na lista do Substack.
+- **Substack** nos links **Siga** e no rodapé.
+
 ## 1.13 — 29/10/2026
 
 - **Buscadores avisados na hora (IndexNow):** a cada 10 minutos, o app avisa o Bing (e Yandex, Seznam, Naver e outros) das páginas novas ou alteradas: textos do blog, coberturas e posts novos nelas, coluna, Zona de Conforto e Sobre. Nada muda no jeito de publicar. Na primeira vez, o site inteiro foi enviado.

@@ -152,7 +152,11 @@ export const SOCIAL = [
   ['Bluesky', 'https://bsky.app/profile/prr2008.bsky.social'],
   ['X', 'https://x.com/prr2008'],
   ['YouTube', 'https://www.youtube.com/@prr2008'],
+  ['Substack', 'https://prr2008.substack.com'],
 ];
+
+/** Newsletter no Substack: formulário oficial de inscrição (gratuita). */
+export const SUBSTACK = 'https://prr2008.substack.com';
 
 export function layout({ title, description = '', image = '', url = '', body, live = false, nav = 'coberturas', type = 'article', head = '', home = '/' }) {
   return `<!doctype html>
