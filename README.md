@@ -15,6 +15,7 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
 - **Agendamento** (botão *⏰ Agendar* no Ao vivo): escolha data e hora e se o post **abre a cobertura do jogo** (vira o 1º do fio no Threads e no Bluesky e cria a página no site), **responde no fio** ou sai solto. Uma rotina roda a cada minuto e publica os que venceram, em ordem. A lista *Agendados* permite editar, cancelar ou publicar agora. Marcando *X*, a versão para o X (até 280 caracteres) vai para a fila do **Buffer** no mesmo horário; cancelar ou editar no app também atualiza o Buffer.
 - **X pelo Buffer**: o destino *X* no compositor publica no X na hora, pela API do Buffer (modo "publicar agora"). Se o texto passar de 280 caracteres, aparece a *Versão para o X* para encurtar. Vale também para os agendados. O X recebe até 4 fotos ou 1 vídeo; não há fio no X (cada post sai solto).
 - **Zona de Conforto** (`/zona-de-conforto`): edições do programa com o player da playlist do Spotify. Na aba *Zona* do app, cola-se o link da playlist; número e data da edição são lidos do nome (oEmbed do Spotify).
+- **Spotify** (aba *Zona*): login PKCE (só `SPOTIFY_CLIENT_ID`, sem segredo); a partir da lista de músicas, busca cada faixa (com ranking e alternativas), cria a playlist pública (`POST /me/playlists` + `/items`) e publica a edição; importa as playlists antigas. Requer app no developer.spotify.com com o redirect `https://app.nasquadras.online/auth/spotify/callback`, dono Premium e o e-mail em *User Management*.
 - **Hashtags fixas** (liga/desliga), aplicadas conforme a rede: no Threads, a 1ª vira o *tema* do post (`topic_tag`) e o texto sai limpo; no Bluesky, saem no post solto, no 1º post do fio e a partir do fim de jogo; no X, sempre; no site, nunca.
 - **Menções por rede** (*@ Menções*): apelidos que viram o perfil certo em cada rede (ou o nome, sem perfil). No Bluesky, menções a perfis existentes viram link.
 - **Card de link no Bluesky**: post sem foto/vídeo ganha a prévia do 1º link (oEmbed para o YouTube).
@@ -95,6 +96,7 @@ src/schedule.js  posts agendados: cadastro e publicação pela rotina de cada mi
 src/buffer.js    Buffer (API GraphQL): fila do X
 src/gdocs.js     Google Docs: código de conexão e importação do documento
 src/zona.js      Zona de Conforto: edições e playlists do Spotify
+src/spotify.js   Spotify Web API: login PKCE, busca de faixas, criação de playlists
 src/coluna.js    coluna: leitura do link (Open Graph), cópia da foto e cadastro
 src/blog.js      blog e páginas fixas: banco D1 e limpeza do HTML do editor
 src/lnb.js       leitura dos dados de tempo real da LNB

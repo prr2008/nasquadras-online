@@ -10,6 +10,7 @@ import * as blog from './blog.js';
 import * as pages from './pages.js';
 import * as coluna from './coluna.js';
 import * as zona from './zona.js';
+import * as spotify from './spotify.js';
 import * as gdocs from './gdocs.js';
 import * as schedule from './schedule.js';
 import * as buffer from './buffer.js';
@@ -287,6 +288,42 @@ async function handleApi(request, env, url) {
     case 'POST /api/zona':
       return json(await zona.add(env, await body(request)));
 
+    // ---------- Spotify: nova edição a partir da lista ----------
+    case 'GET /api/spotify/status':
+      return json({ ...(await spotify.status(env)), redirectUri: spotify.redirectUri(origin) });
+
+    case 'POST /api/spotify/disconnect':
+      await spotify.disconnect(env);
+      return json({ ok: true });
+
+    case 'POST /api/spotify/match': {
+      const { lines = [] } = await body(request);
+      return json({ results: await spotify.matchLines(env, Array.isArray(lines) ? lines : String(lines).split('\n')) });
+    }
+
+    case 'POST /api/spotify/search': {
+      const { q = '' } = await body(request);
+      if (!String(q).trim()) return fail('Digite o que buscar.');
+      const p = spotify.parseLine(q);
+      const tracks = (await spotify.searchTracks(env, String(q).replace(/\s+[-–—]\s+/g, ' ')))
+        .map((t) => ({ ...t, score: Math.round(spotify.score(t, p) * 100) / 100 }));
+      return json({ tracks });
+    }
+
+    case 'POST /api/zona/create':
+      return json(await zona.createFromList(env, spotify, await body(request), canonical(env, url)));
+
+    case 'GET /api/spotify/zona-playlists': {
+      const [lists, eps] = await Promise.all([spotify.zonaPlaylists(env), zona.list(env)]);
+      const onSite = new Set(eps.map((e) => e.playlist_id));
+      return json({ playlists: lists.map((p) => ({ ...p, onSite: onSite.has(p.id), ...zona.parseName(p.name) })) });
+    }
+
+    case 'POST /api/zona/import': {
+      const { items = [] } = await body(request);
+      return json({ results: await zona.importPlaylists(env, spotify, items) });
+    }
+
     case 'GET /api/pages':
       return json({ pages: await blog.listPages(env) });
 
@@ -412,6 +449,27 @@ async function handleAuth(request, env, url) {
     } catch (err) {
       console.error('threads oauth callback:', err.message);
       return back(`threads=erro&msg=${encodeURIComponent(err.message.replace(/^Threads:\s*/, ''))}`);
+    }
+  }
+
+  if (url.pathname === '/auth/spotify/start') {
+    if (!(await isLoggedIn(request, env))) return Response.redirect(`${url.origin}/`, 302);
+    try {
+      return Response.redirect(await spotify.authorizeUrl(env, url.origin), 302);
+    } catch (err) {
+      return new Response(err.message, { status: 500 });
+    }
+  }
+
+  if (url.pathname === '/auth/spotify/callback') {
+    const back = (q) => Response.redirect(`${url.origin}/app#zona?spotify=${q}`, 302);
+    if (url.searchParams.get('error')) return back('cancelado');
+    try {
+      await spotify.handleCallback(env, url.origin, { code: url.searchParams.get('code'), state: url.searchParams.get('state') });
+      return back('ok');
+    } catch (err) {
+      console.error('spotify oauth callback:', err.message);
+      return back(`erro&msg=${encodeURIComponent(err.message.replace(/^Spotify:\s*/, ''))}`);
     }
   }
 

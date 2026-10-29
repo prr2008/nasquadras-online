@@ -46,7 +46,9 @@
     "THREADS_APP_ID": "1028301390289634",
     "BLUESKY_HANDLE": "prr2008.bsky.social",
     // Canal do X (@prr2008) no Buffer: os posts agendados para o X vão para lá.
-    "BUFFER_X_CHANNEL": "68d5bf2f64332ee3985c74c8"
+    "BUFFER_X_CHANNEL": "68d5bf2f64332ee3985c74c8",
+    // App "NasQuadras" no painel de desenvolvedores do Spotify (login PKCE, sem chave secreta).
+    "SPOTIFY_CLIENT_ID": "9257fefbffc4485a8c2aa032da2c8134"
   },
   // Não apaga variáveis criadas pelo painel quando o GitHub publica uma versão nova.
   "keep_vars": true,

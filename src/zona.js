@@ -121,3 +121,48 @@ export function episodeLabel(e) {
   return [e.number ? `Ep. ${e.number}` : '', e.aired_at ? DATE_FMT.format(e.aired_at) : ''].filter(Boolean).join(' · ')
     || e.playlist_name || 'Edição';
 }
+
+// ---------- Criar a edição a partir da lista (Spotify Web API) ----------
+
+const pad = (n) => String(n).padStart(2, '0');
+function shortDate(ms) {
+  const d = new Date(ms - 3 * 3600e3); // dia em Brasília
+  return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
+}
+
+/** Nome padrão: "Zona de Conforto · Ep. 6 · 26/05/2026". */
+export function defaultName({ number, aired_at }) {
+  return ['Zona de Conforto', number ? `Ep. ${number}` : '', aired_at ? shortDate(aired_at) : ''].filter(Boolean).join(' · ');
+}
+
+export function defaultDescription(e, siteUrl) {
+  const label = [e.number ? `Ep. ${e.number}` : '', e.aired_at ? shortDate(e.aired_at) : ''].filter(Boolean).join(', ');
+  const theme = e.title ? ` ${e.title}.` : '';
+  return `As músicas do Zona de Conforto${label ? ` (${label})` : ''}.${theme} Música, cultura e esporte com Pedro Rodrigues. ${siteUrl}/zona-de-conforto`;
+}
+
+/** Cria a playlist no Spotify e a edição no site, de uma vez. */
+export async function createFromList(env, spotify, input, siteUrl) {
+  const c = clean(input);
+  const uris = (Array.isArray(input.uris) ? input.uris : []).filter((u) => /^spotify:track:[A-Za-z0-9]{22}$/.test(u)).slice(0, 300);
+  const name = String(input.name || '').trim() || defaultName(c);
+  const pl = await spotify.createPlaylist(env, { name, description: defaultDescription(c, siteUrl), uris });
+  return add(env, { ...c, playlist_url: pl.url, playlist_name: name, image_url: input.image_url });
+}
+
+/** Torna públicas as playlists escolhidas e cadastra cada uma como edição. */
+export async function importPlaylists(env, spotify, items) {
+  const results = [];
+  for (const it of (Array.isArray(items) ? items : []).slice(0, 50)) {
+    try {
+      const id = playlistId(`spotify:playlist:${it.id}`);
+      if (!it.public) await spotify.makePublic(env, id);
+      const parsed = parseName(it.name);
+      const saved = await add(env, { playlist_url: `https://open.spotify.com/playlist/${id}`, playlist_name: it.name, image_url: it.image, ...parsed });
+      results.push({ id, ok: true, episode: saved });
+    } catch (err) {
+      results.push({ id: it.id, ok: false, error: err.message });
+    }
+  }
+  return results;
+}

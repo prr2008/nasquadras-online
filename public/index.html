@@ -283,6 +283,47 @@
     <!-- ZONA DE CONFORTO (edições com a playlist do Spotify) -->
     <section id="view-zona" class="view" hidden>
       <div class="view-head"><h2>Zona de Conforto</h2></div>
+
+      <!-- SPOTIFY -->
+      <div id="sp-bar" class="sp-bar">
+        <span id="sp-status">Spotify: verificando…</span>
+        <a id="sp-connect" class="primary small-btn sp-btn" href="/auth/spotify/start" hidden>Conectar Spotify</a>
+        <button id="sp-disconnect" type="button" class="link small" hidden>Desconectar</button>
+      </div>
+
+      <details id="ep-new" class="gdocs" open>
+        <summary><span>🎧 Nova edição a partir da lista de músicas</span></summary>
+        <div class="gdocs-body ep-new">
+          <div class="row-3">
+            <label>Nº da edição<input id="nw-number" type="number" min="1" max="9999" inputmode="numeric"></label>
+            <label>Foi ao ar em<input id="nw-date" type="date"></label>
+            <label>Tema <small>(opcional)</small><input id="nw-title" maxlength="140" placeholder="Ex.: 60 anos de Pet Sounds"></label>
+          </div>
+          <label>Nome da playlist<input id="nw-name" maxlength="100"></label>
+          <label>Músicas <small>(uma por linha: "Música - Artista" ou "Artista - Música")</small>
+            <textarea id="nw-lines" rows="8" placeholder="Moving - Supergrass&#10;Refazenda - Gilberto Gil&#10;Mr. Brightside - The Killers"></textarea></label>
+          <button id="nw-match" type="button" class="primary">Buscar músicas no Spotify</button>
+          <p id="nw-summary" class="sched-note"></p>
+          <ol id="trk-list" class="trk-list"></ol>
+          <div id="nw-final" hidden>
+            <label>Resumo da edição <small>(opcional, aparece no site)</small><textarea id="nw-summary-text" rows="2" maxlength="600"></textarea></label>
+            <label class="check"><input type="checkbox" id="nw-announce"> Divulgar no Threads e no Bluesky (link da edição no site)</label>
+            <button id="nw-create" type="button" class="primary">Criar playlist e publicar no site</button>
+          </div>
+        </div>
+      </details>
+
+      <details id="ep-import" class="gdocs">
+        <summary><span>📥 Importar playlists antigas do Spotify</span></summary>
+        <div class="gdocs-body">
+          <p>Lista as playlists da sua conta com "Zona de Conforto" no nome. As marcadas ficam públicas e entram no site como edições.</p>
+          <button id="imp-load" type="button" class="ghost small">Buscar minhas playlists</button>
+          <ul id="imp-list" class="imp-list"></ul>
+          <button id="imp-go" type="button" class="primary" hidden>Tornar públicas e adicionar ao site</button>
+        </div>
+      </details>
+
+      <h3 class="ep-sub">Adicionar uma playlist pelo link</h3>
       <form id="ep-fetch" class="paste-row col-paste" autocomplete="off">
         <input id="ep-url" type="url" inputmode="url" placeholder="Cole o link da playlist da edição no Spotify" aria-label="Link da playlist" required>
         <button type="submit" id="ep-fetch-btn" class="primary small-btn">Buscar</button>
@@ -366,7 +407,7 @@
     </section>
 
     <footer class="foot">
-      <button id="changelog-open" type="button" class="link small">Novidades · v1.7</button>
+      <button id="changelog-open" type="button" class="link small">Novidades · v1.8</button>
       <button id="logout" type="button" class="link small">Sair</button>
     </footer>
   </main>

@@ -118,3 +118,34 @@
   .app-tabs::-webkit-scrollbar { display: none; }
   .app-tabs a { white-space: nowrap; font-size: 13px; padding: 8px 6px; }
 }
+
+/* Spotify: nova edição a partir da lista */
+.sp-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); font-size: 14px; }
+.sp-bar #sp-status { flex: 1; }
+.sp-btn { text-decoration: none; display: inline-block; }
+.ep-new { display: grid; gap: 10px; }
+.ep-new label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+.ep-new input, .ep-new textarea { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 15px; }
+.ep-new textarea { min-height: 0; }
+.row-3 { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; }
+@media (max-width: 560px) { .row-3 { grid-template-columns: 1fr 1fr; } .row-3 label:last-child { grid-column: 1 / -1; } }
+.ep-sub { font-size: 15px; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+.trk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: trk; }
+.trk { display: grid; grid-template-columns: auto 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); }
+.trk.warn { border-color: var(--warn); }
+.trk.missing { border-color: var(--bad); }
+.trk.off { opacity: .45; }
+.trk img, .trk .ph { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; background: var(--panel); }
+.trk-info { display: grid; gap: 4px; min-width: 0; }
+.trk-line { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.trk-line b { color: var(--warn); font-weight: 600; }
+.trk.missing .trk-line b { color: var(--bad); }
+.trk select { width: 100%; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 13px; }
+.trk-more { display: flex; gap: 6px; }
+.trk-more input { flex: 1; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 13px; }
+.trk a.play { text-decoration: none; font-size: 18px; }
+.trk input[type=checkbox], .imp-list input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+.imp-list { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 6px; }
+.imp-list li { display: grid; grid-template-columns: auto 40px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); font-size: 14px; }
+.imp-list img, .imp-list .ph { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--panel); }
+.imp-list .meta { display: block; color: var(--muted); font-size: 12px; }

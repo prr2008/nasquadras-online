@@ -2,6 +2,17 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.8 — 29/10/2026
+
+Playlists do Zona de Conforto criadas pelo próprio app, direto no Spotify.
+
+- **Conectar Spotify** (aba **Zona**): login seguro na sua conta, sem senha nem chave secreta guardada.
+- **Nova edição a partir da lista:** informe número, data e tema, cole as músicas ("Música - Artista" ou "Artista - Música") e toque em **Buscar músicas no Spotify**. O nome da playlist se monta sozinho ("Zona de Conforto · Ep. 7 · 02/06/2026").
+- **Conferência faixa a faixa:** cada música vem com a melhor opção e alternativas (álbum e duração), botão para ouvir e campo para buscar outra versão. Versões ao vivo, remix e medley perdem prioridade; as duvidosas ficam com borda amarela e as não encontradas, com borda vermelha.
+- **Um botão faz o resto:** cria a playlist **pública** no seu Spotify, com descrição do programa e as faixas na ordem, e publica a edição no site. Divulgação opcional no Threads e no Bluesky.
+- **Importar playlists antigas:** lista as suas playlists com "Zona de Conforto" no nome; as marcadas ficam públicas e entram no site com a data lida do nome.
+- O TuneMyMusic e o conector do Claude deixam de ser necessários.
+
 ## 1.7 — 29/10/2026
 
 - **Zona de Conforto com as edições do programa:** a página do site lista as edições, das mais recentes para as mais antigas, cada uma com o **player do Spotify** tocável, número, data, tema e resumo. No computador, em duas colunas.

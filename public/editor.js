@@ -14,7 +14,9 @@ function show(view) {
 
 async function route() {
   if ($('#app').hidden) return; // ainda no login
-  const [section, arg] = location.hash.replace(/^#/, '').split('/');
+  const [path, qs] = location.hash.replace(/^#/, '').split('?');
+  const [section, arg] = path.split('/');
+  if (qs) handleReturn(new URLSearchParams(qs), section);
   try {
     if (section === 'blog') {
       show('blog');
@@ -24,6 +26,7 @@ async function route() {
     }
     if (section === 'zona') {
       show('zona');
+      spotifyStatus().catch(() => {});
       return listEpisodes();
     }
     if (section === 'coluna') {
@@ -685,6 +688,208 @@ $('#ep-list').addEventListener('click', async (e) => {
       listEpisodes();
     } catch (err) { NQ().toast(err.message); }
   }
+});
+
+// ---------- Spotify: nova edição a partir da lista ----------
+
+/** Volta do login do Spotify: #zona?spotify=ok|cancelado|erro&msg=… */
+function handleReturn(q, section) {
+  const sp = q.get('spotify');
+  if (sp === 'ok') NQ().toast('Spotify conectado!');
+  else if (sp === 'cancelado') NQ().toast('Conexão com o Spotify cancelada.');
+  else if (sp === 'erro') NQ().toast(`Spotify: ${q.get('msg') || 'não foi possível conectar.'}`, 8000);
+  history.replaceState(null, '', `#${section}`);
+  lastHash = location.hash;
+}
+
+let spConnected = false;
+async function spotifyStatus() {
+  const st = await NQ().api('/api/spotify/status');
+  spConnected = st.connected;
+  $('#sp-status').innerHTML = st.connected
+    ? `Spotify: conectado como <strong>${NQ().esc(st.name || '')}</strong>`
+    : st.configured ? 'Spotify: não conectado.' : 'Spotify: falta o SPOTIFY_CLIENT_ID na configuração.';
+  $('#sp-connect').hidden = st.connected || !st.configured;
+  $('#sp-disconnect').hidden = !st.connected;
+  $('#nw-match').disabled = !st.connected;
+  $('#imp-load').disabled = !st.connected;
+}
+
+$('#sp-disconnect').addEventListener('click', async () => {
+  if (!confirm('Desconectar o Spotify deste app? (As playlists e as edições do site continuam.)')) return;
+  await NQ().api('/api/spotify/disconnect', {});
+  spotifyStatus();
+});
+
+// Nome da playlist acompanha número e data até ser editado à mão.
+let nameTouched = false;
+const pad2 = (n) => String(n).padStart(2, '0');
+function autoName() {
+  if (nameTouched) return;
+  const n = $('#nw-number').value;
+  const d = $('#nw-date').value;
+  const date = d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : '';
+  $('#nw-name').value = ['Zona de Conforto', n ? `Ep. ${n}` : '', date].filter(Boolean).join(' · ');
+}
+['#nw-number', '#nw-date'].forEach((id) => $(id).addEventListener('input', autoName));
+$('#nw-name').addEventListener('input', () => { nameTouched = Boolean($('#nw-name').value.trim()); });
+autoName();
+
+let tracks = []; // [{ line, candidates, pick, on }]
+const mmss = (ms) => `${Math.floor(ms / 60000)}:${pad2(Math.round((ms % 60000) / 1000) % 60)}`;
+const WARN = 0.6;
+
+function renderTracks() {
+  const esc = NQ().esc;
+  $('#trk-list').innerHTML = tracks.map((t, i) => {
+    const c = t.candidates[t.pick];
+    const missing = !c;
+    const warn = c && c.score < WARN;
+    const flag = missing ? ' · <b>não encontrada</b>' : warn ? ' · <b>confira</b>' : '';
+    return `<li class="trk ${missing ? 'missing' : warn ? 'warn' : ''} ${t.on ? '' : 'off'}" data-i="${i}">
+      <input type="checkbox" data-act="on" ${t.on && c ? 'checked' : ''} ${c ? '' : 'disabled'} aria-label="Incluir">
+      ${c?.image ? `<img src="${esc(c.image)}" alt="">` : '<div class="ph"></div>'}
+      <div class="trk-info">
+        <span class="trk-line">${i + 1}. ${esc(t.line)}${flag}</span>
+        ${t.candidates.length ? `<select data-act="pick">${t.candidates.map((x, k) => `<option value="${k}" ${k === t.pick ? 'selected' : ''}>${esc(x.name)} — ${esc(x.artists)} · ${esc(x.album)} · ${mmss(x.duration_ms)}</option>`).join('')}</select>` : ''}
+        <div class="trk-more"><input placeholder="Buscar outra versão" value="" data-act="q"><button type="button" class="ghost small" data-act="search">Buscar</button></div>
+      </div>
+      ${c ? `<a class="play" href="${esc(c.url)}" target="_blank" rel="noopener" title="Ouvir no Spotify">▶</a>` : '<span></span>'}
+    </li>`;
+  }).join('');
+  const ok = tracks.filter((t) => t.on && t.candidates[t.pick]).length;
+  const warns = tracks.filter((t) => t.candidates[t.pick] && t.candidates[t.pick].score < WARN).length;
+  const miss = tracks.filter((t) => !t.candidates[t.pick]).length;
+  $('#nw-summary').textContent = tracks.length
+    ? `${ok} de ${tracks.length} músicas selecionadas.${warns ? ` ${warns} para conferir (borda amarela).` : ''}${miss ? ` ${miss} não encontradas: busque outra versão ou siga sem elas.` : ''}`
+    : '';
+  $('#nw-final').hidden = !ok;
+  $('#nw-create').textContent = `Criar playlist com ${ok} músicas e publicar no site`;
+}
+
+$('#nw-match').addEventListener('click', async () => {
+  const lines = $('#nw-lines').value.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return NQ().toast('Cole a lista de músicas.');
+  const btn = $('#nw-match');
+  btn.disabled = true;
+  btn.textContent = `Buscando ${lines.length} músicas…`;
+  try {
+    const { results } = await NQ().api('/api/spotify/match', { lines });
+    tracks = results.map((r) => ({ line: r.line, candidates: r.candidates || [], pick: 0, on: Boolean(r.candidates?.length) }));
+    renderTracks();
+  } catch (err) { NQ().toast(err.message, 6000); } finally {
+    btn.disabled = !spConnected;
+    btn.textContent = 'Buscar músicas no Spotify';
+  }
+});
+
+$('#trk-list').addEventListener('change', (e) => {
+  const li = e.target.closest('li');
+  if (!li) return;
+  const t = tracks[Number(li.dataset.i)];
+  const act = e.target.dataset.act;
+  if (act !== 'pick' && act !== 'on') return; // o campo de busca não redesenha a lista
+  if (act === 'pick') t.pick = Number(e.target.value);
+  if (act === 'on') t.on = e.target.checked;
+  renderTracks();
+});
+
+async function searchAgain(li) {
+  const t = tracks[Number(li.dataset.i)];
+  const q = li.querySelector('[data-act=q]').value.trim() || t.line;
+  try {
+    const { tracks: found } = await NQ().api('/api/spotify/search', { q });
+    if (!found.length) return NQ().toast('Nada encontrado com essa busca.');
+    t.candidates = found.sort((a, b) => b.score - a.score);
+    t.pick = 0;
+    t.on = true;
+    renderTracks();
+  } catch (err) { NQ().toast(err.message); }
+}
+$('#trk-list').addEventListener('click', (e) => {
+  if (e.target.dataset.act === 'search') searchAgain(e.target.closest('li'));
+});
+$('#trk-list').addEventListener('keydown', (e) => {
+  if (e.target.dataset.act === 'q' && e.key === 'Enter') { e.preventDefault(); searchAgain(e.target.closest('li')); }
+});
+
+$('#nw-create').addEventListener('click', async () => {
+  const chosen = tracks.filter((t) => t.on && t.candidates[t.pick]).map((t) => t.candidates[t.pick]);
+  const name = $('#nw-name').value.trim();
+  if (!name) return NQ().toast('Dê um nome à playlist.');
+  if (!confirm(`Criar a playlist pública "${name}" com ${chosen.length} músicas no seu Spotify e publicar a edição no site?`)) return;
+  const btn = $('#nw-create');
+  btn.disabled = true;
+  btn.textContent = 'Criando…';
+  const date = $('#nw-date').value;
+  try {
+    const ep = await NQ().api('/api/zona/create', {
+      name,
+      number: $('#nw-number').value,
+      aired_at: date ? fromDateInput(date) : null,
+      title: $('#nw-title').value.trim(),
+      summary: $('#nw-summary-text').value.trim(),
+      uris: chosen.map((c) => c.uri),
+      image_url: chosen[0]?.imageLarge || null,
+    });
+    NQ().toast('Playlist criada e edição publicada no site!', 5000);
+    if ($('#nw-announce').checked) {
+      await announceText(`🎧 As músicas do ${name.replace(/^Zona de Conforto/, 'Zona de Conforto')}${$('#nw-title').value.trim() ? ` — ${$('#nw-title').value.trim()}` : ''}\n\n${siteOrigin()}/zona-de-conforto#ep-${ep.id}`);
+    }
+    tracks = [];
+    renderTracks();
+    for (const id of ['#nw-number', '#nw-date', '#nw-title', '#nw-lines', '#nw-summary-text']) $(id).value = '';
+    nameTouched = false;
+    autoName();
+    listEpisodes();
+  } catch (err) {
+    NQ().toast(err.message, 8000);
+  } finally {
+    btn.disabled = false;
+    renderTracks();
+  }
+});
+
+// ---------- Importar playlists antigas ----------
+
+let importable = [];
+$('#imp-load').addEventListener('click', async () => {
+  const btn = $('#imp-load');
+  btn.disabled = true;
+  btn.textContent = 'Buscando…';
+  try {
+    const { playlists } = await NQ().api('/api/spotify/zona-playlists');
+    importable = playlists;
+    const esc = NQ().esc;
+    $('#imp-list').innerHTML = playlists.length ? playlists.map((p, i) => `
+      <li>
+        <input type="checkbox" data-i="${i}" ${p.onSite ? 'disabled' : 'checked'} aria-label="Importar">
+        ${p.image ? `<img src="${esc(p.image)}" alt="">` : '<div class="ph"></div>'}
+        <div><strong>${esc(p.name)}</strong>
+          <span class="meta">${p.onSite ? 'Já está no site' : p.public ? 'Pública' : 'Privada (vai ficar pública)'}${p.total != null ? ` · ${p.total} músicas` : ''} · ${p.aired_at ? `data: ${fmtDate(p.aired_at)}` : 'sem data no nome (dá para pôr depois em Editar)'}${p.number ? ` · Ep. ${p.number}` : ''}</span></div>
+      </li>`).join('') : '<li>Nenhuma playlist com "Zona de Conforto" no nome.</li>';
+    $('#imp-go').hidden = !playlists.some((p) => !p.onSite);
+  } catch (err) { NQ().toast(err.message, 6000); } finally {
+    btn.disabled = !spConnected;
+    btn.textContent = 'Buscar minhas playlists';
+  }
+});
+
+$('#imp-go').addEventListener('click', async () => {
+  const items = [...document.querySelectorAll('#imp-list input:checked:not(:disabled)')].map((c) => importable[Number(c.dataset.i)]);
+  if (!items.length) return NQ().toast('Marque as playlists que quer importar.');
+  const priv = items.filter((p) => !p.public).length;
+  if (!confirm(`Adicionar ${items.length} ${items.length === 1 ? 'edição' : 'edições'} ao site?${priv ? ` ${priv} ${priv === 1 ? 'playlist privada vai ficar pública' : 'playlists privadas vão ficar públicas'} no Spotify.` : ''}`)) return;
+  const btn = $('#imp-go');
+  btn.disabled = true;
+  try {
+    const { results } = await NQ().api('/api/zona/import', { items });
+    const ok = results.filter((r) => r.ok).length;
+    const bad = results.filter((r) => !r.ok);
+    NQ().toast(`${ok} ${ok === 1 ? 'edição adicionada' : 'edições adicionadas'} ao site.${bad.length ? ` Falharam: ${bad.map((b) => b.error).join('; ')}` : ''}`, 7000);
+    $('#imp-load').click();
+    listEpisodes();
+  } catch (err) { NQ().toast(err.message, 6000); } finally { btn.disabled = false; }
 });
 
 // Primeira exibição (se o login já estiver feito).
