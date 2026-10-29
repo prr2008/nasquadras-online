@@ -2,6 +2,13 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.12 — 29/10/2026
+
+- **Site no endereço principal:** o site saiu do Squarespace e agora responde em **nasquadras.online** (o **www** redireciona para lá). O app continua em **app.nasquadras.online**.
+- Links oficiais (Google, RSS, mapa do site, compartilhamentos e divulgações) passam a usar nasquadras.online.
+- O botão **Ver site** do app abre nasquadras.online; quem acessar nasquadras.online/app é levado ao app.
+- E-mail do domínio (iCloud) não foi alterado.
+
 ## 1.11 — 29/10/2026
 
 - **Audiência do site com o Cloudflare Web Analytics** (gratuito e sem cookies, então sem faixa de consentimento): visitas, páginas mais lidas, de onde vêm os leitores, país, dispositivo e velocidade de carregamento. Medido só nas páginas públicas: o uso do app não entra na conta. Painel em Cloudflare → Analytics → Web analytics.

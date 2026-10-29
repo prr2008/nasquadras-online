@@ -13,10 +13,12 @@
     "run_worker_first": true
   },
 
-  // Endereços próprios. O domínio principal (nasquadras.online) entra aqui
-  // quando o site sair do Squarespace.
+  // Endereços próprios: o site em nasquadras.online (www redireciona para lá)
+  // e o app em app.nasquadras.online.
   "routes": [
-    { "pattern": "app.nasquadras.online", "custom_domain": true }
+    { "pattern": "app.nasquadras.online", "custom_domain": true },
+    { "pattern": "nasquadras.online", "custom_domain": true },
+    { "pattern": "www.nasquadras.online", "custom_domain": true }
   ],
   // Mantém também o endereço nasquadras-online.<conta>.workers.dev (com rotas
   // configuradas, a Cloudflare o desliga se isto não estiver explícito).
@@ -48,6 +50,8 @@
     // Canal do X (@prr2008) no Buffer: os posts agendados para o X vão para lá.
     "BUFFER_X_CHANNEL": "68d5bf2f64332ee3985c74c8",
     // App "NasQuadras" no painel de desenvolvedores do Spotify (login PKCE, sem chave secreta).
+    // Endereço oficial do site: links canônicos, RSS, sitemap e divulgações.
+    "SITE_URL": "https://nasquadras.online",
     "SPOTIFY_CLIENT_ID": "9257fefbffc4485a8c2aa032da2c8134"
   },
   // Não apaga variáveis criadas pelo painel quando o GitHub publica uma versão nova.

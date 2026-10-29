@@ -615,6 +615,8 @@ export default {
         return Response.redirect(`https://nasquadras.online${url.pathname}${url.search}`, 301);
       }
       if (url.pathname === '/c' || url.pathname.startsWith('/c/')) return await handleSite(request, env, url);
+      // No domínio do site, o app fica no endereço próprio dele.
+      if (isSiteHost(url) && url.pathname === '/app') return Response.redirect('https://app.nasquadras.online/', 302);
       if (url.pathname === '/app') return env.ASSETS.fetch(new Request(new URL('/', url), request));
       if (request.method === 'GET' && !url.pathname.startsWith('/api/')) {
         const page = await handleMainSite(request, env, url);
