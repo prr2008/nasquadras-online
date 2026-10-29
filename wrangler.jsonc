@@ -55,6 +55,9 @@
     "INDEXNOW_KEY": "c5ad33bc921b529e423874d4e2b8514d",
     // Caixa "Apoie" no site: Ko-fi e Pix (a chave Pix aparece para os leitores; não é segredo).
     "KOFI_URL": "https://ko-fi.com/prr2008",
+    "PIX_KEY": "96e914ea-c560-400b-b10d-dbe4fdc1cd0c",
+    "PIX_NAME": "Pedro Rodrigues",
+    "PIX_CITY": "Rio de Janeiro",
     // App "NasQuadras" no painel de desenvolvedores do Spotify (login PKCE, sem chave secreta).
     "SPOTIFY_CLIENT_ID": "9257fefbffc4485a8c2aa032da2c8134"
   },
