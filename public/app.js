@@ -204,9 +204,29 @@ $('#reset-game').addEventListener('click', () => {
   renderGame();
 });
 
-function scoreLine() {
+// Fim do período: "Fim do 1º quarto", "Intervalo", "Fim do 3º quarto"…
+const END_LABEL = { '1Q': 'Fim do 1º quarto', '2Q': 'Intervalo', INT: 'Intervalo', '3Q': 'Fim do 3º quarto', '4Q': 'Fim do 4º quarto', OT: 'Fim da prorrogação', FINAL: 'Final' };
+
+/** Relógio da LNB zerado com o jogo em andamento = o período acabou. */
+function periodEnded() {
+  const g = state.lnbGame;
+  return Boolean(state.lnb && g && g.status === 'live' && /^0?0:00$/.test(g.clock || ''));
+}
+
+/**
+ * Situação do jogo para o placar: com a LNB, mostra o relógio durante o
+ * quarto ("1º quarto · 05:32") e "Fim do 1º quarto"/"Intervalo" no fim.
+ */
+function periodText({ ended = periodEnded() } = {}) {
   const g = state.game;
-  return `🏀 ${g.away || 'Mandante'} ${g.sa} x ${g.sh} ${g.home || 'Visitante'} | ${PERIOD_LABEL[g.period]}`;
+  if (ended || g.period === 'INT' || g.period === 'FINAL') return END_LABEL[g.period];
+  const clock = state.lnb && state.lnbGame?.status === 'live' && state.lnbGame.clock ? ` · ${state.lnbGame.clock}` : '';
+  return `${PERIOD_LABEL[g.period]}${clock}`;
+}
+
+function scoreLine(opts) {
+  const g = state.game;
+  return `🏀 ${g.away || 'Mandante'} ${g.sa} x ${g.sh} ${g.home || 'Visitante'} | ${periodText(opts)}`;
 }
 
 function insertAtCursor(snippet) {
@@ -226,7 +246,8 @@ $('#insert-score').addEventListener('click', () => insertAtCursor(`${scoreLine()
 $('#templates').addEventListener('click', (e) => {
   let t = e.target.dataset.t;
   if (!t) return;
-  if (t === '{fimq}') t = `Fim do ${PERIOD_LABEL[state.game.period]}.\n${scoreLine()}\n`;
+  // Fim do quarto: placar com "Fim do Nº quarto"/"Intervalo" e, com a LNB, a parcial do quarto.
+  if (t === '{fimq}') t = `${scoreLine({ ended: true })}\n${state.lnbGame ? `\n${lnbSnippet('quarto')}` : ''}`;
   if (t === '{final}') {
     state.game.period = 'FINAL'; renderGame();
     t = `FIM DE JOGO!\n${scoreLine()}\n`;
@@ -388,13 +409,18 @@ function lnbSnippet(kind) {
       return parts.length ? `🏆 Cestinhas: ${parts.join(' e ')}\n` : '';
     }
     case 'destaques': {
+      // O mesmo jogador liderando mais de uma estatística aparece uma vez só:
+      // "Vini Chagas 27 pts e 9 reb · Vithinho 8 ast".
       const line = (side, short) => {
         const L = g.leaders[side];
-        const bits = [
-          L.pts[0] && `${L.pts[0].name} ${L.pts[0].value} pts`,
-          L.reb[0] && `${L.reb[0].name} ${L.reb[0].value} reb`,
-          L.ast[0] && `${L.ast[0].name} ${L.ast[0].value} ast`,
-        ].filter(Boolean);
+        const byPlayer = new Map();
+        for (const [key, unit] of [['pts', 'pts'], ['reb', 'reb'], ['ast', 'ast']]) {
+          const p = L[key][0];
+          if (!p) continue;
+          if (!byPlayer.has(p.name)) byPlayer.set(p.name, []);
+          byPlayer.get(p.name).push(`${p.value} ${unit}`);
+        }
+        const bits = [...byPlayer].map(([name, stats]) => `${name} ${stats.length > 1 ? `${stats.slice(0, -1).join(', ')} e ${stats.at(-1)}` : stats[0]}`);
         return `${short}: ${bits.join(' · ')}`;
       };
       return `⭐ Destaques\n${line('home', H)}\n${line('away', A)}\n`;
@@ -435,26 +461,51 @@ autoTags.checked = store.get('autoTags', true);
 tagsInput.addEventListener('input', () => { store.set('tags', tagsInput.value); onTextChange(); });
 autoTags.addEventListener('change', () => { store.set('autoTags', autoTags.checked); onTextChange(); });
 
+// O texto do post e as hashtags fixas vão separados: o servidor monta a
+// versão de cada rede (tema no Threads, hashtags no Bluesky só no começo do
+// fio e no fim de jogo, site sem hashtags). finalText() é a versão completa,
+// usada no X e no botão Copiar.
+function bodyText() {
+  return $('#text').value.trim();
+}
+
+function tagsValue() {
+  return autoTags.checked ? tagsInput.value.trim() : '';
+}
+
 function finalText() {
-  const body = $('#text').value.trim();
-  const tags = tagsInput.value.trim();
-  return autoTags.checked && tags ? `${body}\n\n${tags}`.trim() : body;
+  const body = bodyText();
+  const tags = tagsValue();
+  return tags ? `${body}\n\n${tags}`.trim() : body;
+}
+
+/** Fim de jogo: a partir daqui o Bluesky volta a receber as hashtags. */
+function isFinal(body = bodyText()) {
+  return state.game.period === 'FINAL' || /FIM DE JOGO/i.test(body);
+}
+
+/** Texto que o Bluesky vai receber (para o contador). */
+function blueskyText() {
+  const cov = state.status?.coverage;
+  const first = !threadOn() || !(cov?.bluesky?.count);
+  return first || isFinal() ? finalText() : bodyText();
 }
 
 function onTextChange() {
   store.set('draft', $('#text').value);
-  const n = glen(finalText());
+  const n = glen(bodyText());
+  const nb = glen(blueskyText());
   const ct = $('#count-threads');
   ct.textContent = `Threads ${n}/${THREADS_MAX}`;
   ct.className = `count ${n > THREADS_MAX ? 'over' : n > THREADS_MAX - 40 ? 'near' : ''}`;
   const cb = $('#count-bluesky');
-  if (n > BLUESKY_MAX) {
-    const parts = Math.ceil(n / (BLUESKY_MAX - 20));
-    cb.textContent = `Bluesky ${n}/${BLUESKY_MAX} · fio de ~${parts}`;
+  if (nb > BLUESKY_MAX) {
+    const parts = Math.ceil(nb / (BLUESKY_MAX - 20));
+    cb.textContent = `Bluesky ${nb}/${BLUESKY_MAX} · fio de ~${parts}`;
     cb.className = 'count thread';
   } else {
-    cb.textContent = `Bluesky ${n}/${BLUESKY_MAX}`;
-    cb.className = `count ${n > BLUESKY_MAX - 30 ? 'near' : ''}`;
+    cb.textContent = `Bluesky ${nb}/${BLUESKY_MAX}`;
+    cb.className = `count ${nb > BLUESKY_MAX - 30 ? 'near' : ''}`;
   }
   const nx = xLength(xOn() ? xText() : finalText());
   const cx = $('#count-x');
@@ -556,7 +607,7 @@ $('#text').addEventListener('input', onTextChange);
 
 function renderWarnings() {
   const w = [];
-  const n = glen(finalText());
+  const n = glen(bodyText());
   const toThreads = $('#t-threads').checked;
   const toBsky = $('#t-bluesky').checked;
   const videos = state.media.filter((m) => m.kind === 'video').length;
@@ -739,14 +790,14 @@ async function waitThreads(ids, onTick) {
   throw new Error('Threads demorou demais para processar a mídia.');
 }
 
-async function postThreads(text, media, step, thread) {
+async function postThreads(text, media, step, thread, tags = '') {
   step(thread ? 'Respondendo no fio…' : 'Criando post…');
-  const r = await api('/api/threads/containers', { text, media, thread });
+  const r = await api('/api/threads/containers', { text, tags, media, thread });
   let containerId = r.containerId;
   if (r.itemIds.length) {
     step('Processando mídias…');
     await waitThreads(r.itemIds);
-    containerId = (await api('/api/threads/carousel', { text, itemIds: r.itemIds, thread })).containerId;
+    containerId = (await api('/api/threads/carousel', { text, tags, itemIds: r.itemIds, thread })).containerId;
   }
   step(media.some((m) => m.kind === 'video') ? 'Processando vídeo…' : 'Preparando…');
   await waitThreads([containerId]);
@@ -768,7 +819,9 @@ function progressRow(name) {
 
 $('#publish').addEventListener('click', async () => {
   if (state.busy) return;
-  const text = finalText();
+  const text = bodyText();
+  const tags = tagsValue();
+  const final = isFinal(text);
   const toThreads = $('#t-threads').checked;
   const toBsky = $('#t-bluesky').checked;
   // O site recebe o post só com uma cobertura ativa (cada cobertura é uma página).
@@ -786,7 +839,7 @@ $('#publish').addEventListener('click', async () => {
   state.busy = true;
   $('#publish').disabled = true;
   $('#progress').innerHTML = '';
-  const result = { text };
+  const result = { text: finalText() };
   const jobs = [];
 
   const inThread = threadOn();
@@ -794,14 +847,14 @@ $('#publish').addEventListener('click', async () => {
 
   if (toThreads) {
     const row = progressRow('Threads');
-    jobs.push(postThreads(text, media, row.set, threadsInThread)
+    jobs.push(postThreads(text, media, row.set, threadsInThread, tags)
       .then((r) => { row.ok(r.url); result.threads = r.url || 'ok'; })
       .catch((err) => { row.bad(err.message); result.threadsError = err.message; }));
   }
   if (toBsky) {
     const row = progressRow('Bluesky');
     row.set(media.length ? 'Enviando mídia…' : 'Publicando…');
-    jobs.push(api('/api/bluesky/post', { text, media, thread: inThread })
+    jobs.push(api('/api/bluesky/post', { text, tags, final, media, thread: inThread })
       .then((r) => { row.ok(r.url); result.bluesky = r.url; if (r.note) toast(r.note); })
       .catch((err) => { row.bad(err.message); result.blueskyError = err.message; }));
   }
@@ -834,7 +887,7 @@ $('#publish').addEventListener('click', async () => {
     if (inThread) refreshThread().catch(() => {});
   }
   if (anyOk && !anyFail) {
-    lastPublishedText = text;
+    lastPublishedText = result.text;
     $('#text').value = '';
     state.media = [];
     renderMedia();
@@ -862,7 +915,7 @@ function renderHistory(items = []) {
 // Funções compartilhadas com o editor do blog (editor.js).
 window.NQ = {
   api, toast, esc, compressImage, postThreads, threadOn, state, lnbRefresh, copyText,
-  finalText, xLength, X_MAX, glen, xOn, xText, renderX, resetX, renderMedia, renderWarnings, onTextChange, refreshThread, renderHistory,
+  finalText, bodyText, tagsValue, xLength, X_MAX, glen, xOn, xText, renderX, resetX, renderMedia, renderWarnings, onTextChange, refreshThread, renderHistory,
 };
 
 // ---------- Início ----------
@@ -902,3 +955,77 @@ for (const id of ['#text', '#x-text']) {
     }
   });
 }
+
+
+// ---------- Menções por rede ----------
+// O mesmo @ vale numa rede e não na outra (ex.: @nbb existe no Threads e no X,
+// mas não no Bluesky). Cada apelido aponta para o perfil de cada rede; sem
+// perfil naquela rede, sai só o nome.
+function mentionRow(m = {}) {
+  return `<div class="mention-row">
+    <input data-f="key" placeholder="apelido" value="${esc(m.key || '')}" aria-label="Apelido (o que você digita depois do @)">
+    <input data-f="name" placeholder="Nome" value="${esc(m.name || '')}" aria-label="Nome por extenso">
+    <input data-f="threads" placeholder="Threads" value="${esc(m.threads || '')}" aria-label="Perfil no Threads">
+    <input data-f="bluesky" placeholder="Bluesky" value="${esc(m.bluesky || '')}" aria-label="Perfil no Bluesky (ex.: fulano.bsky.social)">
+    <input data-f="x" placeholder="X" value="${esc(m.x || '')}" aria-label="Perfil no X">
+    <button type="button" class="link small danger" data-rm aria-label="Remover">×</button>
+  </div>`;
+}
+
+$('#mentions-open').addEventListener('click', async () => {
+  let list = [];
+  try { list = (await api('/api/mentions')).mentions; } catch (err) { return toast(err.message); }
+  openDialog('Menções por rede', `
+    <p class="small" style="color:var(--muted);margin-top:0">Escreva <strong>@apelido</strong> no post e cada rede recebe o perfil certo. Sem perfil numa rede, sai o nome (ex.: "NBB"). Perfis sem o @.</p>
+    <div class="mention-head"><span>Apelido</span><span>Nome</span><span>Threads</span><span>Bluesky</span><span>X</span><span></span></div>
+    <div id="mention-rows">${(list.length ? list : [{}]).map(mentionRow).join('')}</div>
+    <div class="mention-actions">
+      <button type="button" id="mention-add" class="ghost small">＋ Adicionar</button>
+      <button type="button" id="mention-save" class="primary small-btn">Salvar</button>
+    </div>`);
+  $('#account-dialog').classList.add('wide');
+  $('#account-dialog').addEventListener('close', () => $('#account-dialog').classList.remove('wide'), { once: true });
+  $('#mention-add').onclick = () => $('#mention-rows').insertAdjacentHTML('beforeend', mentionRow());
+  $('#mention-rows').onclick = (e) => { if (e.target.closest('[data-rm]')) e.target.closest('.mention-row').remove(); };
+  $('#mention-save').onclick = async () => {
+    const rows = [...document.querySelectorAll('#mention-rows .mention-row')].map((r) => Object.fromEntries(
+      [...r.querySelectorAll('input')].map((i) => [i.dataset.f, i.value.trim()]),
+    )).filter((m) => m.key);
+    try {
+      const { mentions } = await api('/api/mentions', { mentions: rows }, 'PUT');
+      toast(`${mentions.length} ${mentions.length === 1 ? 'menção salva' : 'menções salvas'}.`);
+      $('#account-dialog').close();
+    } catch (err) { toast(err.message); }
+  };
+});
+
+
+// ---------- Novidades (CHANGELOG.md) ----------
+function renderMarkdown(md) {
+  const inline = (t) => esc(t)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+  let html = '';
+  let inList = false;
+  for (const line of md.split('\n')) {
+    if (/^- /.test(line)) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += `<li>${inline(line.slice(2))}</li>`;
+      continue;
+    }
+    if (inList) { html += '</ul>'; inList = false; }
+    if (/^## /.test(line)) html += `<h3>${inline(line.slice(3))}</h3>`;
+    else if (/^# /.test(line)) continue; // o título já está no diálogo
+    else if (line.trim()) html += `<p>${inline(line)}</p>`;
+  }
+  return html + (inList ? '</ul>' : '');
+}
+
+$('#changelog-open').addEventListener('click', async () => {
+  try {
+    const md = await (await fetch('/CHANGELOG.md', { cache: 'no-store' })).text();
+    openDialog('Novidades do Nas Quadras', `<div class="changelog">${renderMarkdown(md)}</div>`);
+    $('#account-dialog').classList.add('wide');
+    $('#account-dialog').addEventListener('close', () => $('#account-dialog').classList.remove('wide'), { once: true });
+  } catch { toast('Não consegui abrir as novidades.'); }
+});

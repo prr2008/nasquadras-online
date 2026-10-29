@@ -9,6 +9,7 @@ import * as coverage from './coverage.js';
 import * as site from './site.js';
 import * as buffer from './buffer.js';
 import { graphemeLength } from './text.js';
+import { applyMentions, compose, getMentions } from './compose.js';
 
 const KEY_RE = /^[0-9]{13}-[0-9a-f-]{36}\.(jpg|png|webp|gif|mp4|mov|webm)$/;
 const THREAD_MODES = new Set(['start', 'reply', 'none']);
@@ -49,7 +50,8 @@ function validate(input, origin) {
   const text = String(input.text || '').trim();
   const media = cleanMedia(input.media);
   const t = input.targets || {};
-  const targets = { threads: Boolean(t.threads), bluesky: Boolean(t.bluesky), site: Boolean(t.site) };
+  // As hashtags fixas vão junto, para cada rede montar o seu texto no horário.
+  const targets = { threads: Boolean(t.threads), bluesky: Boolean(t.bluesky), site: Boolean(t.site), tags: String(t.tags || '').slice(0, 200) };
   const xText = input.x && typeof input.x.text === 'string' ? input.x.text.trim() : null;
   if (!targets.threads && !targets.bluesky && !targets.site && xText == null) throw new Error('Escolha pelo menos um destino.');
   if (!text && !media.length) throw new Error('Escreva algo ou anexe uma mídia.');
@@ -73,7 +75,8 @@ function validate(input, origin) {
 
 async function sendToBuffer(env, v) {
   if (v.x_text == null) return null;
-  return buffer.schedulePost(env, { text: v.x_text, dueAt: v.run_at, media: withUrls(v.origin, v.media) });
+  const text = applyMentions(v.x_text, 'x', await getMentions(env));
+  return buffer.schedulePost(env, { text, dueAt: v.run_at, media: withUrls(v.origin, v.media) });
 }
 
 export async function create(env, input, origin) {
@@ -150,8 +153,8 @@ export async function referencedKeys(env) {
 
 // ---------- Publicação ----------
 
-async function threadsPost(env, text, media, replyToId) {
-  let { containerId, itemIds } = await threads.createContainers(env, { text, media, replyToId });
+async function threadsPost(env, text, media, replyToId, topicTag) {
+  let { containerId, itemIds } = await threads.createContainers(env, { text, media, replyToId, topicTag });
   const wait = async (ids, maxTries) => {
     for (let i = 0; i < maxTries; i++) {
       const st = await threads.containerStatus(env, ids);
@@ -164,7 +167,7 @@ async function threadsPost(env, text, media, replyToId) {
   };
   if (itemIds.length) {
     await wait(itemIds, 60);
-    containerId = (await threads.createCarousel(env, { text, itemIds, replyToId })).containerId;
+    containerId = (await threads.createCarousel(env, { text, itemIds, replyToId, topicTag })).containerId;
   }
   await wait([containerId], 60);
   return threads.publish(env, containerId);
@@ -190,13 +193,16 @@ export async function publish(env, row) {
     }
   }
   const inThread = row.thread !== 'none' && (await coverage.get(env)).active;
+  const mentions = await getMentions(env);
+  const tags = targets.tags || '';
 
   const jobs = [];
   if (targets.threads) {
     jobs.push((async () => {
       const auth = await threads.getAuth(env);
       const replyToId = inThread && threads.canReply(auth) ? await coverage.threadsReplyTo(env) : null;
-      const r = await threadsPost(env, row.text, media, replyToId);
+      const c = compose({ network: 'threads', text: row.text, tags, mentions });
+      const r = await threadsPost(env, c.text, media, replyToId, c.topic);
       if (inThread) await coverage.threadsAppend(env, r);
       result.threads = r.url || 'ok';
     })().catch((err) => { result.threadsError = err.message; }));
@@ -204,7 +210,8 @@ export async function publish(env, row) {
   if (targets.bluesky) {
     jobs.push((async () => {
       const replyTo = inThread ? await coverage.blueskyReplyTo(env) : null;
-      const r = await bluesky.post(env, { text: row.text, media, replyTo });
+      const c = compose({ network: 'bluesky', text: row.text, tags, inThread, threadFirst: !replyTo, mentions });
+      const r = await bluesky.post(env, { text: c.text, media, replyTo });
       if (inThread) await coverage.blueskyAppend(env, r);
       result.bluesky = r.url;
     })().catch((err) => { result.blueskyError = err.message; }));
@@ -218,7 +225,7 @@ export async function publish(env, row) {
         slug = await site.ensureGame(env, { title: m.title || 'Cobertura', startedAt: m.startedAt || Date.now(), lnbId: row.lnb_id });
         await coverage.setSlug(env, slug);
       }
-      await site.addPost(env, slug, { text: row.text, media, lnbId: row.lnb_id });
+      await site.addPost(env, slug, { text: compose({ network: 'site', text: row.text, mentions }).text, media, lnbId: row.lnb_id });
       result.site = `${row.origin}/c/${slug}`;
     })().catch((err) => { result.siteError = err.message; }));
   }

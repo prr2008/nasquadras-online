@@ -12,6 +12,7 @@ import * as coluna from './coluna.js';
 import * as gdocs from './gdocs.js';
 import * as schedule from './schedule.js';
 import * as buffer from './buffer.js';
+import { applyMentions, compose, getMentions, saveMentions } from './compose.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
 const MEDIA_TTL_MS = 24 * 3600 * 1000;
@@ -148,17 +149,19 @@ async function handleApi(request, env, url) {
       return uploadMedia(request, env, origin);
 
     case 'POST /api/threads/containers': {
-      const { text = '', media, thread } = await body(request);
+      const { text = '', tags = '', media, thread } = await body(request);
       const items = normalizeMedia(origin, media);
       if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
       const replyToId = thread ? await coverage.threadsReplyTo(env) : null;
-      return json(await threads.createContainers(env, { text, media: items, replyToId }));
+      const c = compose({ network: 'threads', text, tags, mentions: await getMentions(env) });
+      return json(await threads.createContainers(env, { text: c.text, topicTag: c.topic, media: items, replyToId }));
     }
 
     case 'POST /api/threads/carousel': {
-      const { text = '', itemIds = [], thread } = await body(request);
+      const { text = '', tags = '', itemIds = [], thread } = await body(request);
       const replyToId = thread ? await coverage.threadsReplyTo(env) : null;
-      return json(await threads.createCarousel(env, { text, itemIds, replyToId }));
+      const c = compose({ network: 'threads', text, tags, mentions: await getMentions(env) });
+      return json(await threads.createCarousel(env, { text: c.text, topicTag: c.topic, itemIds, replyToId }));
     }
 
     case 'POST /api/threads/status': {
@@ -179,11 +182,12 @@ async function handleApi(request, env, url) {
       return json({ ok: true });
 
     case 'POST /api/bluesky/post': {
-      const { text = '', media, thread } = await body(request);
+      const { text = '', tags = '', final = false, media, thread } = await body(request);
       const items = normalizeMedia(origin, media);
       if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
       const replyTo = thread ? await coverage.blueskyReplyTo(env) : null;
-      const res = await bluesky.post(env, { text, media: items, replyTo });
+      const c = compose({ network: 'bluesky', text, tags, inThread: Boolean(thread), threadFirst: !replyTo, final, mentions: await getMentions(env) });
+      const res = await bluesky.post(env, { text: c.text, media: items, replyTo });
       if (thread) await coverage.blueskyAppend(env, res);
       return json({ url: res.url, parts: res.parts, note: res.note });
     }
@@ -218,7 +222,8 @@ async function handleApi(request, env, url) {
         slug = await site.ensureGame(env, { title: m.title || 'Cobertura', startedAt: m.startedAt || Date.now(), lnbId });
         await coverage.setSlug(env, slug);
       }
-      const res = await site.addPost(env, slug, { text, media: items, game, lnbId });
+      const c = compose({ network: 'site', text, mentions: await getMentions(env) });
+      const res = await site.addPost(env, slug, { text: c.text, media: items, game, lnbId });
       return json({ ...res, url: `${origin}/c/${slug}` });
     }
 
@@ -280,7 +285,17 @@ async function handleApi(request, env, url) {
       const { text = '', media } = await body(request);
       const items = normalizeMedia(origin.replace(/^http:\/\/(?!localhost|127\.)/, 'https://'), media);
       if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
-      return json({ id: await buffer.postNow(env, { text: text.trim(), media: items }) });
+      const xText = applyMentions(text.trim(), 'x', await getMentions(env));
+      return json({ id: await buffer.postNow(env, { text: xText, media: items }) });
+    }
+
+    // ---------- Menções por rede ----------
+    case 'GET /api/mentions':
+      return json({ mentions: await getMentions(env) });
+
+    case 'PUT /api/mentions': {
+      const { mentions = [] } = await body(request);
+      return json({ mentions: await saveMentions(env, mentions) });
     }
 
     case 'GET /api/buffer/check':

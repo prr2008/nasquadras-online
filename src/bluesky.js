@@ -1,6 +1,6 @@
 // Integração com o Bluesky (AT Protocol), usando handle + senha de app.
 
-import { BLUESKY_MAX, buildFacets, splitIntoThread } from './text.js';
+import { BLUESKY_MAX, MENTION_RE, buildFacets, splitIntoThread } from './text.js';
 
 const ENTRYWAY = 'https://bsky.social';
 const KV_KEY = 'bsky:session';
@@ -135,6 +135,100 @@ async function buildEmbed(env, session, media) {
   };
 }
 
+// ---------- Card de link (prévia) ----------
+// O Bluesky não monta a prévia de links sozinho: quem publica envia título,
+// descrição e miniatura. Usado quando o post não tem foto nem vídeo.
+
+const UA = 'Mozilla/5.0 (compatible; NasQuadrasOnline/1.0; +https://nasquadras.online)';
+const THUMB_MAX = 950_000; // limite de ~1 MB do Bluesky para a miniatura
+
+const decodeHtml = (s) => String(s || '')
+  .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+  .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+  .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+export function firstUrl(text) {
+  const m = String(text || '').match(/https?:\/\/[^\s<>"']+/);
+  return m ? m[0].replace(/[.,;:!?)\]]+$/, '') : null;
+}
+
+async function pageMeta(url) {
+  // YouTube: o oEmbed é mais confiável que a página (sem tela de consentimento).
+  if (/^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)) {
+    const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`, { headers: { 'User-Agent': UA } });
+    if (r.ok) {
+      const o = await r.json();
+      return { title: o.title, description: o.author_name ? `YouTube · ${o.author_name}` : 'YouTube', image: o.thumbnail_url };
+    }
+  }
+  const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'text/html' }, redirect: 'follow' });
+  if (!res.ok || !(res.headers.get('Content-Type') || '').includes('html')) return null;
+  const meta = {};
+  let title = '';
+  await new HTMLRewriter()
+    .on('meta', {
+      element(e) {
+        const k = (e.getAttribute('property') || e.getAttribute('name') || '').toLowerCase();
+        const c = e.getAttribute('content');
+        if (k && c && !(k in meta)) meta[k] = c;
+      },
+    })
+    .on('title', { text(t) { title += t.text; } })
+    .transform(res).arrayBuffer();
+  let image = meta['og:image'] || meta['twitter:image'] || meta['twitter:image:src'] || null;
+  if (image) { try { image = new URL(image, url).toString(); } catch { image = null; } }
+  return {
+    title: meta['og:title'] || meta['twitter:title'] || title,
+    description: meta['og:description'] || meta.description || '',
+    image,
+  };
+}
+
+/** Monta o embed de link. Qualquer falha devolve null (o post sai sem card). */
+export async function linkCard(env, session, url) {
+  try {
+    const m = await pageMeta(url);
+    if (!m) return null;
+    const external = {
+      uri: url,
+      title: decodeHtml(m.title).slice(0, 300) || new URL(url).hostname,
+      description: decodeHtml(m.description).slice(0, 1000),
+    };
+    if (m.image && /^https:\/\//.test(m.image)) {
+      try {
+        const img = await fetch(m.image, { headers: { 'User-Agent': UA } });
+        const type = (img.headers.get('Content-Type') || '').split(';')[0];
+        if (img.ok && type.startsWith('image/')) {
+          const buf = await img.arrayBuffer();
+          if (buf.byteLength <= THUMB_MAX) {
+            const up = await xrpc(session.pds, 'com.atproto.repo.uploadBlob', {
+              token: session.accessJwt, body: buf, headers: { 'Content-Type': type },
+            });
+            external.thumb = up.blob;
+          }
+        }
+      } catch { /* card sem miniatura */ }
+    }
+    return { $type: 'app.bsky.embed.external', external };
+  } catch {
+    return null;
+  }
+}
+
+/** @fulano.bsky.social -> DID, para a menção virar link para o perfil. */
+async function resolveMentions(session, text) {
+  const dids = {};
+  const handles = [...new Set([...String(text).matchAll(MENTION_RE)].map((m) => m[2].toLowerCase()))].slice(0, 10);
+  await Promise.all(handles.map(async (h) => {
+    try {
+      const r = await xrpc(session.pds, `com.atproto.identity.resolveHandle?handle=${encodeURIComponent(h)}`, { token: session.accessJwt, get: true });
+      if (r.did) dids[h] = r.did;
+    } catch { /* não é um perfil do Bluesky: fica como texto */ }
+  }));
+  return dids;
+}
+
 const webUrl = (handle, uri) => `https://bsky.app/profile/${handle}/post/${uri.split('/').pop()}`;
 
 /**
@@ -145,7 +239,13 @@ const webUrl = (handle, uri) => `https://bsky.app/profile/${handle}/post/${uri.s
 export async function post(env, { text, media = [], langs = ['pt'], replyTo = null }) {
   return withSession(env, async (session) => {
     const parts = splitIntoThread(text || '', BLUESKY_MAX);
-    const { embed, note } = await buildEmbed(env, session, media);
+    let { embed, note } = await buildEmbed(env, session, media);
+    // Sem foto/vídeo: o 1º link do post ganha o card de prévia.
+    if (!embed) {
+      const url = firstUrl(parts[0]);
+      if (url) embed = (await linkCard(env, session, url)) || undefined;
+    }
+    const dids = await resolveMentions(session, text || '');
 
     let root = replyTo?.root || null;
     let parent = replyTo?.parent || null;
@@ -158,7 +258,7 @@ export async function post(env, { text, media = [], langs = ['pt'], replyTo = nu
         createdAt: new Date().toISOString(),
         langs,
       };
-      const facets = buildFacets(parts[i]);
+      const facets = buildFacets(parts[i], dids);
       if (facets.length) record.facets = facets;
       if (i === 0 && embed) record.embed = embed;
       if (parent) record.reply = { root, parent };

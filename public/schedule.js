@@ -14,7 +14,7 @@ const fmtWhen = (ms) => new Date(ms).toLocaleString('pt-BR', { weekday: 'short',
 const MODE = { start: '🧵 abre a cobertura', reply: '↳ no fio', none: 'solto' };
 
 function targets() {
-  return { threads: $('#t-threads').checked, bluesky: $('#t-bluesky').checked, site: $('#t-site').checked };
+  return { threads: $('#t-threads').checked, bluesky: $('#t-bluesky').checked, site: $('#t-site').checked, tags: NQ().tagsValue() };
 }
 
 function renderTargets() {
@@ -80,7 +80,7 @@ $('#sched-save').addEventListener('click', async () => {
   if (xOn && NQ().xLength(xText) > NQ().X_MAX) return NQ().toast(`A versão para o X passa de ${NQ().X_MAX} caracteres.`);
   const payload = {
     runAt,
-    text: NQ().finalText(),
+    text: NQ().bodyText(),
     media: st.media.map(({ key, kind, mime, width, height, alt }) => ({ key, kind, mime, width, height, alt })),
     targets: targets(),
     thread: $('#sched-thread').value,
@@ -189,11 +189,18 @@ $('#sched-list').addEventListener('click', async (e) => {
     } else if (act === 'edit') {
       const st = NQ().state;
       if (($('#text').value.trim() || st.media.length) && !confirm('Substituir o texto e as mídias da caixa pelo post agendado?')) return;
-      // Separa as hashtags fixas, se o texto terminar com elas.
-      const tags = $('#tags').value.trim();
       let text = row.text;
-      if ($('#auto-tags').checked && tags && text.endsWith(tags)) text = text.slice(0, -tags.length).trim();
-      else if ($('#auto-tags').checked) { $('#auto-tags').checked = false; $('#auto-tags').dispatchEvent(new Event('change')); }
+      if (row.targets.tags != null) {
+        // Agendamento novo: texto e hashtags guardados separados.
+        $('#auto-tags').checked = Boolean(row.targets.tags);
+        if (row.targets.tags) $('#tags').value = row.targets.tags;
+        $('#tags').dispatchEvent(new Event('input')); $('#auto-tags').dispatchEvent(new Event('change'));
+      } else {
+        // Agendamento antigo: as hashtags estão no fim do texto.
+        const tags = $('#tags').value.trim();
+        if ($('#auto-tags').checked && tags && text.endsWith(tags)) text = text.slice(0, -tags.length).trim();
+        else if ($('#auto-tags').checked) { $('#auto-tags').checked = false; $('#auto-tags').dispatchEvent(new Event('change')); }
+      }
       $('#text').value = text;
       st.media = (row.media || []).map((m) => ({ ...m, id: crypto.randomUUID(), status: 'ready', progress: 1, preview: `/m/${m.key}` }));
       $('#t-threads').checked = !!row.targets.threads;

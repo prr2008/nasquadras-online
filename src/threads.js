@@ -123,7 +123,7 @@ function mediaFields(item) {
  * - sem mídia ou 1 mídia: um contêiner pronto para publicar;
  * - 2 a 10 mídias: um contêiner por item (o carrossel vem no passo 2).
  */
-export async function createContainers(env, { text, media = [], replyToId }) {
+export async function createContainers(env, { text, media = [], replyToId, topicTag }) {
   const auth = await requireAuth(env);
   const endpoint = `${API}/${auth.userId}/threads`;
 
@@ -131,7 +131,7 @@ export async function createContainers(env, { text, media = [], replyToId }) {
     const fields = media.length ? mediaFields(media[0]) : { media_type: 'TEXT' };
     const res = await call(endpoint, {
       method: 'POST',
-      body: form({ ...fields, text, reply_to_id: replyToId, access_token: auth.token }),
+      body: form({ ...fields, text, reply_to_id: replyToId, topic_tag: topicTag, access_token: auth.token }),
     });
     return { containerId: res.id, itemIds: [] };
   }
@@ -148,7 +148,7 @@ export async function createContainers(env, { text, media = [], replyToId }) {
 }
 
 /** Passo 2 (só carrossel). Cria o contêiner do carrossel com os itens prontos. */
-export async function createCarousel(env, { text, itemIds, replyToId }) {
+export async function createCarousel(env, { text, itemIds, replyToId, topicTag }) {
   const auth = await requireAuth(env);
   const res = await call(`${API}/${auth.userId}/threads`, {
     method: 'POST',
@@ -157,6 +157,7 @@ export async function createCarousel(env, { text, itemIds, replyToId }) {
       children: itemIds.join(','),
       text,
       reply_to_id: replyToId,
+      topic_tag: topicTag,
       access_token: auth.token,
     }),
   });

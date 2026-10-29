@@ -59,14 +59,29 @@ export function splitIntoThread(text, max = BLUESKY_MAX) {
 }
 
 const encoder = new TextEncoder();
+
+/** @handle com ponto (formato do Bluesky): grupo 2 é o handle sem o @. */
+export const MENTION_RE = /(^|[\s(“"'])@([a-zA-Z0-9][a-zA-Z0-9-]*(?:\.[a-zA-Z0-9-]+)+)/g;
 const byteLen = (s) => encoder.encode(s).length;
 
 /**
  * Gera os "facets" do Bluesky para links e hashtags, para que fiquem
  * clicáveis. As posições são em bytes UTF-8, como o protocolo exige.
  */
-export function buildFacets(text) {
+export function buildFacets(text, dids = {}) {
   const facets = [];
+
+  // Menções a perfis do Bluesky (@fulano.bsky.social), já resolvidas em DIDs.
+  for (const m of text.matchAll(MENTION_RE)) {
+    const did = dids[m[2].toLowerCase()];
+    if (!did) continue;
+    const offset = m.index + m[1].length;
+    const start = byteLen(text.slice(0, offset));
+    facets.push({
+      index: { byteStart: start, byteEnd: start + byteLen(`@${m[2]}`) },
+      features: [{ $type: 'app.bsky.richtext.facet#mention', did }],
+    });
+  }
 
   const urlRe = /https?:\/\/[^\s<>"']+/g;
   for (const m of text.matchAll(urlRe)) {
