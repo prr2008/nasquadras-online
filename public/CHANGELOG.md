@@ -2,6 +2,12 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.9 — 29/10/2026
+
+- **Importar posts do WordPress** (Blog → **📦 Importar posts do WordPress**): traz os posts publicados de um site WordPress.com já publicados no blog, com a **data original**, as **fotos copiadas** para cá, os **vídeos** (YouTube, Spotify, VideoPress) como player e os **posts do X e do Instagram** incorporados. A primeira foto (ou a miniatura do vídeo) vira a capa; a categoria é escolhida pelo assunto (NBB, NBA, Seleção…), e dá para mudar no editor. Rodar de novo não duplica. Há um modo de simulação.
+- **Posts do X e do Instagram no editor do Blog:** o botão de vídeo agora aceita também links de posts do X e do Instagram; eles aparecem no editor como um bloco e, no site, como o post incorporado.
+- **Correção:** o editor salvava vídeos do YouTube/Spotify/Vimeo como link em vez de player. Agora o player é mantido ao salvar.
+
 ## 1.8 — 29/10/2026
 
 Playlists do Zona de Conforto criadas pelo próprio app, direto no Spotify.

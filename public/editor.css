@@ -149,3 +149,18 @@
 .imp-list li { display: grid; grid-template-columns: auto 40px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); font-size: 14px; }
 .imp-list img, .imp-list .ph { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--panel); }
 .imp-list .meta { display: block; color: var(--muted); font-size: 12px; }
+
+/* Posts do X e do Instagram dentro do editor */
+.editor-wrap .ql-editor blockquote.twitter-tweet, .editor-wrap .ql-editor blockquote.instagram-media {
+  border: 1px solid var(--line); border-left: 4px solid #1d9bf0; border-radius: 10px; padding: 10px 12px 10px 40px; margin: 10px 0;
+  background: var(--panel-2); position: relative; font-size: 14px; color: var(--muted); user-select: none; }
+.editor-wrap .ql-editor blockquote.instagram-media { border-left-color: #e1306c; }
+.editor-wrap .ql-editor blockquote.twitter-tweet::before { content: '𝕏'; position: absolute; left: 14px; top: 10px; font-weight: 700; color: var(--text); }
+.editor-wrap .ql-editor blockquote.instagram-media::before { content: '📷'; position: absolute; left: 12px; top: 9px; }
+.editor-wrap .ql-editor blockquote.twitter-tweet p { margin: 0 0 4px; color: var(--text); }
+.editor-wrap .ql-editor blockquote a { color: var(--accent); word-break: break-all; }
+
+/* Importação do WordPress */
+.wp-log { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; max-height: 360px; overflow-y: auto; }
+.wp-log .meta { color: var(--muted); }
+.wp-log .bad { color: var(--bad); font-weight: 600; }

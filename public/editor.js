@@ -80,6 +80,80 @@ function toEmbed(url) {
   return null;
 }
 
+// ---------- Blocos especiais do editor ----------
+// 1) Vídeo: o Quill exporta vídeo como link (<a>); aqui ele sai como <iframe>,
+//    para o player continuar no site depois de salvar.
+// 2) Posts do X e do Instagram incorporados: aparecem no editor como um bloco
+//    (não editável) e saem no HTML no formato que os scripts do X/Instagram usam.
+const Q = window.Quill;
+const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const VideoBlot = Q.import('formats/video');
+class PlayerVideo extends VideoBlot {
+  html() { return `<iframe src="${escAttr(this.domNode.getAttribute('src'))}"></iframe>`; }
+}
+Q.register(PlayerVideo, true);
+
+const BlockEmbed = Q.import('blots/block/embed');
+class XPost extends BlockEmbed {
+  static blotName = 'xpost';
+  static tagName = 'BLOCKQUOTE';
+  static className = 'twitter-tweet';
+  static create(v) {
+    const node = super.create();
+    node.setAttribute('contenteditable', 'false');
+    const p = document.createElement('p');
+    p.textContent = v?.text || '';
+    const a = document.createElement('a');
+    a.href = v?.url || '';
+    a.textContent = v?.url || '';
+    node.append(p, a);
+    return node;
+  }
+  static value(node) {
+    const links = [...node.querySelectorAll('a')];
+    const a = links.find((x) => /\/status\//.test(x.getAttribute('href') || '')) || links.at(-1);
+    return { url: a?.getAttribute('href') || '', text: (node.querySelector('p')?.textContent || '').trim() };
+  }
+  html() {
+    const v = XPost.value(this.domNode);
+    return `<blockquote class="twitter-tweet"><p>${escAttr(v.text)}</p><a href="${escAttr(v.url)}">${escAttr(v.url)}</a></blockquote>`;
+  }
+}
+class InstagramPost extends BlockEmbed {
+  static blotName = 'igpost';
+  static tagName = 'BLOCKQUOTE';
+  static className = 'instagram-media';
+  static create(v) {
+    const node = super.create();
+    node.setAttribute('contenteditable', 'false');
+    node.setAttribute('data-instgrm-permalink', v?.url || '');
+    const a = document.createElement('a');
+    a.href = v?.url || '';
+    a.textContent = 'Ver este post no Instagram';
+    node.append(a);
+    return node;
+  }
+  static value(node) {
+    return { url: node.getAttribute('data-instgrm-permalink') || node.querySelector('a')?.getAttribute('href') || '' };
+  }
+  html() {
+    const { url } = InstagramPost.value(this.domNode);
+    return `<blockquote class="instagram-media" data-instgrm-permalink="${escAttr(url)}"><a href="${escAttr(url)}">Ver este post no Instagram</a></blockquote>`;
+  }
+}
+Q.register(XPost, true);
+Q.register(InstagramPost, true);
+
+/** Link de post do X/Twitter ou do Instagram -> bloco incorporado. */
+function toSocial(url) {
+  const s = String(url || '').trim();
+  let m = s.match(/^https?:\/\/(?:www\.|mobile\.)?(?:twitter|x)\.com\/(\w+)\/status\/(\d+)/);
+  if (m) return { type: 'xpost', value: { url: `https://twitter.com/${m[1]}/status/${m[2]}`, text: '' } };
+  m = s.match(/^https?:\/\/(?:www\.)?instagram\.com\/(p|reel|tv)\/([\w-]+)/);
+  if (m) return { type: 'igpost', value: { url: `https://www.instagram.com/${m[1]}/${m[2]}/` } };
+  return null;
+}
+
 async function uploadImage(file) {
   const r = await NQ().compressImage(file);
   const res = await fetch('/api/media', {
@@ -119,11 +193,17 @@ function makeEditor(selector, placeholder) {
             input.click();
           },
           video() {
-            const url = prompt('Cole o link do YouTube, Spotify ou Vimeo:');
+            const url = prompt('Cole o link do YouTube, Spotify, Vimeo, ou de um post do X ou do Instagram:');
             if (!url) return;
-            const embed = toEmbed(url);
-            if (!embed) { NQ().toast('Link não reconhecido. Use YouTube, Spotify ou Vimeo.'); return; }
             const range = quill.getSelection(true);
+            const social = toSocial(url);
+            if (social) {
+              quill.insertEmbed(range.index, social.type, social.value, 'user');
+              quill.setSelection(range.index + 1, 0);
+              return;
+            }
+            const embed = toEmbed(url);
+            if (!embed) { NQ().toast('Link não reconhecido. Use YouTube, Spotify, Vimeo, X ou Instagram.'); return; }
             quill.insertEmbed(range.index, 'video', embed, 'user');
             quill.setSelection(range.index + 1, 0);
           },
@@ -240,6 +320,47 @@ $('#gdocs-revoke').addEventListener('click', async () => {
     await gdocsStatus();
     NQ().toast('Google Docs desconectado.');
   } catch (err) { NQ().toast(err.message); }
+});
+
+// ---------- Importar do WordPress ----------
+
+$('#wp-go').addEventListener('click', async () => {
+  const site = $('#wp-site').value.trim();
+  const dryRun = $('#wp-dry').checked;
+  if (!site) return;
+  if (!dryRun && !confirm(`Importar os posts de ${site} já publicados no blog?`)) return;
+  const btn = $('#wp-go');
+  btn.disabled = true;
+  const log = $('#wp-log');
+  log.innerHTML = '';
+  const esc = NQ().esc;
+  let offset = 0;
+  let totals = { ok: 0, skipped: 0, errors: 0, found: 0 };
+  try {
+    for (let guard = 0; guard < 200; guard++) {
+      btn.textContent = `Importando… ${offset}${totals.found ? `/${totals.found}` : ''}`;
+      const r = await NQ().api('/api/blog/import-wp', { site, offset, limit: 3, dryRun });
+      totals.found = r.found;
+      for (const it of r.results) {
+        const rep = it.report || {};
+        const media = [rep.images && `${rep.images} foto(s)`, rep.youtube && `${rep.youtube} YouTube`, rep.spotify && `${rep.spotify} Spotify`,
+          rep.videopress && `${rep.videopress} vídeo(s) WordPress`, rep.x && `${rep.x} post(s) do X`, rep.instagram && `${rep.instagram} Instagram`].filter(Boolean).join(', ');
+        const status = it.error ? `<b class="bad">erro: ${esc(it.error)}</b>` : it.skipped ? 'já importado' : it.simulated ? `simulado · ${esc(it.category)}` : `<a href="#blog/${it.articleId}">importado</a> · ${esc(it.category)}`;
+        const warn = rep.imageErrors?.length ? `<br><b class="bad">fotos com problema: ${esc(rep.imageErrors.join('; '))}</b>` : '';
+        log.insertAdjacentHTML('beforeend', `<li><strong>${esc(it.title)}</strong> <span class="meta">${new Date(it.date).toLocaleDateString('pt-BR')} · ${status}${media ? ` · ${media}` : ''}${warn}</span></li>`);
+        if (it.error) totals.errors++; else if (it.skipped) totals.skipped++; else totals.ok++;
+      }
+      offset = r.next;
+      if (r.done) break;
+    }
+    NQ().toast(`${dryRun ? 'Simulação' : 'Importação'} concluída: ${totals.ok} ${dryRun ? 'post(s) analisados' : 'importado(s)'}${totals.skipped ? `, ${totals.skipped} já existiam` : ''}${totals.errors ? `, ${totals.errors} com erro` : ''}.`, 7000);
+    if (!dryRun) listArticles();
+  } catch (err) {
+    NQ().toast(err.message, 7000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Importar';
+  }
 });
 
 $('#blog-new').addEventListener('click', () => { location.hash = '#blog/novo'; });

@@ -11,6 +11,7 @@ import * as pages from './pages.js';
 import * as coluna from './coluna.js';
 import * as zona from './zona.js';
 import * as spotify from './spotify.js';
+import * as wpimport from './wpimport.js';
 import * as gdocs from './gdocs.js';
 import * as schedule from './schedule.js';
 import * as buffer from './buffer.js';
@@ -263,6 +264,10 @@ async function handleApi(request, env, url) {
 
     case 'POST /api/blog':
       return json(await blog.createArticle(env, await body(request)));
+
+    // Importação do WordPress, em lotes (o app chama até terminar).
+    case 'POST /api/blog/import-wp':
+      return json(await wpimport.importBatch(env, await body(request)));
 
     // ---------- Coluna (links das colunas no JB) ----------
     case 'GET /api/coluna':

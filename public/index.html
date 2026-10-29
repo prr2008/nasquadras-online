@@ -240,6 +240,18 @@
             <button type="button" id="gdocs-revoke" class="link small danger" hidden>Desconectar o Google Docs</button>
           </div>
         </details>
+        <details id="wp-import" class="gdocs">
+          <summary><span>📦 Importar posts do WordPress</span></summary>
+          <div class="gdocs-body">
+            <p>Traz os posts publicados de um site WordPress.com com a data original, as fotos (copiadas para cá), os vídeos e os posts do X e do Instagram. Posts já importados são pulados.</p>
+            <div class="paste-row">
+              <input id="wp-site" value="prr2008.wordpress.com" aria-label="Endereço do WordPress">
+              <button id="wp-go" type="button" class="primary small-btn">Importar</button>
+            </div>
+            <label class="check"><input type="checkbox" id="wp-dry"> Só simular (mostra o que seria feito, sem gravar)</label>
+            <ol id="wp-log" class="wp-log"></ol>
+          </div>
+        </details>
         <ul id="blog-list" class="doc-list"></ul>
       </div>
 
@@ -407,7 +419,7 @@
     </section>
 
     <footer class="foot">
-      <button id="changelog-open" type="button" class="link small">Novidades · v1.8</button>
+      <button id="changelog-open" type="button" class="link small">Novidades · v1.9</button>
       <button id="logout" type="button" class="link small">Sair</button>
     </footer>
   </main>

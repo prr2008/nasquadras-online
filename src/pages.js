@@ -110,6 +110,14 @@ export function blogIndexPage({ articles, origin, category = '', home = '/' }) {
   });
 }
 
+/** Scripts do X e do Instagram, só nas páginas que têm posts deles incorporados. */
+function socialScripts(html) {
+  const out = [];
+  if (/class="twitter-tweet"/.test(html)) out.push('<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>');
+  if (/class="instagram-media"/.test(html)) out.push('<script async src="https://www.instagram.com/embed.js"></script>');
+  return out.join('');
+}
+
 export function articlePage({ a, origin, admin = false, related = [], home = '/' }) {
   const draft = a.status !== 'published';
   const when = a.published_at ? fmtDate(a.published_at) : 'Rascunho';
@@ -144,6 +152,7 @@ export function articlePage({ a, origin, admin = false, related = [], home = '/'
       <div class="article-body prose">${a.body_html}</div>
       ${admin ? `<p class="admin-note"><a href="/app#blog/${a.id}">Editar no app</a></p>` : ''}
     </article>
+    ${socialScripts(a.body_html)}
     ${related.length ? `<section class="home-block"><header class="block-head"><h2>Leia também</h2></header><div class="cards">${related.map(articleCard).join('')}</div></section>` : ''}`,
   });
 }

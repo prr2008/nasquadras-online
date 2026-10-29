@@ -13,7 +13,7 @@ export const PAGES = {
 const ALLOWED = {
   p: [], br: [], h2: [], h3: [], h4: [],
   strong: [], b: [], em: [], i: [], u: [], s: [],
-  blockquote: [], ul: [], ol: [], li: [], hr: [],
+  blockquote: ['class', 'data-instgrm-permalink'], ul: [], ol: [], li: [], hr: [],
   pre: [], code: [],
   a: ['href'],
   img: ['src', 'alt', 'width', 'height'],
@@ -23,14 +23,18 @@ const ALLOWED = {
 const DROP = new Set(['script', 'style', 'noscript', 'template', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'svg', 'math', 'link', 'meta', 'base']);
 const SAFE_HREF = /^(https?:\/\/|mailto:|\/(?!\/)|#)/i;
 const SAFE_IMG = /^(\/m\/[0-9]{13}-[0-9a-f-]{36}\.(jpg|png|webp|gif)|https:\/\/[^\s"'<>]+)$/i;
-const SAFE_IFRAME = /^https:\/\/(www\.youtube(-nocookie)?\.com\/embed\/[\w-]+|open\.spotify\.com\/embed\/(episode|show|track|playlist|album)\/[\w]+|player\.vimeo\.com\/video\/\d+)/i;
+const SAFE_IFRAME = /^https:\/\/(www\.youtube(-nocookie)?\.com\/embed\/[\w-]+|open\.spotify\.com\/embed\/(episode|show|track|playlist|album)\/[\w]+|player\.vimeo\.com\/video\/\d+|(videopress\.com|video\.wordpress\.com)\/embed\/[\w]+)/i;
+const SAFE_IG = /^https:\/\/www\.instagram\.com\/(p|reel|tv)\/[\w-]+\/?(\?[\w=&.%-]*)?$/;
 
 /**
  * Limpa o HTML do editor com o HTMLRewriter dos Workers: remove scripts,
  * estilos, eventos e atributos desconhecidos; mantém só formatação de texto,
  * links seguros, imagens do próprio site e vídeos do YouTube/Spotify/Vimeo.
  */
+const EMBED_LINK_RE = /<a [^>]*href="(https:\/\/(?:www\.youtube(?:-nocookie)?\.com\/embed\/|open\.spotify\.com\/embed\/|player\.vimeo\.com\/video\/)[^"]+)"[^>]*>\s*\1\s*<\/a>/g;
+
 export async function sanitizeHtml(html) {
+  html = String(html || '').replace(EMBED_LINK_RE, (_, src) => `<iframe src="${src}"></iframe>`);
   const rewriter = new HTMLRewriter()
     .on('*', {
       element(el) {
@@ -48,6 +52,18 @@ export async function sanitizeHtml(html) {
           if (/^https?:/i.test(href)) {
             el.setAttribute('target', '_blank');
             el.setAttribute('rel', 'noopener nofollow');
+          }
+        }
+        // Posts do X e do Instagram incorporados: só as classes deles e o
+        // endereço do Instagram validado; o resto vira citação comum.
+        if (tag === 'blockquote') {
+          const cls = get('class');
+          el.removeAttribute('class');
+          el.removeAttribute('data-instgrm-permalink');
+          if (/\btwitter-tweet\b/.test(cls)) el.setAttribute('class', 'twitter-tweet');
+          else if (/\binstagram-media\b/.test(cls) && SAFE_IG.test(get('data-instgrm-permalink').trim())) {
+            el.setAttribute('class', 'instagram-media');
+            el.setAttribute('data-instgrm-permalink', get('data-instgrm-permalink').trim());
           }
         }
         if (tag === 'img') {
@@ -157,6 +173,23 @@ export async function updateArticle(env, id, input) {
        published_at = ?, updated_at = ? WHERE id = ?`,
   ).bind(slug, a.title, a.summary, body, a.cover_key, a.category, a.status, publishedAt, now, id).run();
   return getArticleById(env, id);
+}
+
+/**
+ * Grava um artigo vindo de outro lugar (importação do WordPress), já publicado,
+ * com a data original. O endereço tenta manter o do WordPress.
+ */
+export async function importArticle(env, input) {
+  const a = clean({ ...input, status: 'published' });
+  if (!a.title) throw new Error('Post sem título.');
+  const body = await sanitizeHtml(input.body_html);
+  const published = Number(input.published_at) || Date.now();
+  const slug = await uniqueSlug(env, slugify(input.slug || a.title));
+  const res = await env.DB.prepare(
+    `INSERT INTO articles (slug, title, summary, body_html, cover_key, category, status, published_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'published', ?, ?, ?)`,
+  ).bind(slug, a.title, a.summary, body, a.cover_key, a.category, published, published, published).run();
+  return getArticleById(env, res.meta.last_row_id);
 }
 
 export async function deleteArticle(env, id) {
