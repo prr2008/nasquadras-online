@@ -16,6 +16,7 @@ import * as gdocs from './gdocs.js';
 import * as schedule from './schedule.js';
 import * as buffer from './buffer.js';
 import * as indexnow from './indexnow.js';
+import { supportInfo } from './pix.js';
 import { applyMentions, compose, getMentions, saveMentions } from './compose.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
@@ -539,7 +540,7 @@ async function handleMainSite(request, env, url) {
     const [games, articles, cols, eps] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 4), zona.list(env, 1)]);
     const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
     const withLive = live ? await withLiveScore(live) : null;
-    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, columns: cols, latestEpisode: eps[0] || null }));
+    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, columns: cols, latestEpisode: eps[0] || null, support: supportInfo(env) }));
   }
 
   if (p === '/blog') return html(pages.blogIndexPage({ articles: await blog.listPublished(env), origin, home }));
@@ -557,7 +558,7 @@ async function handleMainSite(request, env, url) {
     const a = await blog.getArticleBySlug(env, art[1], { includeDrafts: admin });
     if (!a) return html(site.notFoundPage({ home }), 404);
     const related = (await blog.listPublished(env, { category: a.category, limit: 4 })).filter((x) => x.id !== a.id).slice(0, 3);
-    return html(pages.articlePage({ a, origin, admin, related, home }));
+    return html(pages.articlePage({ a, origin, admin, related, home, support: supportInfo(env) }));
   }
 
   if (p === '/coluna') {
@@ -570,10 +571,12 @@ async function handleMainSite(request, env, url) {
     return html(pages.zonaPage({ page, episodes, origin, admin, home }));
   }
 
+  if (p === '/apoie') return html(pages.supportPage({ support: supportInfo(env), origin, home }));
+
   const fixed = p.match(/^\/(sobre)$/);
   if (fixed) {
     const [page, admin] = await Promise.all([blog.getPage(env, fixed[1]), isLoggedIn(request, env)]);
-    return html(pages.staticPage({ page, slug: fixed[1], origin, admin, home }));
+    return html(pages.staticPage({ page, slug: fixed[1], origin, admin, home, support: supportInfo(env) }));
   }
 
   if (p === '/rss.xml') {

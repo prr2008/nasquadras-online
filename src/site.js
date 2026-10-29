@@ -196,7 +196,7 @@ ${body}
 </main>
 <footer class="site-foot">
   <div><strong>Nas Quadras</strong> · basquete por Pedro Rodrigues</div>
-  <div class="foot-links">${SOCIAL.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener me">${n}</a>`).join('')}<a href="/rss.xml">RSS</a></div>
+  <div class="foot-links">${SOCIAL.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener me">${n}</a>`).join('')}<a href="/rss.xml">RSS</a><a href="/apoie">Apoie</a></div>
 </footer>
 <script src="/site.js" defer></script>
 <!-- Cloudflare Web Analytics (sem cookies): só nas páginas públicas, o app não é medido. -->

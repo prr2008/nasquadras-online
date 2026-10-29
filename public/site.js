@@ -1,3 +1,17 @@
+// Botão "Copiar código Pix" da caixa Apoie.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.pix-copy');
+  if (!btn) return;
+  try {
+    await navigator.clipboard.writeText(btn.dataset.copy);
+    const old = btn.textContent;
+    btn.textContent = 'Código copiado ✓';
+    setTimeout(() => { btn.textContent = old; }, 2500);
+  } catch {
+    window.prompt('Copie o código Pix:', btn.dataset.copy);
+  }
+});
+
 // Páginas públicas das coberturas: atualização ao vivo e "Apagar" para o autor logado.
 (() => {
   const game = document.querySelector('.game');

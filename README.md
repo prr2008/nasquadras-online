@@ -21,6 +21,7 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
 - **Menções por rede** (*@ Menções*): apelidos que viram o perfil certo em cada rede (ou o nome, sem perfil). No Bluesky, menções a perfis existentes viram link.
 - **Card de link no Bluesky**: post sem foto/vídeo ganha a prévia do 1º link (oEmbed para o YouTube).
 - **Newsletter (Substack)**: caixa com o formulário oficial de inscrição (`SUBSTACK/embed`) no Início, no fim dos textos do blog e no Sobre; Substack nos links *Siga* e no rodapé. O Substack não tem API pública de publicação, então a newsletter é escrita lá.
+- **Apoie** (`/apoie` e caixa no Início, artigos e Sobre): Ko-fi (`KOFI_URL`) e Pix estático com QR Code e copia e cola gerados no servidor (`src/pix.js`, BR Code do Banco Central com CRC16; `PIX_KEY`, `PIX_NAME`, `PIX_CITY`). Sem `PIX_KEY`, só o Ko-fi aparece.
 - **IndexNow** (Bing, Yandex, Seznam, Naver…): a cada 10 minutos, a rotina compara o banco com a última verificação e envia os endereços novos ou alterados (artigos, coberturas e posts novos, coluna, Zona, páginas fixas) para `api.indexnow.org`. A chave pública (`INDEXNOW_KEY`) fica em `/<chave>.txt`. O Crawler Hints da Cloudflare também está ligado.
 - **Novidades**: registro de versões em `public/CHANGELOG.md`, aberto pelo link *Novidades* no rodapé do app.
 - **Contadores** para os limites de cada rede (Threads 500, Bluesky 300). Acima de 300, o Bluesky recebe um **fio numerado** automaticamente.
@@ -102,6 +103,7 @@ src/zona.js      Zona de Conforto: edições e playlists do Spotify
 src/spotify.js   Spotify Web API: login PKCE, busca de faixas, criação de playlists
 src/coluna.js    coluna: leitura do link (Open Graph), cópia da foto e cadastro
 src/wpimport.js  importação dos posts do WordPress.com
+src/pix.js       Pix estático (copia e cola) e QR Code em SVG
 src/indexnow.js  aviso aos buscadores (IndexNow) do que mudou no site
 src/blog.js      blog e páginas fixas: banco D1 e limpeza do HTML do editor
 src/lnb.js       leitura dos dados de tempo real da LNB

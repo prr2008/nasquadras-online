@@ -37,7 +37,7 @@ export async function changedUrls(env, origin, since) {
   if (cols.length) paths.add('/').add('/coluna');
   if (eps.length) paths.add('/').add('/zona-de-conforto');
   for (const p of pages) if (PAGE_PATH[p.slug]) paths.add(PAGE_PATH[p.slug]);
-  if (!since) ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre'].forEach((p) => paths.add(p));
+  if (!since) ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie'].forEach((p) => paths.add(p));
   return [...paths].slice(0, 10000).map((p) => `${origin}${p}`);
 }
 

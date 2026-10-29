@@ -2,6 +2,11 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.15 — 29/10/2026
+
+- **Apoie:** caixa com **Pix** (QR Code e botão **Copiar código Pix**, valor livre) e **Ko-fi** no Início, no fim dos textos do blog e no Sobre, além da página própria **nasquadras.online/apoie**, boa para divulgar na bio das redes. Link **Apoie** no rodapé.
+- O Pix aparece assim que a chave for configurada; até lá, a caixa mostra só o Ko-fi.
+
 ## 1.14 — 29/10/2026
 
 - **Newsletter no site:** caixa de inscrição do Substack (oficial e gratuita) no Início, ao lado do Zona de Conforto, no fim de cada texto do blog e na página Sobre. Quem se inscreve entra direto na lista do Substack.

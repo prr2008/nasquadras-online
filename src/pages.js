@@ -82,7 +82,7 @@ function featureColumn(columns) {
   </section>`;
 }
 
-export function homePage({ games, articles, origin, home = '/', columns = [], latestEpisode = null }) {
+export function homePage({ games, articles, origin, home = '/', columns = [], latestEpisode = null, support = null }) {
   const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
   const liveBlock = live ? `<section class="live-hero">
       <a href="/c/${esc(live.slug)}" class="live-hero-link">
@@ -122,6 +122,7 @@ export function homePage({ games, articles, origin, home = '/', columns = [], la
         <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>${latestEpisode ? `Playlist mais recente: ${esc(episodeLabel(latestEpisode))}` : 'Música, cultura e esporte'}</span></a>
       </section>
       ${newsletterBox()}
+      ${supportBox(support)}
       <section class="home-block follow">
         <h2>Siga</h2>
         <ul>
@@ -169,7 +170,44 @@ export function newsletterBox({ title = 'Newsletter', text = 'Receba os textos, 
   </section>`;
 }
 
-export function articlePage({ a, origin, admin = false, related = [], home = '/' }) {
+/** Caixa "Apoie": Ko-fi e Pix (QR Code + copia e cola). Some quando nada está configurado. */
+export function supportBox(support, { title = 'Apoie o Nas Quadras', text = 'O site é independente e sem anúncios. Se o trabalho te ajuda a acompanhar o basquete, você pode contribuir com qualquer valor.' } = {}) {
+  if (!support || (!support.kofi && !support.pix)) return '';
+  const { kofi, pix } = support;
+  return `<section class="home-block support" id="apoie">
+    <h2>${esc(title)}</h2>
+    <p>${esc(text)}</p>
+    <div class="support-ways">
+      ${pix ? `<div class="pix">
+        <div class="pix-qr" role="img" aria-label="QR Code do Pix">${pix.svg}</div>
+        <div class="pix-info">
+          <strong>Pix</strong>
+          <span>Aponte a câmera do app do banco para o QR Code ou copie o código.</span>
+          <button type="button" class="pix-copy" data-copy="${esc(pix.code)}">Copiar código Pix</button>
+          <small>Chave: <span class="pix-key">${esc(pix.key)}</span></small>
+        </div>
+      </div>` : ''}
+      ${kofi ? `<a class="kofi-btn" href="${esc(kofi)}" target="_blank" rel="noopener">☕ Pague um café no Ko-fi</a>` : ''}
+    </div>
+  </section>`;
+}
+
+/** Página /apoie (endereço curto para divulgar). */
+export function supportPage({ support, origin, home = '/' }) {
+  return layout({
+    title: 'Apoie · Nas Quadras',
+    description: 'Apoie o Nas Quadras com um Pix ou pelo Ko-fi.',
+    url: `${origin}/apoie`,
+    type: 'website',
+    nav: 'apoie',
+    home,
+    body: `<article class="article"><h1 class="article-title">Apoie</h1></article>
+    ${supportBox(support, { title: 'Pix ou Ko-fi' }) || '<p class="empty">Em breve.</p>'}
+    ${newsletterBox({ title: 'Ou assine a newsletter' })}`,
+  });
+}
+
+export function articlePage({ a, origin, admin = false, related = [], home = '/', support = null }) {
   const draft = a.status !== 'published';
   const when = a.published_at ? fmtDate(a.published_at) : 'Rascunho';
   const updated = a.published_at && a.updated_at - a.published_at > 60 * 60 * 1000
@@ -205,13 +243,14 @@ export function articlePage({ a, origin, admin = false, related = [], home = '/'
     </article>
     ${socialScripts(a.body_html)}
     ${draft ? '' : newsletterBox({ title: 'Gostou? Assine a newsletter' })}
+    ${draft ? '' : supportBox(support)}
     ${related.length ? `<section class="home-block"><header class="block-head"><h2>Leia também</h2></header><div class="cards">${related.map(articleCard).join('')}</div></section>` : ''}`,
   });
 }
 
 // ---------- Páginas fixas ----------
 
-export function staticPage({ page, slug, origin, admin = false, home = '/' }) {
+export function staticPage({ page, slug, origin, admin = false, home = '/', support = null }) {
   const navKey = { sobre: 'sobre', coluna: 'coluna', 'zona-de-conforto': 'zona' }[slug];
   const body = page.body_html?.trim()
     ? page.body_html
@@ -228,7 +267,7 @@ export function staticPage({ page, slug, origin, admin = false, home = '/' }) {
       <div class="article-body prose">${body}</div>
       ${admin ? `<p class="admin-note"><a href="/app#paginas/${slug}">Editar no app</a></p>` : ''}
     </article>
-    ${slug === 'sobre' ? newsletterBox() : ''}`,
+    ${slug === 'sobre' ? newsletterBox() + supportBox(support) : ''}`,
   });
 }
 
@@ -261,7 +300,7 @@ ${items}
 
 export function sitemap({ articles, games, origin }) {
   const url = (loc, ms) => `<url><loc>${xml(loc)}</loc>${ms ? `<lastmod>${new Date(ms).toISOString()}</lastmod>` : ''}</url>`;
-  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre'].map((p) => url(`${origin}${p}`));
+  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie'].map((p) => url(`${origin}${p}`));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${[...fixed,
