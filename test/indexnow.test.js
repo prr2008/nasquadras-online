@@ -57,3 +57,12 @@ test('envia e guarda o marco', async () => {
   assert.ok(r.sent > 0);
   assert.equal(env.KV.m.get('indexnow:since'), '42');
 });
+
+test('recusa pausa as próximas tentativas', async () => {
+  const env = { INDEXNOW_KEY: KEY, KV: kv(), DB: fakeDB({ articles: [{ slug: 't' }], games: [], columns: [], episodes: [], pages: [] }) };
+  globalThis.fetch = async () => new Response('{}', { status: 429 });
+  await assert.rejects(() => run(env, 'https://nasquadras.online', 1), /429/);
+  assert.ok(env.KV.m.get('indexnow:pause'));
+  const r = await run(env, 'https://nasquadras.online', 2);
+  assert.equal(r.paused, true);
+});

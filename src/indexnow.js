@@ -8,6 +8,8 @@
 
 const ENDPOINT = 'https://api.indexnow.org/indexnow';
 const KV_SINCE = 'indexnow:since';
+const KV_PAUSE = 'indexnow:pause';
+const PAUSE_S = 3 * 3600;
 const PAGE_PATH = { sobre: '/sobre', coluna: '/coluna', 'zona-de-conforto': '/zona-de-conforto' };
 
 export const configured = (env) => /^[A-Za-z0-9-]{8,128}$/.test(env.INDEXNOW_KEY || '');
@@ -55,10 +57,18 @@ export async function submit(env, origin, urls) {
 /** Rotina: envia o que mudou desde a última vez e guarda o novo marco. */
 export async function run(env, origin, now = Date.now()) {
   if (!configured(env)) return { skipped: true };
+  // Depois de uma recusa (ex.: 429 enquanto a chave é nova), espera antes de tentar de novo.
+  if (await env.KV.get(KV_PAUSE)) return { paused: true };
   const since = Number(await env.KV.get(KV_SINCE)) || 0;
   const urls = await changedUrls(env, origin, since);
   if (!urls.length) return { sent: 0, urls };
-  const result = await submit(env, origin, urls);
+  let result;
+  try {
+    result = await submit(env, origin, urls);
+  } catch (err) {
+    await env.KV.put(KV_PAUSE, String(now), { expirationTtl: PAUSE_S });
+    throw err;
+  }
   await env.KV.put(KV_SINCE, String(now));
   return { ...result, urls };
 }
