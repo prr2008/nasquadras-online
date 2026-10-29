@@ -144,6 +144,8 @@ export const NAV = [
 export const SOCIAL = [
   ['Threads', 'https://www.threads.net/@prr2008'],
   ['Bluesky', 'https://bsky.app/profile/prr2008.bsky.social'],
+  ['X', 'https://x.com/prr2008'],
+  ['YouTube', 'https://www.youtube.com/@prr2008'],
 ];
 
 export function layout({ title, description = '', image = '', url = '', body, live = false, nav = 'coberturas', type = 'article', head = '', home = '/' }) {
@@ -271,12 +273,18 @@ export function gamePage(g, posts, origin, { admin = false, home = '/' } = {}) {
     live,
     home,
     body: `<div class="game" data-slug="${esc(g.slug)}" data-last="${posts[0]?.id || 0}" data-admin="${admin ? 1 : 0}">
-      <p class="crumbs"><a href="/c">Coberturas</a> · ${esc(fmtDate(g.started_at))}</p>
-      <h1 class="page-title">${esc(g.title)}</h1>
-      ${scoreboard(g)}
-      <nav class="tabs"><a class="on" href="/c/${esc(g.slug)}">Posts (${posts.length})</a>${photos ? `<a href="/c/${esc(g.slug)}/fotos">Fotos (${photos})</a>` : ''}</nav>
-      <div id="new-posts" class="new-posts" hidden></div>
-      <div id="posts" class="posts">${posts.map((p) => postHtml(p, { admin })).join('') || '<p class="empty">A cobertura vai começar.</p>'}</div>
+      <header class="game-head">
+        <p class="crumbs"><a href="/c">Coberturas</a> · ${esc(fmtDate(g.started_at))}</p>
+        <h1 class="page-title">${esc(g.title)}</h1>
+      </header>
+      <aside class="game-side">
+        ${scoreboard(g)}
+        <nav class="tabs"><a class="on" href="/c/${esc(g.slug)}">Posts (${posts.length})</a>${photos ? `<a href="/c/${esc(g.slug)}/fotos">Fotos (${photos})</a>` : ''}</nav>
+      </aside>
+      <div class="game-main">
+        <div id="new-posts" class="new-posts" hidden></div>
+        <div id="posts" class="posts">${posts.map((p) => postHtml(p, { admin })).join('') || '<p class="empty">A cobertura vai começar.</p>'}</div>
+      </div>
     </div>`,
   });
 }

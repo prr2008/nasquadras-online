@@ -2,6 +2,18 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.6 — 29/10/2026
+
+Site adaptado ao computador (o app já estava desde a 1.4).
+
+- **Início:** em telas largas, textos do blog e coberturas à esquerda; à direita, uma coluna fixa com a **Coluna Nas Quadras** (com a foto da mais recente), o **Zona de Conforto** e os links **Siga** (Threads, Bluesky, X, YouTube e a coluna no JB).
+- **Página do jogo:** os posts à esquerda e o **placar fixo à direita**, sempre visível enquanto se rola a cobertura.
+- **Coluna:** cards em duas colunas.
+- **Blog e artigos:** cards maiores e texto com largura e tamanho de leitura confortáveis.
+- Site inteiro mais largo (até 1200px), com letras um pouco maiores no computador.
+- Rodapé com **X** e **YouTube**, além de Threads, Bluesky e RSS.
+- No celular, nada muda: a coluna da direita vira o fim da página e o placar continua no topo do jogo.
+
 ## 1.5 — 29/10/2026
 
 Ajustes a partir da primeira cobertura completa (Botafogo 84 x 82 Caxias do Sul, 28/10).

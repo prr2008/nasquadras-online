@@ -1,6 +1,6 @@
 // Páginas do site principal: Início, Blog, artigo, categoria, páginas fixas, RSS e sitemap.
 
-import { layout, esc, fmtDate, PERIOD_LABEL } from './site.js';
+import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL } from './site.js';
 import { CATEGORIES, PAGES, categorySlug, excerpt, readingMinutes } from './blog.js';
 
 const TZ = 'America/Sao_Paulo';
@@ -62,6 +62,8 @@ export function homePage({ games, articles, origin, home = '/', latestColumn = n
         <p class="lede">Basquete brasileiro e NBA por <strong>Pedro Rodrigues</strong>: coberturas ao vivo, análises e a coluna no Jornal do Brasil.</p>
       </section>
       ${liveBlock}
+      <div class="home-grid">
+      <div class="home-main">
       <section class="home-block">
         <header class="block-head"><h2>Do blog</h2><a href="/blog">Ver todos →</a></header>
         ${articles.length ? `<div class="cards">${articles.slice(0, 3).map(articleCard).join('')}</div>` : '<p class="empty">Os primeiros textos estão a caminho.</p>'}
@@ -70,10 +72,23 @@ export function homePage({ games, articles, origin, home = '/', latestColumn = n
         <header class="block-head"><h2>Coberturas</h2><a href="/c">Ver todas →</a></header>
         ${recentGames.length ? `<div class="cards">${recentGames.map(coverageCard).join('')}</div>` : '<p class="empty">Nenhuma cobertura anterior.</p>'}
       </section>
+      </div>
+      <aside class="home-side">
       <section class="home-block promo">
-        <a class="promo-card" href="/coluna"><strong>Coluna Nas Quadras</strong><span>${latestColumn ? `Mais recente: ${esc(latestColumn.title)}` : 'No Jornal do Brasil'}</span></a>
+        <a class="promo-card${latestColumn?.image_key ? ' has-img' : ''}" href="/coluna">
+          ${latestColumn?.image_key ? `<img src="/m/${esc(latestColumn.image_key)}" alt="" loading="lazy">` : ''}
+          <strong>Coluna Nas Quadras</strong><span>${latestColumn ? `Mais recente: ${esc(latestColumn.title)}` : 'No Jornal do Brasil'}</span></a>
         <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>Música, cultura e esporte</span></a>
-      </section>`,
+      </section>
+      <section class="home-block follow">
+        <h2>Siga</h2>
+        <ul>
+          ${SOCIAL.map(([n, u]) => `<li><a href="${u}" rel="me noopener" target="_blank">${n}</a></li>`).join('')}
+          <li><a href="https://www.jb.com.br/esportes/nas-quadras" rel="noopener" target="_blank">Coluna no JB</a></li>
+        </ul>
+      </section>
+      </aside>
+      </div>`,
   });
 }
 
