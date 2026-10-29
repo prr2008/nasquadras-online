@@ -195,7 +195,7 @@ img, video { max-width: 100%; display: block; }
   .live-hero-link { padding: 24px 28px; }
   .live-hero-link strong { font-size: 40px; }
   .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; align-items: start; }
-  .home-side { position: sticky; top: 84px; }
+  .home-side { align-self: start; }
   .home-side .home-block:first-child { margin-top: 28px; }
   .home-side .promo { grid-template-columns: 1fr; }
 
