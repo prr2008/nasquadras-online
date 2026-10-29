@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.16 — 29/10/2026
+
+- **Vamos conversar** no menu do site: a página **nasquadras.online/conversar** mostra os horários livres da sua agenda pública do Google. A pessoa escolhe o horário e o agendamento é feito ali mesmo (com link para abrir a agenda em outra janela).
+
 ## 1.15 — 29/10/2026
 
 - **Apoie:** caixa com **Pix** (QR Code e botão **Copiar código Pix**, valor livre) e **Ko-fi** no Início, no fim dos textos do blog e no Sobre, além da página própria **nasquadras.online/apoie**, boa para divulgar na bio das redes. Link **Apoie** no rodapé.

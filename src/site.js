@@ -145,6 +145,7 @@ export const NAV = [
   ['coluna', 'Coluna', '/coluna'],
   ['zona', 'Zona de Conforto', '/zona-de-conforto'],
   ['sobre', 'Sobre', '/sobre'],
+  ['conversar', 'Vamos conversar', '/conversar'],
 ];
 
 export const SOCIAL = [
@@ -157,6 +158,12 @@ export const SOCIAL = [
 
 /** Newsletter no Substack: formulário oficial de inscrição (gratuita). */
 export const SUBSTACK = 'https://prr2008.substack.com';
+
+/** Agenda pública do Google (página de agendamento de horários). */
+export const BOOKING = {
+  link: 'https://calendar.app.google/TdyKm4WZK1gHsSiW9',
+  embed: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ3xUAW8xvkdajIYT0H2p2leCWQUV2pYCg3U69Fq4XPNSMn1Lr54F7NOIgXhnCpTnmHA671K8bXF?gv=true',
+};
 
 export function layout({ title, description = '', image = '', url = '', body, live = false, nav = 'coberturas', type = 'article', head = '', home = '/' }) {
   return `<!doctype html>

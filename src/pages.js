@@ -1,6 +1,6 @@
 // Páginas do site principal: Início, Blog, artigo, categoria, páginas fixas, RSS e sitemap.
 
-import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL, SUBSTACK } from './site.js';
+import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL, SUBSTACK, BOOKING } from './site.js';
 import { CATEGORIES, PAGES, categorySlug, excerpt, readingMinutes } from './blog.js';
 import { episodeLabel } from './zona.js';
 
@@ -207,6 +207,26 @@ export function supportPage({ support, origin, home = '/' }) {
   });
 }
 
+/** Página /conversar: horários livres da agenda pública do Google. */
+export function talkPage({ origin, home = '/' }) {
+  return layout({
+    title: 'Vamos conversar · Nas Quadras',
+    description: 'Entrevista, pauta, podcast ou projeto: escolha um horário livre na agenda de Pedro Rodrigues.',
+    url: `${origin}/conversar`,
+    type: 'website',
+    nav: 'conversar',
+    home,
+    body: `<article class="article">
+      <h1 class="article-title">Vamos conversar</h1>
+      <p class="lede">Entrevista, pauta, convite para podcast ou um projeto: escolha um horário livre na agenda abaixo e a conversa já fica marcada.</p>
+    </article>
+    <section class="booking">
+      <iframe src="${BOOKING.embed}" title="Agenda de horários de Pedro Rodrigues" loading="lazy" frameborder="0"></iframe>
+      <a class="booking-link" href="${BOOKING.link}" target="_blank" rel="noopener">Abrir a agenda em outra janela ↗</a>
+    </section>`,
+  });
+}
+
 export function articlePage({ a, origin, admin = false, related = [], home = '/', support = null }) {
   const draft = a.status !== 'published';
   const when = a.published_at ? fmtDate(a.published_at) : 'Rascunho';
@@ -300,7 +320,7 @@ ${items}
 
 export function sitemap({ articles, games, origin }) {
   const url = (loc, ms) => `<url><loc>${xml(loc)}</loc>${ms ? `<lastmod>${new Date(ms).toISOString()}</lastmod>` : ''}</url>`;
-  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie'].map((p) => url(`${origin}${p}`));
+  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie', '/conversar'].map((p) => url(`${origin}${p}`));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${[...fixed,
