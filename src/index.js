@@ -532,7 +532,14 @@ export default {
       }
       if (url.pathname.startsWith('/api/public/')) return await handlePublicApi(request, env, url);
       if (url.pathname.startsWith('/api/')) return await handleApi(request, env, url);
-      return env.ASSETS.fetch(request);
+      const asset = await env.ASSETS.fetch(request);
+      // Markdown (Novidades) em UTF-8, para os acentos aparecerem certos.
+      if (url.pathname.endsWith('.md') && asset.ok) {
+        const res = new Response(asset.body, asset);
+        res.headers.set('Content-Type', 'text/markdown; charset=utf-8');
+        return res;
+      }
+      return asset;
     } catch (err) {
       console.error(err);
       return fail(err.message || 'Erro inesperado.', 502);
