@@ -144,8 +144,8 @@ export const NAV = [
   ['blog', 'Blog', '/blog'],
   ['coluna', 'Coluna', '/coluna'],
   ['zona', 'Zona de Conforto', '/zona-de-conforto'],
-  ['sobre', 'Sobre', '/sobre'],
   ['conversar', 'Vamos conversar', '/conversar'],
+  ['sobre', 'Sobre', '/sobre'],
 ];
 
 export const SOCIAL = [
