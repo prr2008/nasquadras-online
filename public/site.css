@@ -230,3 +230,4 @@ img, video { max-width: 100%; display: block; }
 .prose blockquote.instagram-media { border-left-color: #e1306c; }
 .prose .twitter-tweet, .prose .instagram-media, .prose iframe.instagram-media { margin-left: auto !important; margin-right: auto !important; }
 .prose iframe[src*="videopress"], .prose iframe[src*="video.wordpress"] { aspect-ratio: 16 / 9; }
+.prose iframe[src*="anchor.fm"], .prose iframe[src*="podcasters.spotify"], .prose iframe[src*="creators.spotify"] { aspect-ratio: auto; height: 161px; }

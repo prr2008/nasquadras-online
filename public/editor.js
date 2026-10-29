@@ -344,7 +344,7 @@ $('#wp-go').addEventListener('click', async () => {
       for (const it of r.results) {
         const rep = it.report || {};
         const media = [rep.images && `${rep.images} foto(s)`, rep.youtube && `${rep.youtube} YouTube`, rep.spotify && `${rep.spotify} Spotify`,
-          rep.videopress && `${rep.videopress} vídeo(s) WordPress`, rep.x && `${rep.x} post(s) do X`, rep.instagram && `${rep.instagram} Instagram`].filter(Boolean).join(', ');
+          rep.videopress && `${rep.videopress} vídeo(s) WordPress`, rep.podcast && `${rep.podcast} podcast(s)`, rep.x && `${rep.x} post(s) do X`, rep.instagram && `${rep.instagram} Instagram`].filter(Boolean).join(', ');
         const status = it.error ? `<b class="bad">erro: ${esc(it.error)}</b>` : it.skipped ? 'já importado' : it.simulated ? `simulado · ${esc(it.category)}` : `<a href="#blog/${it.articleId}">importado</a> · ${esc(it.category)}`;
         const warn = rep.imageErrors?.length ? `<br><b class="bad">fotos com problema: ${esc(rep.imageErrors.join('; '))}</b>` : '';
         log.insertAdjacentHTML('beforeend', `<li><strong>${esc(it.title)}</strong> <span class="meta">${new Date(it.date).toLocaleDateString('pt-BR')} · ${status}${media ? ` · ${media}` : ''}${warn}</span></li>`);

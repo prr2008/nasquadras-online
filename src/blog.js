@@ -23,7 +23,7 @@ const ALLOWED = {
 const DROP = new Set(['script', 'style', 'noscript', 'template', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'svg', 'math', 'link', 'meta', 'base']);
 const SAFE_HREF = /^(https?:\/\/|mailto:|\/(?!\/)|#)/i;
 const SAFE_IMG = /^(\/m\/[0-9]{13}-[0-9a-f-]{36}\.(jpg|png|webp|gif)|https:\/\/[^\s"'<>]+)$/i;
-const SAFE_IFRAME = /^https:\/\/(www\.youtube(-nocookie)?\.com\/embed\/[\w-]+|open\.spotify\.com\/embed\/(episode|show|track|playlist|album)\/[\w]+|player\.vimeo\.com\/video\/\d+|(videopress\.com|video\.wordpress\.com)\/embed\/[\w]+)/i;
+const SAFE_IFRAME = /^https:\/\/(www\.youtube(-nocookie)?\.com\/embed\/[\w-]+|open\.spotify\.com\/embed\/(episode|show|track|playlist|album)\/[\w]+|player\.vimeo\.com\/video\/\d+|(videopress\.com|video\.wordpress\.com)\/embed\/[\w]+|anchor\.fm\/[\w-]+\/embed\/|(podcasters|creators)\.spotify\.com\/pod\/(show|profile)\/[\w-]+\/embed\/)/i;
 const SAFE_IG = /^https:\/\/www\.instagram\.com\/(p|reel|tv)\/[\w-]+\/?(\?[\w=&.%-]*)?$/;
 
 /**

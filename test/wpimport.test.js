@@ -53,3 +53,9 @@ test('categoria pelo assunto e endereço do site', () => {
   assert.equal(siteHost('https://prr2008.wordpress.com/'), 'prr2008.wordpress.com');
   assert.throws(() => siteHost('javascript:alert(1)'));
 });
+
+test('podcast do Anchor e vídeo do VideoPress viram player', () => {
+  const h = prepareHtml('<div class="wp-block-embed__wrapper">https://anchor.fm/prr2008/episodes/A-Temporada-e1abc</div><div class="wp-block-embed__wrapper">https://videopress.com/v/AbC123?resizeToParent=true</div>');
+  assert.match(h, /<iframe src="https:\/\/anchor\.fm\/prr2008\/embed\/episodes\/A-Temporada-e1abc"><\/iframe>/);
+  assert.match(h, /<iframe src="https:\/\/videopress\.com\/embed\/AbC123"><\/iframe>/);
+});

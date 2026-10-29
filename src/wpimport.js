@@ -56,6 +56,11 @@ function embedFromUrl(url) {
   if (m) return `<blockquote class="twitter-tweet"><a href="https://twitter.com/${m[1]}/status/${m[2]}">https://twitter.com/${m[1]}/status/${m[2]}</a></blockquote>`;
   m = u.match(/^https?:\/\/(?:www\.)?instagram\.com\/(p|reel|tv)\/([\w-]+)/);
   if (m) return `<blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/${m[1]}/${m[2]}/"><a href="https://www.instagram.com/${m[1]}/${m[2]}/">Ver este post no Instagram</a></blockquote>`;
+  // Podcast no Anchor / Spotify for Podcasters.
+  m = u.match(/^https?:\/\/anchor\.fm\/([\w-]+)\/(?:embed\/)?episodes\/([\w-]+)/);
+  if (m) return `<iframe src="https://anchor.fm/${m[1]}/embed/episodes/${m[2]}"></iframe>`;
+  m = u.match(/^https?:\/\/(podcasters|creators)\.spotify\.com\/pod\/(show|profile)\/([\w-]+)\/(?:embed\/)?episodes\/([\w-]+)/);
+  if (m) return `<iframe src="https://${m[1]}.spotify.com/pod/${m[2]}/${m[3]}/embed/episodes/${m[4]}"></iframe>`;
   m = u.match(/^https?:\/\/(?:videopress\.com\/v\/|video\.wordpress\.com\/v\/)(\w+)/);
   if (m) return `<iframe src="https://videopress.com/embed/${m[1]}"></iframe>`;
   return null;
@@ -129,6 +134,7 @@ export async function convertPost(env, post, { dryRun = false } = {}) {
   report.youtube = (html.match(/youtube(?:-nocookie)?\.com\/embed\//g) || []).length;
   report.spotify = (html.match(/open\.spotify\.com\/embed\//g) || []).length;
   report.videopress = (html.match(/(videopress\.com|video\.wordpress\.com)\/embed\//g) || []).length;
+  report.podcast = (html.match(/(anchor\.fm|(podcasters|creators)\.spotify\.com)\/[^"]*\/embed\//g) || []).length;
   report.x = (html.match(/class="twitter-tweet/g) || []).length;
   report.instagram = (html.match(/class="instagram-media/g) || []).length;
 
