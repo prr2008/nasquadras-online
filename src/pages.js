@@ -39,7 +39,50 @@ const categoryNav = (active = '') => `<nav class="tabs cats" aria-label="Categor
 
 // ---------- Início ----------
 
-export function homePage({ games, articles, origin, home = '/', latestColumn = null, latestEpisode = null }) {
+// ---------- Destaques do Início: coberturas e coluna ----------
+
+function featureCoverage(games) {
+  const [main, ...rest] = games;
+  const head = '<header class="block-head"><h2>Coberturas</h2><a href="/c">Ver todas →</a></header>';
+  if (!main) return `<section class="feature">${head}<p class="empty">As coberturas ao vivo vão aparecer aqui.</p></section>`;
+  const score = (g) => (g.home ? `${esc(g.home)} <b>${g.home_score ?? 0}</b> x <b>${g.away_score ?? 0}</b> ${esc(g.away)}` : '');
+  const status = main.status === 'live' && main.period !== 'FINAL' ? '<span class="live-pill">Ao vivo</span>' : (main.period === 'FINAL' || main.status === 'ended') ? '<span class="tag">Final</span>' : '';
+  return `<section class="feature">
+    ${head}
+    <a class="feature-main" href="/c/${esc(main.slug)}">
+      ${main.cover_key ? `<img src="/m/${esc(main.cover_key)}" alt="" loading="lazy">` : '<div class="card-ph feature-ph" aria-hidden="true"><span class="ball"></span></div>'}
+      <div class="feature-body">
+        <span class="card-date">${shortDate(main.started_at)} ${status}</span>
+        <strong>${esc(main.title)}</strong>
+        ${main.home ? `<span class="feature-score">${score(main)}</span>` : ''}
+        <span class="column-cta">${main.n_posts ? `${main.n_posts} posts · ` : ''}Ver a cobertura →</span>
+      </div>
+    </a>
+    ${rest.length ? `<ul class="feature-list">${rest.map((g) => `<li><a href="/c/${esc(g.slug)}"><span class="card-date">${shortDate(g.started_at)}</span><span>${esc(g.title)}</span>${g.home ? `<span class="card-score">${score(g)}</span>` : ''}</a></li>`).join('')}</ul>` : ''}
+  </section>`;
+}
+
+function featureColumn(columns) {
+  const [main, ...rest] = columns;
+  const head = '<header class="block-head"><h2>Coluna Nas Quadras</h2><a href="/coluna">Ver todas →</a></header>';
+  if (!main) return `<section class="feature">${head}<p class="empty">Toda semana no Jornal do Brasil.</p></section>`;
+  const img = main.image_key ? `/m/${esc(main.image_key)}` : (main.image_url ? esc(main.image_url) : '');
+  return `<section class="feature">
+    ${head}
+    <a class="feature-main" href="${esc(main.url)}" target="_blank" rel="noopener">
+      ${img ? `<img src="${img}" alt="" loading="lazy">` : '<div class="card-ph feature-ph" aria-hidden="true"></div>'}
+      <div class="feature-body">
+        <span class="card-date">${esc(main.source)} · ${shortDate(main.published_at)}</span>
+        <strong>${esc(main.title)}</strong>
+        ${main.summary ? `<span class="card-excerpt">${esc(main.summary)}</span>` : ''}
+        <span class="column-cta">Ler no ${esc(main.source)} ↗</span>
+      </div>
+    </a>
+    ${rest.length ? `<ul class="feature-list">${rest.map((c) => `<li><a href="${esc(c.url)}" target="_blank" rel="noopener"><span class="card-date">${shortDate(c.published_at)}</span><span>${esc(c.title)}</span></a></li>`).join('')}</ul>` : ''}
+  </section>`;
+}
+
+export function homePage({ games, articles, origin, home = '/', columns = [], latestEpisode = null }) {
   const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
   const liveBlock = live ? `<section class="live-hero">
       <a href="/c/${esc(live.slug)}" class="live-hero-link">
@@ -50,7 +93,7 @@ export function homePage({ games, articles, origin, home = '/', latestColumn = n
       </a>
     </section>` : '';
 
-  const recentGames = games.filter((g) => g !== live).slice(0, 3);
+  const coverages = games.filter((g) => g !== live).slice(0, 4);
   return layout({
     title: 'Nas Quadras · Basquete por Pedro Rodrigues',
     description: 'Coberturas ao vivo, análises e a coluna Nas Quadras: basquete brasileiro e NBA por Pedro Rodrigues.',
@@ -63,22 +106,19 @@ export function homePage({ games, articles, origin, home = '/', latestColumn = n
         <p class="lede">Basquete brasileiro e NBA por <strong>Pedro Rodrigues</strong>: coberturas ao vivo, análises e a coluna no Jornal do Brasil.</p>
       </section>
       ${liveBlock}
+      <div class="features">
+        ${featureCoverage(coverages)}
+        ${featureColumn(columns)}
+      </div>
       <div class="home-grid">
       <div class="home-main">
       <section class="home-block">
         <header class="block-head"><h2>Do blog</h2><a href="/blog">Ver todos →</a></header>
-        ${articles.length ? `<div class="cards">${articles.slice(0, 3).map(articleCard).join('')}</div>` : '<p class="empty">Os primeiros textos estão a caminho.</p>'}
-      </section>
-      <section class="home-block">
-        <header class="block-head"><h2>Coberturas</h2><a href="/c">Ver todas →</a></header>
-        ${recentGames.length ? `<div class="cards">${recentGames.map(coverageCard).join('')}</div>` : '<p class="empty">Nenhuma cobertura anterior.</p>'}
+        ${articles.length ? `<div class="cards">${articles.slice(0, 6).map(articleCard).join('')}</div>` : '<p class="empty">Os primeiros textos estão a caminho.</p>'}
       </section>
       </div>
       <aside class="home-side">
       <section class="home-block promo">
-        <a class="promo-card${latestColumn?.image_key ? ' has-img' : ''}" href="/coluna">
-          ${latestColumn?.image_key ? `<img src="/m/${esc(latestColumn.image_key)}" alt="" loading="lazy">` : ''}
-          <strong>Coluna Nas Quadras</strong><span>${latestColumn ? `Mais recente: ${esc(latestColumn.title)}` : 'No Jornal do Brasil'}</span></a>
         <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>${latestEpisode ? `Playlist mais recente: ${esc(episodeLabel(latestEpisode))}` : 'Música, cultura e esporte'}</span></a>
       </section>
       <section class="home-block follow">

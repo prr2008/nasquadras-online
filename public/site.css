@@ -231,3 +231,29 @@ img, video { max-width: 100%; display: block; }
 .prose .twitter-tweet, .prose .instagram-media, .prose iframe.instagram-media { margin-left: auto !important; margin-right: auto !important; }
 .prose iframe[src*="videopress"], .prose iframe[src*="video.wordpress"] { aspect-ratio: 16 / 9; }
 .prose iframe[src*="anchor.fm"], .prose iframe[src*="podcasters.spotify"], .prose iframe[src*="creators.spotify"] { aspect-ratio: auto; height: 161px; }
+
+/* ---------- Início: destaques (coberturas e coluna) ---------- */
+.features { display: grid; gap: 8px; margin: 8px 0 12px; }
+.feature { margin: 20px 0 8px; }
+.feature-main { display: grid; border-radius: 16px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.feature-main:hover { border-color: var(--accent); }
+.feature-main img, .feature-ph { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.feature-ph { display: grid; place-items: center; }
+.feature-ph .ball { width: 56px; height: 56px; opacity: .6; }
+.feature-body { display: grid; gap: 6px; padding: 16px 18px 18px; }
+.feature-body strong { font-family: var(--display); font-size: 28px; line-height: 1.05; text-transform: uppercase; }
+.feature-body .card-date { display: flex; align-items: center; gap: 8px; }
+.feature-score { font-size: 18px; }
+.feature-score b { font-family: var(--display); font-size: 24px; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; background: var(--panel-2); color: var(--muted); }
+.feature-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.feature-list li a { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 2px; align-items: baseline; padding: 10px 4px; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.feature-list li:last-child a { border-bottom: 0; }
+.feature-list li a:hover span:nth-child(2) { color: var(--accent); }
+.feature-list .card-score { grid-column: 2; color: var(--muted); font-size: 14px; }
+@media (min-width: 1000px) {
+  .features { grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 16px; }
+  .feature-body strong { font-size: 32px; }
+}
+.block-head { gap: 12px; }
+.block-head a { white-space: nowrap; }

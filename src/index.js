@@ -535,10 +535,10 @@ async function handleMainSite(request, env, url) {
 
   if ((p === '/' && isSiteHost(url)) || p === '/inicio') {
     if (p === '/inicio' && isSiteHost(url)) return Response.redirect(`${url.origin}/`, 301);
-    const [games, articles, cols, eps] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 1), zona.list(env, 1)]);
+    const [games, articles, cols, eps] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 4), zona.list(env, 1)]);
     const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
     const withLive = live ? await withLiveScore(live) : null;
-    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, latestColumn: cols[0] || null, latestEpisode: eps[0] || null }));
+    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, columns: cols, latestEpisode: eps[0] || null }));
   }
 
   if (p === '/blog') return html(pages.blogIndexPage({ articles: await blog.listPublished(env), origin, home }));

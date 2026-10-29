@@ -2,6 +2,11 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.10 — 29/10/2026
+
+- **Início com destaques:** logo abaixo da apresentação (e do aviso de jogo ao vivo), **Coberturas** e **Coluna Nas Quadras** aparecem lado a lado no computador e em sequência no celular. Em cada uma, o mais recente vem grande, com foto (placar final e número de posts na cobertura; resumo e link para o JB na coluna), e os anteriores numa lista logo abaixo.
+- O blog vem em seguida (6 textos mais recentes), com Zona de Conforto e Siga na lateral.
+
 ## 1.9 — 29/10/2026
 
 - **Importar posts do WordPress** (Blog → **📦 Importar posts do WordPress**): traz os posts publicados de um site WordPress.com já publicados no blog, com a **data original**, as **fotos copiadas** para cá, os **vídeos** (YouTube, Spotify, VideoPress) como player e os **posts do X e do Instagram** incorporados. A primeira foto (ou a miniatura do vídeo) vira a capa; a categoria é escolhida pelo assunto (NBB, NBA, Seleção…), e dá para mudar no editor. Rodar de novo não duplica. Há um modo de simulação.
