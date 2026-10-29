@@ -178,7 +178,9 @@ export async function importBatch(env, { site, offset = 0, limit = 3, dryRun = f
       if (existing && !dryRun) { results.push({ ...base, skipped: true, articleId: Number(existing) }); continue; }
       const { html, cover, report } = await convertPost(env, post, { dryRun });
       const category = guessCategory({ ...post, title });
-      const summary = text(post.excerpt).replace(/\s*(Continue reading|Leia mais|Continuar lendo)[\s\S]*$/i, '').replace(/\s*\[…\]\s*$/, '…').slice(0, 300);
+      // O trecho do WordPress é o começo do texto cortado: fica sem resumo, e o
+      // site monta o trecho dos cards a partir do texto (cortado em palavra inteira).
+      const summary = '';
       const slug = decodeURIComponent(post.slug || '');
       if (dryRun) { results.push({ ...base, category, slug, report, simulated: true }); continue; }
       const a = await blog.importArticle(env, {
