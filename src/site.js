@@ -195,6 +195,8 @@ ${body}
   <div class="foot-links">${SOCIAL.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener me">${n}</a>`).join('')}<a href="/rss.xml">RSS</a></div>
 </footer>
 <script src="/site.js" defer></script>
+<!-- Cloudflare Web Analytics (sem cookies): só nas páginas públicas, o app não é medido. -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "0f4c4364473b4a2a80d252b640cf5dbc"}'></script>
 </body>
 </html>`;
 }

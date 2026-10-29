@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.11 — 29/10/2026
+
+- **Audiência do site com o Cloudflare Web Analytics** (gratuito e sem cookies, então sem faixa de consentimento): visitas, páginas mais lidas, de onde vêm os leitores, país, dispositivo e velocidade de carregamento. Medido só nas páginas públicas: o uso do app não entra na conta. Painel em Cloudflare → Analytics → Web analytics.
+
 ## 1.10 — 29/10/2026
 
 - **Início com destaques:** logo abaixo da apresentação (e do aviso de jogo ao vivo), **Coberturas** e **Coluna Nas Quadras** aparecem lado a lado no computador e em sequência no celular. Em cada uma, o mais recente vem grande, com foto (placar final e número de posts na cobertura; resumo e link para o JB na coluna), e os anteriores numa lista logo abaixo.
