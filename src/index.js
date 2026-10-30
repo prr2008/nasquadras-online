@@ -652,7 +652,7 @@ export default {
     // A cada 10 minutos: avisa os buscadores (IndexNow) do que mudou no site.
     if (new Date(event.scheduledTime).getUTCMinutes() % 10 === 3) {
       const origin = (env.SITE_URL || 'https://nasquadras.online').replace(/\/$/, '');
-      ctx.waitUntil(indexnow.run(env, origin).then((r) => r.sent && console.log('indexnow enviado', r.sent, r.status)).catch((err) => console.error('indexnow', err.message)));
+      ctx.waitUntil(indexnow.run(env, origin).then((r) => r.sent && console.log('indexnow enviado', r.sent, r.status, r.via)).catch((err) => console.error('indexnow', err.message)));
     }
     if (event.cron !== DAILY_CRON) return;
 

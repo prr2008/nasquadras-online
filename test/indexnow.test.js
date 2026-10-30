@@ -66,3 +66,12 @@ test('recusa pausa as próximas tentativas', async () => {
   const r = await run(env, 'https://nasquadras.online', 2);
   assert.equal(r.paused, true);
 });
+
+test('tenta o Bing e depois a API da conta', async () => {
+  const env = { INDEXNOW_KEY: KEY, BING_API_KEY: 'k', KV: kv(), DB: fakeDB({ articles: [{ slug: 't' }], games: [], columns: [], episodes: [], pages: [] }) };
+  const hit = [];
+  globalThis.fetch = async (url) => { hit.push(new URL(url).hostname); return new Response('{"d":null}', { status: /ssl\.bing/.test(url) ? 200 : 429 }); };
+  const r = await run(env, 'https://nasquadras.online', 5);
+  assert.equal(r.via, 'bing-api');
+  assert.deepEqual(hit, ['www.bing.com', 'yandex.com', 'api.indexnow.org', 'ssl.bing.com']);
+});

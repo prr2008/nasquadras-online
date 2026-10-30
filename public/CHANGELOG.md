@@ -2,6 +2,11 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.17 — 30/10/2026
+
+- **IndexNow mais confiável:** o aviso aos buscadores tenta o Bing direto, depois o Yandex e o servidor geral do IndexNow. Se todos recusarem, usa a **chave da API do Bing Webmaster Tools** (cota própria da sua conta), quando configurada.
+- **Vamos conversar** antes de **Sobre** no menu.
+
 ## 1.16 — 29/10/2026
 
 - **Vamos conversar** no menu do site: a página **nasquadras.online/conversar** mostra os horários livres da sua agenda pública do Google. A pessoa escolhe o horário e o agendamento é feito ali mesmo (com link para abrir a agenda em outra janela).
