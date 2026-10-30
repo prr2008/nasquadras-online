@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## Em breve (31/10/2026)
+
+- **Sequência de posts no agendamento:** botão **+ Adicionar post ao fio** para escrever vários posts (cada um com texto e fotos) num único horário. Eles ficam agrupados na lista **Agendados** e, na hora, saem em ordem, com poucos segundos entre um e outro, sem precisar marcar 19:45, 19:46, 19:47.
+
 ## 1.17 — 30/10/2026
 
 - **IndexNow mais confiável:** o aviso aos buscadores tenta o Bing direto, depois o Yandex e o servidor geral do IndexNow. Se todos recusarem, usa a **chave da API do Bing Webmaster Tools** (cota própria da sua conta), quando configurada.
