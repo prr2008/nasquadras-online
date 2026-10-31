@@ -212,6 +212,12 @@ async function handleApi(request, env, url) {
       return json(await coverage.get(env));
     }
 
+    case 'POST /api/coverage/resume': {
+      const cov = await coverage.resume(env);
+      if (cov.slug) await site.setGameStatus(env, cov.slug, 'live');
+      return json(cov);
+    }
+
     case 'POST /api/coverage/stop': {
       const m = await coverage.meta(env);
       if (m?.slug) await site.setGameStatus(env, m.slug, 'ended');

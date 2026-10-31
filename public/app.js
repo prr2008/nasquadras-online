@@ -178,10 +178,34 @@ $('#thread-start').addEventListener('click', async () => {
 });
 
 $('#thread-stop').addEventListener('click', async () => {
-  if (!confirm('Encerrar a cobertura? Os próximos posts sairão soltos e a página do site fica como encerrada.')) return;
+  if (!confirm('Encerrar a cobertura? Os próximos posts sairão soltos, a página do site fica como encerrada e o placar e os times são zerados.')) return;
   state.status.coverage = await api('/api/coverage/stop', {});
+  // Jogo novo começa do zero: placar, times, período e vínculo com a LNB.
+  state.game = { away: '', home: '', sa: 0, sh: 0, period: '1Q' };
+  renderGame();
+  if (state.lnb) unlinkLnb();
   renderThread();
+  toast('Cobertura encerrada. Placar e times zerados.');
 });
+
+/**
+ * Post logo depois de encerrar (até 30 min): pergunta se continua no mesmo
+ * fio. Sim = reabre a cobertura e o post responde nele. Pergunta uma vez só.
+ */
+const RESUME_MS = 30 * 60 * 1000;
+let resumeAsked = null;
+async function maybeResume() {
+  const c = state.status?.coverage;
+  if (!c || c.active || !c.endedAt || Date.now() - c.endedAt > RESUME_MS || resumeAsked === c.endedAt) return false;
+  resumeAsked = c.endedAt;
+  const min = Math.max(1, Math.round((Date.now() - c.endedAt) / 60000));
+  const ok = confirm(`A cobertura${c.title ? ` "${c.title}"` : ''} foi encerrada há ${min} min. Publicar este post no mesmo fio?\n\nOK = responde no fio (e entra na página do jogo no site). Cancelar = sai solto.`);
+  if (!ok) return false;
+  state.status.coverage = await api('/api/coverage/resume', {});
+  $('#thread-reply').checked = true;
+  renderThread();
+  return true;
+}
 
 $('#thread-reply').addEventListener('change', renderWarnings);
 
@@ -363,13 +387,16 @@ async function linkGame(id, label = '') {
   lnbStartPolling();
 }
 
-$('#lnb-unlink').addEventListener('click', () => {
+function unlinkLnb() {
   clearInterval(lnbTimer);
   state.lnb = null;
   state.lnbGame = null;
   state.lnbError = null;
   store.set('lnb', null);
   renderLnb();
+}
+$('#lnb-unlink').addEventListener('click', () => {
+  unlinkLnb();
   toast('Jogo desvinculado. O placar volta a ser manual.');
 });
 $('#lnb-refresh').addEventListener('click', lnbRefresh);
@@ -933,6 +960,7 @@ function progressRow(name) {
 
 $('#publish').addEventListener('click', async () => {
   if (state.busy) return;
+  try { await maybeResume(); } catch (err) { toast(err.message); }
   const text = bodyText();
   const tags = tagsValue();
   const final = isFinal(text);

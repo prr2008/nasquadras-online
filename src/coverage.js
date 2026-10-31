@@ -17,6 +17,7 @@ export async function get(env) {
     title: meta?.title || '',
     startedAt: meta?.startedAt || null,
     slug: meta?.slug || null,
+    endedAt: meta?.active ? null : meta?.endedAt || null,
     threads: threads ? { count: threads.count, rootUrl: threads.rootUrl } : { count: 0 },
     bluesky: bluesky ? { count: bluesky.count, rootUrl: bluesky.rootUrl } : { count: 0 },
     mastodon: mastodon ? { count: mastodon.count, rootUrl: mastodon.rootUrl } : { count: 0 },
@@ -45,7 +46,19 @@ export async function setSlug(env, slug) {
 /** Encerra o fio: os próximos posts saem soltos. */
 export async function stop(env) {
   const meta = await read(env, META);
-  await env.KV.put(META, JSON.stringify({ ...(meta || {}), active: false }));
+  await env.KV.put(META, JSON.stringify({ ...(meta || {}), active: false, endedAt: Date.now() }));
+  return get(env);
+}
+
+export const RESUME_WINDOW_MS = 30 * 60 * 1000;
+
+/** Reabre o fio encerrado há pouco: o próximo post continua respondendo nele. */
+export async function resume(env, now = Date.now()) {
+  const meta = await read(env, META);
+  if (!meta || meta.active) throw new Error('Não há cobertura encerrada para retomar.');
+  if (!meta.endedAt || now - meta.endedAt > RESUME_WINDOW_MS) throw new Error('A cobertura foi encerrada há mais de 30 minutos.');
+  const { endedAt, ...rest } = meta;
+  await env.KV.put(META, JSON.stringify({ ...rest, active: true }));
   return get(env);
 }
 

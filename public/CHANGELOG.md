@@ -2,6 +2,11 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.21 — 31/10/2026
+
+- **Encerrar a cobertura zera o jogo:** placar, times e período voltam ao zero e o jogo da LNB é desvinculado, pronto para a próxima cobertura.
+- **Post logo depois de encerrar:** se você publicar até **30 minutos** depois de encerrar, o app pergunta se o post vai **no mesmo fio**. Sim = a cobertura é reaberta, o post responde no fio (Threads, Bluesky, Mastodon) e entra na página do jogo no site. Não = sai solto, e a pergunta não se repete para essa cobertura.
+
 ## 1.20 — 31/10/2026
 
 - **Mastodon (mastodon.social)** como destino, ao lado de Threads, Bluesky, Site e X: botão **Mastodon** no compositor e indicador da conta no topo.
