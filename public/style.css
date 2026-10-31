@@ -208,6 +208,10 @@ dialog .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .sched-x .count { justify-self: end; }
 .sched-list ol { list-style: none; padding: 0; }
 .sched-item { display: grid; gap: 4px; }
+.sched-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.sched-buttons button { flex: 1 1 200px; }
+.sched-seq { color: var(--accent, #ff7a1a); font-weight: 600; }
+.sched-item .seq { color: var(--accent, #ff7a1a); font-weight: 600; }
 .sched-when { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .sched-when span { color: var(--muted); font-size: 13px; }
 .sched-text { white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

@@ -45,14 +45,16 @@ function openPanel(row = null) {
   $('#sched-save').textContent = row ? 'Salvar alterações' : 'Agendar';
   const last = rows.pending.filter((r) => r.id !== editingId).at(-1);
   let when = row?.run_at;
-  // Sem horário: 1 minuto depois do último agendado, ou daqui a ~30 min (múltiplo de 5).
-  if (!when) when = last ? last.run_at + 60_000 : Math.ceil((Date.now() + 30 * 60_000) / 300_000) * 300_000;
+  // Sem horário: o mesmo do último agendado (entra na sequência), ou daqui a ~30 min (múltiplo de 5).
+  if (!when) when = last && last.run_at > Date.now() + 60_000 ? last.run_at : Math.ceil((Date.now() + 30 * 60_000) / 300_000) * 300_000;
   $('#sched-at').value = toLocalInput(when);
   const hasStart = rows.pending.some((r) => r.thread === 'start' && r.id !== editingId);
   $('#sched-thread').value = row?.thread || (hasStart ? 'reply' : 'start');
   $('#sched-title').value = row?.title || defaultTitle();
   renderThreadNote();
   renderTargets();
+  $('#sched-more').hidden = Boolean(row);
+  renderSeqNote();
   $('#sched-panel').hidden = false;
   $('#sched-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -62,14 +64,31 @@ function closePanel() {
   editingId = null;
 }
 
+/** Quantos posts já estão agendados no horário escolhido (a sequência). */
+function sameTime() {
+  const at = new Date($('#sched-at').value).getTime();
+  return rows.pending.filter((r) => r.run_at === at && r.id !== editingId).length;
+}
+
+function renderSeqNote() {
+  const n = editingId ? 0 : sameTime();
+  const el = $('#sched-seq-note');
+  el.hidden = !n;
+  if (n) {
+    el.textContent = `Sequência: ${n} ${n === 1 ? 'post já agendado' : 'posts já agendados'} neste horário. Este sai como o ${n + 1}º, segundos depois do anterior.`
+      + (NQ().xOn() ? ` No X, ${n} min depois do 1º.` : '');
+  }
+}
+
 $('#sched-open').addEventListener('click', () => {
   if (!$('#sched-panel').hidden && !editingId) return closePanel();
   openPanel();
 });
 $('#sched-close').addEventListener('click', closePanel);
 $('#sched-thread').addEventListener('change', renderThreadNote);
-['#t-threads', '#t-bluesky', '#t-site', '#t-x'].forEach((id) => $(id).addEventListener('change', renderTargets));
-$('#sched-save').addEventListener('click', async () => {
+$('#sched-at').addEventListener('change', renderSeqNote);
+['#t-threads', '#t-bluesky', '#t-site', '#t-x'].forEach((id) => $(id).addEventListener('change', () => { renderTargets(); renderSeqNote(); }));
+async function save({ more = false } = {}) {
   const st = NQ().state;
   if (st.media.some((m) => m.status === 'uploading' || m.status === 'preparing')) return NQ().toast('Aguarde o envio das mídias terminar.');
   if (st.media.some((m) => m.status === 'failed')) return NQ().toast('Remova as mídias com erro antes de agendar.');
@@ -89,24 +108,37 @@ $('#sched-save').addEventListener('click', async () => {
     x: xOn ? { text: xText } : null,
   };
   $('#sched-save').disabled = true;
+  $('#sched-more').disabled = true;
   try {
     const saved = editingId
       ? await NQ().api(`/api/schedule/${editingId}`, payload, 'PUT')
       : await NQ().api('/api/schedule', payload);
-    closePanel();
+    if (!more) closePanel();
     $('#text').value = '';
     st.media = [];
     NQ().renderMedia();
     NQ().resetX();
     NQ().onTextChange();
-    NQ().toast(`Agendado para ${fmtWhen(saved.run_at)}.${saved.buffer_id ? ' O X foi para a fila do Buffer.' : ''}`, 5000);
     await refresh();
+    if (more) {
+      // Mesmo horário, agora respondendo no fio: é só escrever o próximo.
+      $('#sched-thread').value = 'reply';
+      renderThreadNote();
+      renderSeqNote();
+      $('#text').focus();
+      NQ().toast(`${sameTime()}º post da sequência agendado para ${fmtWhen(saved.run_at)}. Escreva o próximo.`, 5000);
+    } else {
+      NQ().toast(`Agendado para ${fmtWhen(saved.run_at)}.${saved.buffer_id ? ' O X foi para a fila do Buffer.' : ''}`, 5000);
+    }
   } catch (err) {
     NQ().toast(err.message, 6000);
   } finally {
     $('#sched-save').disabled = false;
+    $('#sched-more').disabled = false;
   }
-});
+}
+$('#sched-save').addEventListener('click', () => save());
+$('#sched-more').addEventListener('click', () => save({ more: true }));
 
 // ---------- Lista ----------
 
@@ -131,13 +163,20 @@ function resultLinks(r) {
 function render() {
   const esc = NQ().esc;
   const all = [...rows.pending, ...rows.done];
+  // Posts pendentes no mesmo horário: "sequência 2/3".
+  const groups = new Map();
+  for (const r of rows.pending) groups.set(r.run_at, [...(groups.get(r.run_at) || []), r.id]);
+  const seqLabel = (r) => {
+    const g = r.status === 'pending' || r.status === 'sending' ? groups.get(r.run_at) : null;
+    return g && g.length > 1 ? ` <span class="seq">· sequência ${g.indexOf(r.id) + 1}/${g.length}</span>` : '';
+  };
   $('#sched-wrap').hidden = !all.length;
   $('#sched-list').innerHTML = all.map((r) => {
     const pending = r.status === 'pending';
     const label = { pending: '', sending: 'Publicando…', sent: 'Publicado', partial: 'Publicado em parte', error: 'Erro' }[r.status] || '';
     const media = r.media?.length ? ` · ${r.media.length} ${r.media.length === 1 ? 'mídia' : 'mídias'}` : '';
     return `<li class="sched-item ${r.status}" data-id="${r.id}">
-      <div class="sched-when"><strong>${esc(fmtWhen(r.run_at))}</strong> <span>${MODE[r.thread] || ''}${r.thread === 'start' && r.title ? ` · ${esc(r.title)}` : ''}</span></div>
+      <div class="sched-when"><strong>${esc(fmtWhen(r.run_at))}</strong> <span>${MODE[r.thread] || ''}${r.thread === 'start' && r.title ? ` · ${esc(r.title)}` : ''}</span>${seqLabel(r)}</div>
       <div class="sched-text">${esc(r.text || r.x_text || '(só mídia)')}</div>
       <div class="meta"><span>${esc(dests(r))}${media}</span>${label ? `<span class="badge ${r.status === 'sent' ? 'published' : r.status === 'pending' ? '' : 'draft'}">${label}</span>` : ''}</div>
       ${pending ? '' : `<div class="meta">${resultLinks(r)}</div>`}

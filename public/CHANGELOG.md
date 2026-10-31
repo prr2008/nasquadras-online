@@ -2,9 +2,13 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
-## Em breve (31/10/2026)
+## 1.18 — 30/10/2026
 
-- **Sequência de posts no agendamento:** botão **+ Adicionar post ao fio** para escrever vários posts (cada um com texto e fotos) num único horário. Eles ficam agrupados na lista **Agendados** e, na hora, saem em ordem, com poucos segundos entre um e outro, sem precisar marcar 19:45, 19:46, 19:47.
+- **Sequência de posts no agendamento:** no painel **⏰ Agendar**, o botão **＋ Agendar e escrever o próximo** agenda o post e deixa o painel aberto no mesmo horário, já como resposta no fio. Escreva o próximo, toque de novo, e no último use **Agendar**.
+- Na hora marcada, os posts saem **em ordem, segundos um depois do outro**, cada um numa execução própria do app (sem estourar o limite de chamadas do plano gratuito). Se algo travar, a rotina de cada minuto continua de onde parou.
+- Na lista **Agendados**, cada post mostra a posição: "sequência 2/3".
+- No **X** (Buffer), cada post seguinte da sequência vai 1 minuto depois do anterior, para garantir a ordem.
+- Ao abrir o agendamento, o horário sugerido passa a ser **o mesmo do último agendado** (entra na sequência), em vez de 1 minuto depois.
 
 ## 1.17 — 30/10/2026
 

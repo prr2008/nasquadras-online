@@ -191,7 +191,11 @@
         <p class="sched-note" id="sched-thread-note"></p>
         <p class="sched-note">Destinos: <span id="sched-targets"></span> <small>(use as opções acima para mudar)</small></p>
         <p id="sched-x-note" class="sched-note" hidden>O X vai para a fila do Buffer no mesmo horário, com a versão para o X.</p>
-        <button id="sched-save" type="button" class="primary">Agendar</button>
+        <p id="sched-seq-note" class="sched-note sched-seq" hidden></p>
+        <div class="sched-buttons">
+          <button id="sched-save" type="button" class="primary">Agendar</button>
+          <button id="sched-more" type="button" class="ghost" title="Agenda este post e deixa o painel aberto, no mesmo horário, para escrever o próximo do fio">＋ Agendar e escrever o próximo</button>
+        </div>
       </div>
       <div id="progress" class="progress" aria-live="polite"></div>
     </section>
@@ -419,7 +423,7 @@
     </section>
 
     <footer class="foot">
-      <button id="changelog-open" type="button" class="link small">Novidades · v1.17</button>
+      <button id="changelog-open" type="button" class="link small">Novidades · v1.18</button>
       <button id="logout" type="button" class="link small">Sair</button>
     </footer>
   </main>

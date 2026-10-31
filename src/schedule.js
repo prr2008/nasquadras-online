@@ -73,10 +73,23 @@ function validate(input, origin) {
   };
 }
 
-async function sendToBuffer(env, v) {
+/**
+ * Posts no mesmo horário formam uma sequência (saem em ordem, segundos entre
+ * si). No X, o Buffer não garante a ordem no mesmo minuto: cada post seguinte
+ * da sequência vai 1 minuto depois do anterior.
+ */
+async function sequenceIndex(env, runAt, exceptId = 0) {
+  const r = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM scheduled WHERE status = 'pending' AND run_at = ? AND id != ?" + (exceptId ? ' AND id < ?' : ''),
+  ).bind(...(exceptId ? [runAt, exceptId, exceptId] : [runAt, 0])).first();
+  return Number(r?.n) || 0;
+}
+
+async function sendToBuffer(env, v, exceptId = 0) {
   if (v.x_text == null) return null;
   const text = applyMentions(v.x_text, 'x', await getMentions(env));
-  return buffer.schedulePost(env, { text, dueAt: v.run_at, media: withUrls(v.origin, v.media) });
+  const idx = await sequenceIndex(env, v.run_at, exceptId);
+  return buffer.schedulePost(env, { text, dueAt: v.run_at + idx * 60_000, media: withUrls(v.origin, v.media) });
 }
 
 export async function create(env, input, origin) {
@@ -98,7 +111,7 @@ export async function update(env, id, input, origin) {
   if (cur.status !== 'pending') throw new Error('Esse post já saiu ou foi cancelado.');
   const v = validate(input, origin);
   if (cur.buffer_id) await buffer.deletePost(env, cur.buffer_id).catch(() => {});
-  const bufferId = await sendToBuffer(env, v);
+  const bufferId = await sendToBuffer(env, v, id);
   const r = await env.DB.prepare(
     `UPDATE scheduled SET run_at = ?, text = ?, media = ?, targets = ?, thread = ?, title = ?, lnb_id = ?, origin = ?,
        x_text = ?, buffer_id = ?, updated_at = ? WHERE id = ? AND status = 'pending'`,
@@ -253,16 +266,27 @@ export async function claimAndPublish(env, id, { now = false } = {}) {
   return publish(env, await get(env, id));
 }
 
-/** Rotina de cada minuto: publica, em ordem, os que já venceram. */
-export async function runDue(env) {
+/**
+ * Publica o próximo agendado que venceu (um por execução: cada execução tem o
+ * seu limite de chamadas externas). Se houver mais na fila, `next()` abre uma
+ * nova execução, que publica o seguinte segundos depois. A rotina de cada
+ * minuto também chama esta função: é a rede de segurança se a corrente parar.
+ */
+export async function runDue(env, { next = null } = {}) {
+  const now = Date.now();
   await env.DB.prepare("UPDATE scheduled SET status = 'error', result = ?, updated_at = ? WHERE status = 'sending' AND updated_at < ?")
-    .bind(JSON.stringify({ error: 'Publicação interrompida. Confira as redes antes de tentar de novo.' }), Date.now(), Date.now() - STUCK_MS).run();
-  const { results } = await env.DB.prepare(
-    "SELECT id FROM scheduled WHERE status = 'pending' AND run_at <= ? ORDER BY run_at ASC, id ASC LIMIT 10",
-  ).bind(Date.now()).all();
-  // Em sequência: o post que abre o fio precisa sair antes das respostas.
-  for (const { id } of results) {
-    try { await claimAndPublish(env, id); } catch (err) { console.error('agendado', id, err); }
+    .bind(JSON.stringify({ error: 'Publicação interrompida. Confira as redes antes de tentar de novo.' }), now, now - STUCK_MS).run();
+  // Um post ainda saindo: espera, para as respostas do fio não passarem na frente.
+  const busy = await env.DB.prepare("SELECT id FROM scheduled WHERE status = 'sending' LIMIT 1").first();
+  if (busy) return 0;
+  const row = await env.DB.prepare(
+    "SELECT id FROM scheduled WHERE status = 'pending' AND run_at <= ? ORDER BY run_at ASC, id ASC LIMIT 1",
+  ).bind(now).first();
+  if (!row) return 0;
+  try { await claimAndPublish(env, row.id); } catch (err) { console.error('agendado', row.id, err); }
+  const more = await env.DB.prepare("SELECT id FROM scheduled WHERE status = 'pending' AND run_at <= ? LIMIT 1").bind(Date.now()).first();
+  if (more && next) {
+    try { await next(); } catch (err) { console.error('agendados: próxima execução', err); }
   }
-  return results.length;
+  return 1;
 }

@@ -26,6 +26,8 @@
   "preview_urls": true,
 
   // Site público das coberturas: jogos e posts (esquema em schema.sql).
+  // Ligação com o próprio Worker: cada post de uma sequência agendada sai numa execução nova.
+  "services": [{ "binding": "SELF", "service": "nasquadras-online" }],
   "d1_databases": [
     { "binding": "DB", "database_name": "nasquadras-site", "database_id": "64ef9ee0-3c46-4a32-baec-64e0b753ca7a" }
   ],

@@ -610,10 +610,31 @@ async function handlePublicApi(request, env, url) {
   });
 }
 
+/**
+ * Sequência de agendados: cada post sai numa execução nova do próprio Worker
+ * (ligação SELF), com limite de chamadas próprio. Só a rotina usa esta rota.
+ */
+const INTERNAL_PATH = '/__agendados/proximo';
+const chainNext = (env) => (env.SELF && env.SESSION_SECRET
+  ? async () => {
+    const res = await env.SELF.fetch(`https://interno${INTERNAL_PATH}`, { method: 'POST', headers: { 'x-nq-interno': env.SESSION_SECRET } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  : null);
+
+async function handleChain(request, env) {
+  if (request.method !== 'POST' || !env.SESSION_SECRET || !safeEqual(request.headers.get('x-nq-interno') || '', env.SESSION_SECRET)) {
+    return new Response('Not found', { status: 404 });
+  }
+  const n = await schedule.runDue(env, { next: chainNext(env) });
+  return new Response(String(n));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     try {
+      if (url.pathname === INTERNAL_PATH) return await handleChain(request, env);
       if (url.pathname.startsWith('/m/') && (request.method === 'GET' || request.method === 'HEAD')) {
         return await serveMedia(request, env, url.pathname.slice(3));
       }
@@ -648,7 +669,7 @@ export default {
   // Rotina diária: renova o token do Threads e apaga mídia com mais de 24h.
   async scheduled(event, env, ctx) {
     // A cada minuto: publica os posts agendados que venceram.
-    ctx.waitUntil(schedule.runDue(env).catch((err) => console.error('agendados', err)));
+    ctx.waitUntil(schedule.runDue(env, { next: chainNext(env) }).catch((err) => console.error('agendados', err)));
     // A cada 10 minutos: avisa os buscadores (IndexNow) do que mudou no site.
     if (new Date(event.scheduledTime).getUTCMinutes() % 10 === 3) {
       const origin = (env.SITE_URL || 'https://nasquadras.online').replace(/\/$/, '');
