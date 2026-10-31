@@ -3,6 +3,7 @@
 import { clearCookie, isLoggedIn, safeEqual, sessionCookie } from './auth.js';
 import * as threads from './threads.js';
 import * as bluesky from './bluesky.js';
+import * as mastodon from './mastodon.js';
 import * as coverage from './coverage.js';
 import * as lnb from './lnb.js';
 import * as site from './site.js';
@@ -140,12 +141,13 @@ async function handleApi(request, env, url) {
 
   switch (`${method} ${pathname}`) {
     case 'GET /api/status': {
-      const [t, b, cov] = await Promise.all([threads.getAuth(env), bluesky.status(env), coverage.get(env)]);
+      const [t, b, cov, mst] = await Promise.all([threads.getAuth(env), bluesky.status(env), coverage.get(env), mastodon.status(env)]);
       return json({
         threads: t
           ? { connected: t.expiresAt > Date.now(), username: t.username, expiresAt: t.expiresAt, canReply: threads.canReply(t) }
           : { connected: false, configured: Boolean(env.THREADS_APP_SECRET) },
         bluesky: b,
+        mastodon: mst,
         coverage: cov,
         redirectUri: threads.redirectUri(origin),
       });
@@ -237,6 +239,17 @@ async function handleApi(request, env, url) {
     case 'GET /api/lnb/today':
       return json({ games: await lnb.listToday() });
 
+    case 'POST /api/mastodon/post': {
+      const { text = '', tags = '', final = false, media, thread } = await body(request);
+      const items = normalizeMedia(origin, media);
+      if (!text.trim() && !items.length) return fail('Escreva um texto ou anexe uma mídia.');
+      const replyToId = thread ? await coverage.mastodonReplyTo(env) : null;
+      const c = compose({ network: 'mastodon', text, tags, inThread: Boolean(thread), threadFirst: !replyToId, final, mentions: await getMentions(env) });
+      const res = await mastodon.post(env, { text: c.text, media: items, replyToId });
+      if (thread) await coverage.mastodonAppend(env, res);
+      return json({ url: res.url, parts: res.parts, note: res.note });
+    }
+
     case 'GET /api/lnb/game':
       return json(await lnb.getGame(url.searchParams.get('id')));
 
@@ -255,6 +268,7 @@ async function handleApi(request, env, url) {
           text: String(entry.text || '').slice(0, 200),
           threads: entry.threads || null,
           bluesky: entry.bluesky || null,
+          mastodon: typeof entry.mastodon === 'string' ? entry.mastodon : null,
           site: typeof entry.site === 'string' && entry.site.startsWith(origin) ? entry.site : null,
           x: entry.x ? true : null,
         }),

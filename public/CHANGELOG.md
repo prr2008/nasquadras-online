@@ -2,6 +2,15 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.20 — 31/10/2026
+
+- **Mastodon (mastodon.social)** como destino, ao lado de Threads, Bluesky, Site e X: botão **Mastodon** no compositor e indicador da conta no topo.
+- **Fio da cobertura também no Mastodon:** o 1º post sai público e as respostas saem **"não listadas"** (quem segue vê, sem encher as linhas do tempo públicas). Texto acima de 500 caracteres vira fio numerado.
+- Até 4 fotos ou 1 vídeo, com as descrições (alt). Hashtags seguem a regra do Bluesky (post solto, 1º do fio e a partir do fim de jogo).
+- **Menções:** nova coluna **Mastodon** em **@ Menções** (ex.: fulano@mastodon.social).
+- Vale também para os **agendados** e as **sequências**.
+- App no celular: os destinos quebram em duas linhas e o topo não sobrepõe mais o nome.
+
 ## 1.19 — 31/10/2026
 
 - **Prévia do link no editor do Ao vivo:** ao colar um link no texto (inclusive encurtado, como bit.ly), aparece logo abaixo o card que as redes vão montar: imagem, título, descrição e o site de destino real ("jb.com.br (via bit.ly)").

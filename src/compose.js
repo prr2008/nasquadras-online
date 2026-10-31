@@ -4,12 +4,13 @@
 //   topic_tag (parâmetro da API) e o texto sai limpo, sem hashtags.
 // - Bluesky: hashtags no post avulso, no 1º post do fio e a partir do fim de
 //   jogo; nas respostas do meio do fio, o texto sai sem elas.
+// - Mastodon: mesma regra do Bluesky.
 // - X: texto + hashtags (a versão do X é montada no app).
 // - Site: sem hashtags.
 // Em todas, os apelidos de menção (@nbb…) viram o perfil certo de cada rede.
 
 const MENTIONS_KEY = 'mentions';
-const NETWORKS = ['threads', 'bluesky', 'x'];
+const NETWORKS = ['threads', 'bluesky', 'x', 'mastodon'];
 
 /** "#NBB #NasQuadras" -> ['#NBB', '#NasQuadras'] (só hashtags válidos). */
 export function splitTags(tags) {
@@ -20,7 +21,7 @@ export function splitTags(tags) {
 
 const cleanHandle = (s) => String(s || '').trim().replace(/^@+/, '').replace(/^https?:\/\/\S+\//, '').slice(0, 100);
 
-/** Lista de apelidos: [{ key, name, threads, bluesky, x }]. */
+/** Lista de apelidos: [{ key, name, threads, bluesky, x, mastodon }]. */
 export async function getMentions(env) {
   try { return JSON.parse((await env.KV.get(MENTIONS_KEY)) || '[]'); } catch { return []; }
 }
@@ -33,6 +34,7 @@ export async function saveMentions(env, list) {
     threads: cleanHandle(m.threads),
     bluesky: cleanHandle(m.bluesky),
     x: cleanHandle(m.x),
+    mastodon: cleanHandle(m.mastodon),
   })).filter((m) => m.key && !seen.has(m.key) && seen.add(m.key)).slice(0, 200);
   await env.KV.put(MENTIONS_KEY, JSON.stringify(clean));
   return clean;
@@ -73,7 +75,7 @@ export function compose({ network, text, tags = '', inThread = false, threadFirs
     const topic = list[0]?.slice(1);
     return { text: body, topic: validTopic(topic) ? topic : undefined };
   }
-  if (network === 'bluesky') {
+  if (network === 'bluesky' || network === 'mastodon') {
     const withTags = !inThread || threadFirst || final;
     return { text: withTags ? join(body) : body };
   }

@@ -14,12 +14,12 @@ const fmtWhen = (ms) => new Date(ms).toLocaleString('pt-BR', { weekday: 'short',
 const MODE = { start: '🧵 abre a cobertura', reply: '↳ no fio', none: 'solto' };
 
 function targets() {
-  return { threads: $('#t-threads').checked, bluesky: $('#t-bluesky').checked, site: $('#t-site').checked, tags: NQ().tagsValue() };
+  return { threads: $('#t-threads').checked, bluesky: $('#t-bluesky').checked, mastodon: NQ().mastodonOn(), site: $('#t-site').checked, tags: NQ().tagsValue() };
 }
 
 function renderTargets() {
   const t = targets();
-  const names = [t.threads && 'Threads', t.bluesky && 'Bluesky', t.site && 'Site', NQ().xOn() && 'X (Buffer)'].filter(Boolean);
+  const names = [t.threads && 'Threads', t.bluesky && 'Bluesky', t.mastodon && 'Mastodon', t.site && 'Site', NQ().xOn() && 'X (Buffer)'].filter(Boolean);
   $('#sched-targets').textContent = names.join(', ') || 'nenhum';
   $('#sched-x-note').hidden = !NQ().xOn();
 }
@@ -87,7 +87,7 @@ $('#sched-open').addEventListener('click', () => {
 $('#sched-close').addEventListener('click', closePanel);
 $('#sched-thread').addEventListener('change', renderThreadNote);
 $('#sched-at').addEventListener('change', renderSeqNote);
-['#t-threads', '#t-bluesky', '#t-site', '#t-x'].forEach((id) => $(id).addEventListener('change', () => { renderTargets(); renderSeqNote(); }));
+['#t-threads', '#t-bluesky', '#t-mastodon', '#t-site', '#t-x'].forEach((id) => $(id).addEventListener('change', () => { renderTargets(); renderSeqNote(); }));
 async function save({ more = false } = {}) {
   const st = NQ().state;
   if (st.media.some((m) => m.status === 'uploading' || m.status === 'preparing')) return NQ().toast('Aguarde o envio das mídias terminar.');
@@ -144,7 +144,7 @@ $('#sched-more').addEventListener('click', () => save({ more: true }));
 
 function dests(r) {
   const t = r.targets || {};
-  return [t.threads && 'Threads', t.bluesky && 'Bluesky', t.site && 'Site', r.x_text != null && 'X'].filter(Boolean).join(' · ');
+  return [t.threads && 'Threads', t.bluesky && 'Bluesky', t.mastodon && 'Mastodon', t.site && 'Site', r.x_text != null && 'X'].filter(Boolean).join(' · ');
 }
 
 function resultLinks(r) {
@@ -153,9 +153,10 @@ function resultLinks(r) {
   const parts = [];
   if (x.threads) parts.push(x.threads !== 'ok' ? `<a href="${esc(x.threads)}" target="_blank" rel="noopener">Threads ↗</a>` : 'Threads ✓');
   if (x.bluesky) parts.push(`<a href="${esc(x.bluesky)}" target="_blank" rel="noopener">Bluesky ↗</a>`);
+  if (x.mastodon) parts.push(`<a href="${esc(x.mastodon)}" target="_blank" rel="noopener">Mastodon ↗</a>`);
   if (x.site) parts.push(`<a href="${esc(x.site)}" target="_blank" rel="noopener">Site ↗</a>`);
   if (r.buffer_id) parts.push('X pelo Buffer');
-  const errs = ['threads', 'bluesky', 'site'].filter((k) => x[`${k}Error`]).map((k) => `${k}: ${x[`${k}Error`]}`);
+  const errs = ['threads', 'bluesky', 'mastodon', 'site'].filter((k) => x[`${k}Error`]).map((k) => `${k}: ${x[`${k}Error`]}`);
   if (x.error) errs.push(x.error);
   return parts.join(' · ') + (errs.length ? `<span class="sched-err">Falhou — ${esc(errs.join('; '))}</span>` : '');
 }
@@ -245,6 +246,7 @@ $('#sched-list').addEventListener('click', async (e) => {
       $('#t-threads').checked = !!row.targets.threads;
       $('#t-bluesky').checked = !!row.targets.bluesky;
       $('#t-site').checked = !!row.targets.site;
+      if (!$('#t-mastodon').disabled) $('#t-mastodon').checked = !!row.targets.mastodon;
       $('#t-x').checked = row.x_text != null;
       NQ().renderMedia(); NQ().onTextChange();
       // Versão do X diferente do texto do post: abre a caixa com ela.

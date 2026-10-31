@@ -5,6 +5,7 @@
 
 import * as threads from './threads.js';
 import * as bluesky from './bluesky.js';
+import * as mastodon from './mastodon.js';
 import * as coverage from './coverage.js';
 import * as site from './site.js';
 import * as buffer from './buffer.js';
@@ -51,9 +52,9 @@ function validate(input, origin) {
   const media = cleanMedia(input.media);
   const t = input.targets || {};
   // As hashtags fixas vão junto, para cada rede montar o seu texto no horário.
-  const targets = { threads: Boolean(t.threads), bluesky: Boolean(t.bluesky), site: Boolean(t.site), tags: String(t.tags || '').slice(0, 200) };
+  const targets = { threads: Boolean(t.threads), bluesky: Boolean(t.bluesky), mastodon: Boolean(t.mastodon), site: Boolean(t.site), tags: String(t.tags || '').slice(0, 200) };
   const xText = input.x && typeof input.x.text === 'string' ? input.x.text.trim() : null;
-  if (!targets.threads && !targets.bluesky && !targets.site && xText == null) throw new Error('Escolha pelo menos um destino.');
+  if (!targets.threads && !targets.bluesky && !targets.mastodon && !targets.site && xText == null) throw new Error('Escolha pelo menos um destino.');
   if (!text && !media.length) throw new Error('Escreva algo ou anexe uma mídia.');
   if (targets.threads && graphemeLength(text) > 500) {
     throw new Error('Texto passa de 500 caracteres para o Threads.');
@@ -229,6 +230,15 @@ export async function publish(env, row) {
       result.bluesky = r.url;
     })().catch((err) => { result.blueskyError = err.message; }));
   }
+  if (targets.mastodon) {
+    jobs.push((async () => {
+      const replyToId = inThread ? await coverage.mastodonReplyTo(env) : null;
+      const c = compose({ network: 'mastodon', text: row.text, tags, inThread, threadFirst: !replyToId, mentions });
+      const r = await mastodon.post(env, { text: c.text, media, replyToId });
+      if (inThread) await coverage.mastodonAppend(env, r);
+      result.mastodon = r.url;
+    })().catch((err) => { result.mastodonError = err.message; }));
+  }
   if (targets.site) {
     jobs.push((async () => {
       const m = await coverage.meta(env);
@@ -245,13 +255,13 @@ export async function publish(env, row) {
   await Promise.all(jobs);
   if (row.buffer_id) result.x = 'buffer';
 
-  const ok = ['threads', 'bluesky', 'site'].filter((k) => result[k]);
-  const failed = ['threads', 'bluesky', 'site'].filter((k) => result[`${k}Error`]);
+  const ok = ['threads', 'bluesky', 'mastodon', 'site'].filter((k) => result[k]);
+  const failed = ['threads', 'bluesky', 'mastodon', 'site'].filter((k) => result[`${k}Error`]);
   const status = failed.length ? (ok.length ? 'partial' : 'error') : 'sent';
   await env.DB.prepare('UPDATE scheduled SET status = ?, result = ?, updated_at = ? WHERE id = ?')
     .bind(status, JSON.stringify(result), Date.now(), row.id).run();
   if (ok.length || row.buffer_id) {
-    await appendHistory(env, { text: `⏰ ${row.text || row.x_text}`.slice(0, 200), threads: result.threads || null, bluesky: result.bluesky || null, site: result.site || null, x: row.buffer_id ? true : null });
+    await appendHistory(env, { text: `⏰ ${row.text || row.x_text}`.slice(0, 200), threads: result.threads || null, bluesky: result.bluesky || null, mastodon: result.mastodon || null, site: result.site || null, x: row.buffer_id ? true : null });
   }
   return { status, result };
 }

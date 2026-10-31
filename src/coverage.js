@@ -4,13 +4,13 @@
 // publicações correm em paralelo e não podem sobrescrever uma à outra.
 
 const META = 'cov:meta';
-const NET = { threads: 'cov:threads', bluesky: 'cov:bluesky' };
+const NET = { threads: 'cov:threads', bluesky: 'cov:bluesky', mastodon: 'cov:mastodon' };
 
 const read = async (env, key) => JSON.parse((await env.KV.get(key)) || 'null');
 
 export async function get(env) {
-  const [meta, threads, bluesky] = await Promise.all([
-    read(env, META), read(env, NET.threads), read(env, NET.bluesky),
+  const [meta, threads, bluesky, mastodon] = await Promise.all([
+    read(env, META), read(env, NET.threads), read(env, NET.bluesky), read(env, NET.mastodon),
   ]);
   return {
     active: Boolean(meta?.active),
@@ -19,12 +19,13 @@ export async function get(env) {
     slug: meta?.slug || null,
     threads: threads ? { count: threads.count, rootUrl: threads.rootUrl } : { count: 0 },
     bluesky: bluesky ? { count: bluesky.count, rootUrl: bluesky.rootUrl } : { count: 0 },
+    mastodon: mastodon ? { count: mastodon.count, rootUrl: mastodon.rootUrl } : { count: 0 },
   };
 }
 
 /** Começa um fio novo: o próximo post vira o primeiro do fio. */
 export async function start(env, title = '') {
-  await Promise.all([env.KV.delete(NET.threads), env.KV.delete(NET.bluesky)]);
+  await Promise.all([env.KV.delete(NET.threads), env.KV.delete(NET.bluesky), env.KV.delete(NET.mastodon)]);
   await env.KV.put(META, JSON.stringify({ active: true, title: String(title).slice(0, 80), startedAt: Date.now() }));
   return get(env);
 }
@@ -86,6 +87,24 @@ export async function blueskyAppend(env, { root, last, rootUrl, parts }) {
     root: cur?.root || root,
     rootUrl: cur?.rootUrl || rootUrl,
     parent: last,
+    count: (cur?.count || 0) + (parts || 1),
+  }));
+}
+
+// ---------- Mastodon ----------
+
+export async function mastodonReplyTo(env) {
+  if (!(await isActive(env))) return null;
+  return (await read(env, NET.mastodon))?.lastId || null;
+}
+
+export async function mastodonAppend(env, { id, url, lastId, parts }) {
+  if (!(await isActive(env))) return;
+  const cur = await read(env, NET.mastodon);
+  await env.KV.put(NET.mastodon, JSON.stringify({
+    rootId: cur?.rootId || id,
+    rootUrl: cur?.rootUrl || url || null,
+    lastId: lastId || id,
     count: (cur?.count || 0) + (parts || 1),
   }));
 }

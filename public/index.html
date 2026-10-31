@@ -35,6 +35,7 @@
       <div class="accounts">
         <button id="acc-threads" class="pill" type="button" title="Threads">Threads</button>
         <button id="acc-bluesky" class="pill" type="button" title="Bluesky">Bluesky</button>
+        <button id="acc-mastodon" class="pill" type="button" title="Mastodon">Mastodon</button>
       </div>
     </header>
 
@@ -142,6 +143,7 @@
         <div class="counters">
           <span id="count-threads" class="count">Threads 0/500</span>
           <span id="count-bluesky" class="count">Bluesky 0/300</span>
+          <span id="count-mastodon" class="count" hidden>Mastodon 0/500</span>
           <span id="count-x" class="count" title="Limite do X (Twitter)">X 0/280</span>
         </div>
       </div>
@@ -149,6 +151,7 @@
       <div class="targets">
         <label class="target"><input type="checkbox" id="t-threads" checked><span>Threads</span></label>
         <label class="target"><input type="checkbox" id="t-bluesky" checked><span>Bluesky</span></label>
+        <label class="target" id="t-mastodon-wrap" title="Publica no Mastodon"><input type="checkbox" id="t-mastodon"><span>Mastodon</span></label>
         <label class="target"><input type="checkbox" id="t-site" checked><span>Site</span></label>
         <label class="target" id="t-x-wrap" title="Publica no X pelo Buffer"><input type="checkbox" id="t-x"><span>X</span></label>
       </div>
@@ -424,7 +427,7 @@
     </section>
 
     <footer class="foot">
-      <button id="changelog-open" type="button" class="link small">Novidades · v1.19</button>
+      <button id="changelog-open" type="button" class="link small">Novidades · v1.20</button>
       <button id="logout" type="button" class="link small">Sair</button>
     </footer>
   </main>

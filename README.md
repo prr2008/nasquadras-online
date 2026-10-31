@@ -14,6 +14,7 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
 - **Coluna Nas Quadras** (`/coluna`): na aba *Coluna* do app, cole o link completo de uma coluna publicada (JB ou outro site); o app lê título, foto, data e o início do texto, você revisa e adiciona. A página mostra os cards com link para o texto original; a foto é copiada para o R2. Divulgação opcional no Threads e no Bluesky.
 - **Agendamento** (botão *⏰ Agendar* no Ao vivo): escolha data e hora e se o post **abre a cobertura do jogo** (vira o 1º do fio no Threads e no Bluesky e cria a página no site), **responde no fio** ou sai solto. Uma rotina roda a cada minuto e publica os que venceram, em ordem. A lista *Agendados* permite editar, cancelar ou publicar agora. Marcando *X*, a versão para o X (até 280 caracteres) vai para a fila do **Buffer** no mesmo horário; cancelar ou editar no app também atualiza o Buffer.
 - **Prévia de link no editor** (`src/linkpreview.js`, `POST /api/link/preview`, `GET /api/link/image`): segue encurtadores até a página final, lê Open Graph (o mesmo leitor do card do Bluesky), avisa sobre mídia anexada, falta de imagem ou miniatura grande demais; o botão *Usar a imagem como foto do post* baixa a imagem pelo servidor (CORS) e a passa pelo mesmo fluxo de compressão e envio das fotos.
+- **Mastodon** (`src/mastodon.js`, `POST /api/mastodon/post`): token de acesso da conta no segredo `MASTODON_TOKEN` (escopos `write:statuses write:media`; `read:accounts` para mostrar a conta), servidor em `MASTODON_INSTANCE`. Fio da cobertura com `in_reply_to_id` (1º público, respostas não listadas), até 4 fotos ou 1 vídeo (`/api/v2/media`, espera o processamento), acima de 500 caracteres vira fio numerado.
 - **Sequência agendada**: posts no mesmo horário saem em ordem (id), um por execução; depois de cada um, a rotina chama o próprio Worker pela ligação `SELF` (rota interna autenticada com `SESSION_SECRET`) para publicar o seguinte segundos depois, com limite de chamadas novo. Enquanto um post está saindo, a rotina de cada minuto espera. No X, cada post seguinte da sequência vai 1 min depois no Buffer.
 - **X pelo Buffer**: o destino *X* no compositor publica no X na hora, pela API do Buffer (modo "publicar agora"). Se o texto passar de 280 caracteres, aparece a *Versão para o X* para encurtar. Vale também para os agendados. O X recebe até 4 fotos ou 1 vídeo; não há fio no X (cada post sai solto).
 - **Zona de Conforto** (`/zona-de-conforto`): edições do programa com o player da playlist do Spotify. Na aba *Zona* do app, cola-se o link da playlist; número e data da edição são lidos do nome (oEmbed do Spotify).
@@ -96,6 +97,7 @@ public/vendor/   Quill 2.0.3 (editor visual, licença BSD)
 src/index.js     rotas, upload de mídia, login e rotina diária
 src/threads.js   OAuth e publicação no Threads
 src/bluesky.js   sessão e publicação no Bluesky
+src/mastodon.js  publicação no Mastodon (token de acesso)
 src/site.js      site: layout, menu e páginas das coberturas
 src/pages.js     site: início, blog, artigo, páginas fixas, RSS e sitemap
 src/schedule.js  posts agendados: cadastro e publicação pela rotina de cada minuto

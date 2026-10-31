@@ -73,6 +73,20 @@ function renderAccounts() {
   $('#acc-bluesky').classList.toggle('on', !!s?.bluesky?.connected);
   $('#acc-threads').textContent = s?.threads?.username ? `@${s.threads.username}` : 'Threads';
   $('#acc-bluesky').textContent = s?.bluesky?.handle ? `@${s.bluesky.handle.replace('.bsky.social', '')}` : 'Bluesky';
+  const m = s?.mastodon || {};
+  $('#acc-mastodon').classList.toggle('on', !!m.connected);
+  $('#acc-mastodon').textContent = m.acct ? `@${m.acct.split('@')[0]}` : 'Mastodon';
+  renderMastodonTarget();
+}
+
+// ---------- Mastodon ----------
+function mastodonReady() { return Boolean(state.status?.mastodon?.connected); }
+function mastodonOn() { return mastodonReady() && $('#t-mastodon').checked; }
+function renderMastodonTarget() {
+  const ready = mastodonReady();
+  $('#t-mastodon').disabled = !ready;
+  $('#t-mastodon-wrap').title = ready ? `Publica no Mastodon (${state.status.mastodon.acct})` : 'Cadastre MASTODON_TOKEN na Cloudflare para publicar no Mastodon';
+  $('#count-mastodon').hidden = !mastodonOn();
 }
 
 function openDialog(title, html) {
@@ -98,6 +112,14 @@ $('#acc-threads').addEventListener('click', () => {
       <p><code>${esc(state.status?.redirectUri || '')}</code></p>
       <div class="row"><a class="primary" style="text-decoration:none;padding:10px 14px" href="/auth/threads/start">Conectar Threads</a></div>`);
   }
+});
+
+$('#acc-mastodon').addEventListener('click', () => {
+  const m = state.status?.mastodon || {};
+  openDialog('Mastodon', m.connected
+    ? `<p>Conectado como <strong>@${esc(m.acct)}</strong>${m.url ? ` · <a href="${esc(m.url)}" target="_blank" rel="noopener">perfil ↗</a>` : ''}.</p>
+      <p class="small" style="color:var(--muted)">No fio da cobertura, o 1º post sai público e as respostas saem "não listadas" (quem segue vê, sem encher as linhas do tempo públicas).</p>`
+    : `<p>Não conectado.</p><p class="error">${esc(m.reason || 'Cadastre o segredo MASTODON_TOKEN no Worker na Cloudflare.')}</p>`);
 });
 
 $('#acc-bluesky').addEventListener('click', () => {
@@ -131,6 +153,7 @@ function renderThread() {
   if (c.threads?.rootUrl) links.push(`<a href="${esc(c.threads.rootUrl)}" target="_blank" rel="noopener">Threads (${c.threads.count})</a>`);
   else if (c.threads?.count) links.push(`Threads (${c.threads.count})`);
   if (c.bluesky?.rootUrl) links.push(`<a href="${esc(c.bluesky.rootUrl)}" target="_blank" rel="noopener">Bluesky (${c.bluesky.count})</a>`);
+  if (c.mastodon?.rootUrl) links.push(`<a href="${esc(c.mastodon.rootUrl)}" target="_blank" rel="noopener">Mastodon (${c.mastodon.count})</a>`);
   const started = c.startedAt ? new Date(c.startedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   if (c.slug) links.push(`<a href="/c/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Página no site ↗</a>`);
   $('#thread-meta').innerHTML = links.length
@@ -507,6 +530,10 @@ function onTextChange() {
     cb.textContent = `Bluesky ${nb}/${BLUESKY_MAX}`;
     cb.className = `count ${nb > BLUESKY_MAX - 30 ? 'near' : ''}`;
   }
+  const nm = glen(blueskyText());
+  const cm = $('#count-mastodon');
+  cm.textContent = nm > 500 ? `Mastodon ${nm}/500 · fio de ~${Math.ceil(nm / 480)}` : `Mastodon ${nm}/500`;
+  cm.className = `count ${nm > 500 ? 'thread' : nm > 470 ? 'near' : ''}`;
   const nx = xLength(xOn() ? xText() : finalText());
   const cx = $('#count-x');
   cx.textContent = `X ${nx}/${X_MAX}`;
@@ -629,6 +656,8 @@ function resetX() {
   renderX();
 }
 
+$('#t-mastodon').checked = store.get('tm', true);
+$('#t-mastodon').addEventListener('change', () => { store.set('tm', $('#t-mastodon').checked); renderMastodonTarget(); onTextChange(); });
 $('#t-x').checked = store.get('tx', false);
 $('#t-x').addEventListener('change', () => { store.set('tx', $('#t-x').checked); onTextChange(); });
 $('#x-text').addEventListener('input', () => { xTouched = true; onTextChange(); });
@@ -703,6 +732,10 @@ function renderWarnings() {
   }
   if (threadOn() && toThreads !== toBsky) w.push('O fio só avança na rede selecionada.');
   if ($('#t-site').checked && !state.status?.coverage?.active) w.push('Para publicar no site, toque em "Iniciar cobertura do jogo".');
+  if (mastodonOn()) {
+    if (videos && state.media.length > 1) w.push('Mastodon: só o vídeo será enviado.');
+    else if (images > 4) w.push('Mastodon: só as 4 primeiras fotos serão enviadas.');
+  }
   if (xOn()) {
     if (xLength(xText()) > X_MAX) w.push(`X: deixe a versão para o X com até ${X_MAX} caracteres.`);
     if (videos && state.media.length > 1) w.push('X: só o vídeo será enviado.');
@@ -908,8 +941,9 @@ $('#publish').addEventListener('click', async () => {
   // O site recebe o post só com uma cobertura ativa (cada cobertura é uma página).
   const toSite = $('#t-site').checked && Boolean(state.status?.coverage?.active);
   const toX = xOn();
+  const toMastodon = mastodonOn();
   const xt = toX ? xText() : '';
-  if (!toThreads && !toBsky && !toSite && !toX) return toast('Escolha pelo menos um destino.');
+  if (!toThreads && !toBsky && !toMastodon && !toSite && !toX) return toast('Escolha pelo menos um destino.');
   if (toX && xLength(xt) > X_MAX) return toast(`A versão para o X passa de ${X_MAX} caracteres.`);
   if (state.media.some((m) => m.status === 'uploading' || m.status === 'preparing')) return toast('Aguarde o envio das mídias terminar.');
   if (state.media.some((m) => m.status === 'failed')) return toast('Remova as mídias com erro antes de publicar.');
@@ -940,6 +974,14 @@ $('#publish').addEventListener('click', async () => {
       .catch((err) => { row.bad(err.message); result.blueskyError = err.message; }));
   }
 
+  if (toMastodon) {
+    const row = progressRow('Mastodon');
+    row.set(media.length ? 'Enviando mídia…' : 'Publicando…');
+    jobs.push(api('/api/mastodon/post', { text, tags, final, media, thread: inThread })
+      .then((r) => { row.ok(r.url); result.mastodon = r.url; if (r.note) toast(r.note); })
+      .catch((err) => { row.bad(err.message); result.mastodonError = err.message; }));
+  }
+
   if (toSite) {
     const row = progressRow('Site');
     row.set('Publicando…');
@@ -960,10 +1002,10 @@ $('#publish').addEventListener('click', async () => {
   state.busy = false;
   $('#publish').disabled = false;
 
-  const anyOk = result.threads || result.bluesky || result.site || result.x;
-  const anyFail = result.threadsError || result.blueskyError || result.siteError || result.xError;
+  const anyOk = result.threads || result.bluesky || result.mastodon || result.site || result.x;
+  const anyFail = result.threadsError || result.blueskyError || result.mastodonError || result.siteError || result.xError;
   if (anyOk) {
-    api('/api/history', { text: (result.threads || result.bluesky || result.site ? text : xt).slice(0, 200), threads: result.threads, bluesky: result.bluesky, site: result.site, x: result.x })
+    api('/api/history', { text: (result.threads || result.bluesky || result.mastodon || result.site ? text : xt).slice(0, 200), threads: result.threads, bluesky: result.bluesky, mastodon: result.mastodon, site: result.site, x: result.x })
       .then((h) => renderHistory(h.items)).catch(() => {});
     if (inThread) refreshThread().catch(() => {});
   }
@@ -987,6 +1029,7 @@ function renderHistory(items = []) {
         <span>${new Date(h.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
         ${h.threads && h.threads !== 'ok' ? `<a href="${esc(h.threads)}" target="_blank" rel="noopener">Threads ↗</a>` : h.threads ? '<span>Threads ✓</span>' : ''}
         ${h.bluesky ? `<a href="${esc(h.bluesky)}" target="_blank" rel="noopener">Bluesky ↗</a>` : ''}
+        ${h.mastodon ? `<a href="${esc(h.mastodon)}" target="_blank" rel="noopener">Mastodon ↗</a>` : ''}
         ${h.site ? `<a href="${esc(h.site)}" target="_blank" rel="noopener">Site ↗</a>` : ''}
         ${h.x ? '<span>X ✓</span>' : ''}
       </div>
@@ -996,7 +1039,7 @@ function renderHistory(items = []) {
 // Funções compartilhadas com o editor do blog (editor.js).
 window.NQ = {
   api, toast, esc, compressImage, postThreads, threadOn, state, lnbRefresh, copyText,
-  finalText, bodyText, tagsValue, xLength, X_MAX, glen, xOn, xText, renderX, resetX, renderMedia, renderWarnings, onTextChange, refreshThread, renderHistory,
+  finalText, bodyText, tagsValue, mastodonOn, xLength, X_MAX, glen, xOn, xText, renderX, resetX, renderMedia, renderWarnings, onTextChange, refreshThread, renderHistory,
 };
 
 // ---------- Início ----------
@@ -1049,6 +1092,7 @@ function mentionRow(m = {}) {
     <input data-f="threads" placeholder="Threads" value="${esc(m.threads || '')}" aria-label="Perfil no Threads">
     <input data-f="bluesky" placeholder="Bluesky" value="${esc(m.bluesky || '')}" aria-label="Perfil no Bluesky (ex.: fulano.bsky.social)">
     <input data-f="x" placeholder="X" value="${esc(m.x || '')}" aria-label="Perfil no X">
+    <input data-f="mastodon" placeholder="Mastodon" value="${esc(m.mastodon || '')}" aria-label="Perfil no Mastodon (ex.: fulano@mastodon.social)">
     <button type="button" class="link small danger" data-rm aria-label="Remover">×</button>
   </div>`;
 }
@@ -1058,7 +1102,7 @@ $('#mentions-open').addEventListener('click', async () => {
   try { list = (await api('/api/mentions')).mentions; } catch (err) { return toast(err.message); }
   openDialog('Menções por rede', `
     <p class="small" style="color:var(--muted);margin-top:0">Escreva <strong>@apelido</strong> no post e cada rede recebe o perfil certo. Sem perfil numa rede, sai o nome (ex.: "NBB"). Perfis sem o @.</p>
-    <div class="mention-head"><span>Apelido</span><span>Nome</span><span>Threads</span><span>Bluesky</span><span>X</span><span></span></div>
+    <div class="mention-head"><span>Apelido</span><span>Nome</span><span>Threads</span><span>Bluesky</span><span>X</span><span>Mastodon</span><span></span></div>
     <div id="mention-rows">${(list.length ? list : [{}]).map(mentionRow).join('')}</div>
     <div class="mention-actions">
       <button type="button" id="mention-add" class="ghost small">＋ Adicionar</button>
