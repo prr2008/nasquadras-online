@@ -2,6 +2,12 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.19 — 31/10/2026
+
+- **Prévia do link no editor do Ao vivo:** ao colar um link no texto (inclusive encurtado, como bit.ly), aparece logo abaixo o card que as redes vão montar: imagem, título, descrição e o site de destino real ("jb.com.br (via bit.ly)").
+- **Avisos antes de publicar:** com foto ou vídeo anexado, o card não aparece no Threads nem no Bluesky; página sem imagem de prévia; imagem grande demais para a miniatura do Bluesky; link que o site não deixa ler.
+- **🖼️ Usar a imagem como foto do post:** baixa a imagem da prévia e anexa como foto normal (comprimida como as outras, com descrição "Imagem de: título"). Use com imagens que você pode publicar.
+
 ## 1.18 — 30/10/2026
 
 - **Sequência de posts no agendamento:** no painel **⏰ Agendar**, o botão **＋ Agendar e escrever o próximo** agenda o post e deixa o painel aberto no mesmo horário, já como resposta no fio. Escreva o próximo, toque de novo, e no último use **Agendar**.

@@ -17,6 +17,7 @@ import * as schedule from './schedule.js';
 import * as buffer from './buffer.js';
 import * as indexnow from './indexnow.js';
 import { supportInfo } from './pix.js';
+import * as linkpreview from './linkpreview.js';
 import { applyMentions, compose, getMentions, saveMentions } from './compose.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
@@ -274,6 +275,14 @@ async function handleApi(request, env, url) {
     // ---------- Coluna (links das colunas no JB) ----------
     case 'GET /api/coluna':
       return json({ columns: await coluna.list(env) });
+
+    case 'POST /api/link/preview': {
+      const { url: link } = await body(request);
+      return json(await linkpreview.preview(link));
+    }
+
+    case 'GET /api/link/image':
+      return linkpreview.image(url.searchParams.get('url'));
 
     case 'POST /api/coluna/preview': {
       const { url: link } = await body(request);

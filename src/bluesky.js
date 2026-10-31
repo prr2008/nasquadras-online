@@ -139,10 +139,10 @@ async function buildEmbed(env, session, media) {
 // O Bluesky não monta a prévia de links sozinho: quem publica envia título,
 // descrição e miniatura. Usado quando o post não tem foto nem vídeo.
 
-const UA = 'Mozilla/5.0 (compatible; NasQuadrasOnline/1.0; +https://nasquadras.online)';
-const THUMB_MAX = 950_000; // limite de ~1 MB do Bluesky para a miniatura
+export const UA = 'Mozilla/5.0 (compatible; NasQuadrasOnline/1.0; +https://nasquadras.online)';
+export const THUMB_MAX = 950_000; // limite de ~1 MB do Bluesky para a miniatura
 
-const decodeHtml = (s) => String(s || '')
+export const decodeHtml = (s) => String(s || '')
   .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
   .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
   .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
@@ -153,13 +153,13 @@ export function firstUrl(text) {
   return m ? m[0].replace(/[.,;:!?)\]]+$/, '') : null;
 }
 
-async function pageMeta(url) {
+export async function pageMeta(url) {
   // YouTube: o oEmbed é mais confiável que a página (sem tela de consentimento).
   if (/^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)) {
     const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`, { headers: { 'User-Agent': UA } });
     if (r.ok) {
       const o = await r.json();
-      return { title: o.title, description: o.author_name ? `YouTube · ${o.author_name}` : 'YouTube', image: o.thumbnail_url };
+      return { title: o.title, description: o.author_name ? `YouTube · ${o.author_name}` : 'YouTube', image: o.thumbnail_url, finalUrl: url };
     }
   }
   const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'text/html' }, redirect: 'follow' });
@@ -182,6 +182,7 @@ async function pageMeta(url) {
     title: meta['og:title'] || meta['twitter:title'] || title,
     description: meta['og:description'] || meta.description || '',
     image,
+    finalUrl: res.url || url,
   };
 }
 

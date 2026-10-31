@@ -513,7 +513,87 @@ function onTextChange() {
   cx.className = `count ${nx > X_MAX ? 'over' : nx > X_MAX - 20 ? 'near' : ''}`;
   renderX();
   renderWarnings();
+  watchLink();
 }
+
+// ---------- Prévia do link ----------
+// Mostra no editor o card que as redes vão montar (segue bit.ly e afins até a
+// página final). A imagem pode virar foto do post.
+const linkState = { url: null, data: null, loading: false, timer: null };
+
+function firstLink(text) {
+  const m = String(text || '').match(/https?:\/\/[^\s<>"']+/);
+  return m ? m[0].replace(/[.,;:!?)\]]+$/, '') : null;
+}
+
+function watchLink() {
+  const url = firstLink($('#text').value);
+  if (url === linkState.url) return;
+  linkState.url = url;
+  linkState.data = null;
+  clearTimeout(linkState.timer);
+  if (!url) return renderLinkPreview();
+  linkState.loading = true;
+  renderLinkPreview();
+  linkState.timer = setTimeout(async () => {
+    try {
+      const data = await api('/api/link/preview', { url });
+      if (linkState.url === url) linkState.data = data;
+    } catch (err) {
+      if (linkState.url === url) linkState.data = { ok: false, error: err.message };
+    }
+    if (linkState.url === url) { linkState.loading = false; renderLinkPreview(); }
+  }, 700);
+}
+
+function renderLinkPreview() {
+  const box = $('#link-preview');
+  if (!box) return;
+  const { url, data, loading } = linkState;
+  if (!url) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  if (loading || !data) { box.innerHTML = '<p class="lp-note">Lendo a prévia do link…</p>'; return; }
+  if (!data.ok) { box.innerHTML = `<p class="lp-note warn">${esc(data.error || 'Sem prévia para este link.')}</p>`; return; }
+  const notes = [];
+  if (state.media.length) notes.push('Com foto ou vídeo anexado, o card do link não aparece no Threads nem no Bluesky.');
+  if (!data.image) notes.push('Esta página não tem imagem de prévia: o card sai só com o texto.');
+  else if (data.imageTooBig) notes.push('No Bluesky, o card sai sem a imagem (arquivo grande demais para a miniatura).');
+  box.innerHTML = `
+    <div class="lp-card">
+      ${data.image ? `<img src="${esc(data.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+      <div class="lp-body">
+        <span class="lp-host">${esc(data.host)}${data.shortened ? ` <small>(via ${esc(new URL(data.url).hostname.replace(/^www\./, ''))})</small>` : ''}</span>
+        <strong>${esc(data.title || data.host)}</strong>
+        ${data.description ? `<span class="lp-desc">${esc(data.description)}</span>` : ''}
+      </div>
+    </div>
+    ${notes.map((n) => `<p class="lp-note warn">${esc(n)}</p>`).join('')}
+    ${data.image ? '<button type="button" id="lp-use" class="ghost small">🖼️ Usar a imagem como foto do post</button>' : ''}`;
+}
+
+document.addEventListener('click', async (e) => {
+  if (e.target.id !== 'lp-use') return;
+  const data = linkState.data;
+  if (!data?.image) return;
+  const btn = e.target;
+  btn.disabled = true;
+  btn.textContent = 'Baixando a imagem…';
+  try {
+    const res = await fetch(`/api/link/image?url=${encodeURIComponent(data.image)}`, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Não consegui baixar a imagem.');
+    const blob = await res.blob();
+    const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+    const file = new File([blob], `prévia.${ext}`, { type: blob.type });
+    await addFile(file);
+    const item = state.media.at(-1);
+    if (item && !item.alt && data.title) { item.alt = `Imagem de: ${data.title}`.slice(0, 1000); renderMedia(); }
+    toast('Imagem anexada como foto. O card do link deixa de aparecer nas redes.', 5000);
+  } catch (err) {
+    toast(err.message, 5000);
+    btn.disabled = false;
+    btn.textContent = '🖼️ Usar a imagem como foto do post';
+  }
+});
 
 // ---------- X pelo Buffer ----------
 // O texto do X acompanha o do post até ser editado à mão na "Versão para o X".
@@ -629,6 +709,7 @@ function renderWarnings() {
     else if (images > 4) w.push('X: só as 4 primeiras fotos serão enviadas.');
   }
   $('#warnings').textContent = w.join(' ');
+  renderLinkPreview();
 }
 $('#t-threads').addEventListener('change', renderWarnings);
 $('#t-bluesky').addEventListener('change', renderWarnings);
