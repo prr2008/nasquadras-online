@@ -2,6 +2,12 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.22 — 04/11/2026
+
+- **security.txt** em nasquadras.online/.well-known/security.txt (padrão RFC 9116): diz a quem achar uma falha para onde avisar (pedro.rodrigues@nasquadras.online). A validade se renova sozinha, sempre um ano à frente.
+- **Login do app protegido na Cloudflare:** regra de limite de tentativas no /api/login (muitas tentativas seguidas do mesmo endereço são bloqueadas por alguns segundos).
+- **Speed optimizations** ligado na Cloudflare: pré-carrega a próxima página provável e acelera a reconexão de quem volta ao site.
+
 ## 1.21 — 31/10/2026
 
 - **Encerrar a cobertura zera o jogo:** placar, times e período voltam ao zero e o jogo da LNB é desvinculado, pronto para a próxima cobertura.

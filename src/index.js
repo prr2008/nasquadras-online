@@ -616,6 +616,11 @@ async function handleMainSite(request, env, url) {
     const [articles, games] = await Promise.all([blog.listPublished(env, { limit: 1000 }), site.listGames(env, 1000)]);
     return xmlRes(pages.sitemap({ articles, games, origin }), 'application/xml');
   }
+  if (p === '/.well-known/security.txt' || p === '/security.txt') {
+    // RFC 9116: validade sempre 1 ano à frente, para o arquivo nunca vencer.
+    const expires = new Date(Date.now() + 365 * 86400e3).toISOString().replace(/\.\d{3}Z$/, 'Z');
+    return xmlRes(`Contact: mailto:pedro.rodrigues@nasquadras.online\nExpires: ${expires}\nPreferred-Languages: pt, en\nCanonical: ${origin}/.well-known/security.txt\n`, 'text/plain');
+  }
   const key = indexnow.keyFile(env, p);
   if (key) return new Response(key, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   if (p === '/robots.txt') {
