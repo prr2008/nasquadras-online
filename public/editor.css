@@ -164,3 +164,10 @@
 .wp-log { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; max-height: 360px; overflow-y: auto; }
 .wp-log .meta { color: var(--muted); }
 .wp-log .bad { color: var(--bad); font-weight: 600; }
+
+/* Podcast */
+.pod-info { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+.pod-tag { display: inline-block; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.pod-tag.warn { border-color: var(--warn, #f5b041); color: var(--warn, #f5b041); }
+.pod-hidden { opacity: .55; }
+.col-list .info .meta .pod-tag { margin-left: 4px; }

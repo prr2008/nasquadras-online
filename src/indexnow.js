@@ -22,12 +22,13 @@ export function keyFile(env, pathname) {
 /** Endereços que mudaram desde `since` (0 = todos, na primeira vez). */
 export async function changedUrls(env, origin, since) {
   const q = (sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results || []);
-  const [articles, games, cols, eps, pages] = await Promise.all([
+  const [articles, games, cols, eps, pages, pods] = await Promise.all([
     q(`SELECT slug FROM articles WHERE status = 'published' AND updated_at > ? LIMIT 500`, since),
     q(`SELECT slug FROM games WHERE updated_at > ? UNION SELECT game_slug AS slug FROM posts WHERE created_at > ? LIMIT 300`, since, since),
     q('SELECT id FROM columns WHERE updated_at > ? LIMIT 1', since),
     q('SELECT id FROM episodes WHERE updated_at > ? LIMIT 1', since),
     q('SELECT slug FROM pages WHERE updated_at > ?', since),
+    q('SELECT slug FROM podcast_episodes WHERE hidden = 0 AND updated_at > ? LIMIT 200', since).catch(() => []),
   ]);
   const paths = new Set();
   if (articles.length) paths.add('/').add('/blog');
@@ -37,6 +38,8 @@ export async function changedUrls(env, origin, since) {
   if (cols.length) paths.add('/').add('/coluna');
   if (eps.length) paths.add('/').add('/zona-de-conforto');
   for (const p of pages) if (PAGE_PATH[p.slug]) paths.add(PAGE_PATH[p.slug]);
+  if (pods.length) paths.add('/').add('/podcast');
+  for (const e of pods) paths.add(`/podcast/${e.slug}`);
   if (!since) ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie'].forEach((p) => paths.add(p));
   return [...paths].slice(0, 10000).map((p) => `${origin}${p}`);
 }

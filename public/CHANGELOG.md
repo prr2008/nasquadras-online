@@ -2,6 +2,14 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.23 — 07/11/2026
+
+- **Podcast no site** (menu **Podcast**): a página nasquadras.online/podcast mostra o A Temporada com a capa, a apresentação e os links do Spotify e do RSS, e todos os episódios, do mais novo ao mais antigo, cada um com **player de áudio** próprio, data, duração, temporada e número.
+- **Página de cada episódio** (nasquadras.online/podcast/…): descrição completa, player e outros episódios. Entra no mapa do site e no IndexNow, para os buscadores acharem.
+- **Atualização automática:** a cada hora o app confere o feed do Spotify; episódio novo aparece sozinho no site e no Início.
+- **Divulgação automática** dos episódios novos no Threads, Bluesky, Mastodon e X, com o link da página. Os episódios que já existiam (inclusive o "Not Made in USA") não são divulgados.
+- **Aba Podcast no app:** lista dos episódios, **↻ Atualizar agora**, **Divulgar** (manual, para qualquer episódio) e **Esconder** do site.
+
 ## 1.22 — 04/11/2026
 
 - **security.txt** em nasquadras.online/.well-known/security.txt (padrão RFC 9116): diz a quem achar uma falha para onde avisar (pedro.rodrigues@nasquadras.online). A validade se renova sozinha, sempre um ano à frente.

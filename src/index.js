@@ -19,6 +19,7 @@ import * as buffer from './buffer.js';
 import * as indexnow from './indexnow.js';
 import { supportInfo } from './pix.js';
 import * as linkpreview from './linkpreview.js';
+import * as podcast from './podcast.js';
 import { applyMentions, compose, getMentions, saveMentions } from './compose.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
@@ -211,6 +212,15 @@ async function handleApi(request, env, url) {
       await coverage.setSlug(env, slug);
       return json(await coverage.get(env));
     }
+
+    // ---------- Podcast ----------
+    case 'GET /api/podcast': {
+      const [episodes, channel] = await Promise.all([podcast.list(env, { includeHidden: true }), podcast.getChannel(env)]);
+      return json({ configured: podcast.configured(env), feed: podcast.feedUrl(env), channel, episodes });
+    }
+
+    case 'POST /api/podcast/sync':
+      return json(await podcast.sync(env));
 
     case 'POST /api/coverage/resume': {
       const cov = await coverage.resume(env);
@@ -450,6 +460,20 @@ async function handleApi(request, env, url) {
         return (await zona.remove(env, Number(ep[1]))) ? json({ ok: true }) : fail('Edição não encontrada.', 404);
       }
 
+      const pc = pathname.match(/^\/api\/podcast\/(\d+)(\/announce)?$/);
+      if (pc && method === 'PUT') {
+        const { hidden } = await body(request);
+        const e = await podcast.setHidden(env, Number(pc[1]), Boolean(hidden));
+        return e ? json(e) : fail('Episódio não encontrado.', 404);
+      }
+      if (pc && pc[2] && method === 'POST') {
+        const e = (await podcast.list(env, { includeHidden: true })).find((x) => x.id === Number(pc[1]));
+        if (!e) return fail('Episódio não encontrado.', 404);
+        const result = await podcast.announce(env, e, canonical(env, url));
+        await env.DB.prepare('UPDATE podcast_episodes SET announced = 1, announce_result = ? WHERE id = ?').bind(JSON.stringify(result), e.id).run();
+        return json({ result });
+      }
+
       const pg = pathname.match(/^\/api\/pages\/([a-z-]+)$/);
       if (pg && method === 'PUT') return json(await blog.savePage(env, pg[1], await body(request)));
 
@@ -566,10 +590,10 @@ async function handleMainSite(request, env, url) {
 
   if ((p === '/' && isSiteHost(url)) || p === '/inicio') {
     if (p === '/inicio' && isSiteHost(url)) return Response.redirect(`${url.origin}/`, 301);
-    const [games, articles, cols, eps] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 4), zona.list(env, 1)]);
+    const [games, articles, cols, eps, pods] = await Promise.all([site.listGames(env, 8), blog.listPublished(env, { limit: 6 }), coluna.list(env, 4), zona.list(env, 1), podcast.list(env, { limit: 1 }).catch(() => [])]);
     const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
     const withLive = live ? await withLiveScore(live) : null;
-    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, columns: cols, latestEpisode: eps[0] || null, support: supportInfo(env) }));
+    return html(pages.homePage({ games: games.map((g) => (g === live ? withLive : g)), articles, origin, home, columns: cols, latestEpisode: eps[0] || null, latestPodcast: pods[0] || null, support: supportInfo(env) }));
   }
 
   if (p === '/blog') return html(pages.blogIndexPage({ articles: await blog.listPublished(env), origin, home }));
@@ -600,6 +624,19 @@ async function handleMainSite(request, env, url) {
     return html(pages.zonaPage({ page, episodes, origin, admin, home }));
   }
 
+  if (p === '/podcast') {
+    const [episodes, channel] = await Promise.all([podcast.list(env), podcast.getChannel(env)]);
+    return html(pages.podcastPage({ channel, episodes, origin, feed: podcast.feedUrl(env), home }));
+  }
+  const pod = p.match(/^\/podcast\/([a-z0-9-]+)$/);
+  if (pod) {
+    const e = await podcast.getBySlug(env, pod[1]);
+    if (!e) return html(site.notFoundPage({ home }), 404);
+    const [channel, all] = await Promise.all([podcast.getChannel(env), podcast.list(env, { limit: 6 })]);
+    const others = all.filter((o) => o.id !== e.id).slice(0, 3);
+    return html(pages.podcastEpisodePage({ e, channel, others, origin, feed: podcast.feedUrl(env), home }));
+  }
+
   if (p === '/conversar') return html(pages.talkPage({ origin, home }));
   if (p === '/apoie') return html(pages.supportPage({ support: supportInfo(env), origin, home }));
 
@@ -613,8 +650,8 @@ async function handleMainSite(request, env, url) {
     return xmlRes(pages.rssFeed({ articles: await blog.listPublished(env, { limit: 30, withBody: true }), origin }), 'application/rss+xml');
   }
   if (p === '/sitemap.xml') {
-    const [articles, games] = await Promise.all([blog.listPublished(env, { limit: 1000 }), site.listGames(env, 1000)]);
-    return xmlRes(pages.sitemap({ articles, games, origin }), 'application/xml');
+    const [articles, games, podcasts] = await Promise.all([blog.listPublished(env, { limit: 1000 }), site.listGames(env, 1000), podcast.list(env).catch(() => [])]);
+    return xmlRes(pages.sitemap({ articles, games, origin, podcasts }), 'application/xml');
   }
   if (p === '/.well-known/security.txt' || p === '/security.txt') {
     // RFC 9116: validade sempre 1 ano à frente, para o arquivo nunca vencer.
@@ -704,6 +741,14 @@ export default {
   async scheduled(event, env, ctx) {
     // A cada minuto: publica os posts agendados que venceram.
     ctx.waitUntil(schedule.runDue(env, { next: chainNext(env) }).catch((err) => console.error('agendados', err)));
+    // A cada hora (minuto 37): confere o feed do podcast e divulga episódio novo.
+    if (podcast.configured(env) && new Date(event.scheduledTime).getUTCMinutes() === 37) {
+      const origin = (env.SITE_URL || 'https://nasquadras.online').replace(/\/$/, '');
+      ctx.waitUntil(podcast.sync(env)
+        .then(() => podcast.announcePending(env, origin))
+        .then((r) => r && console.log('podcast divulgado', JSON.stringify(r)))
+        .catch((err) => console.error('podcast', err.message)));
+    }
     // A cada 10 minutos: avisa os buscadores (IndexNow) do que mudou no site.
     if (new Date(event.scheduledTime).getUTCMinutes() % 10 === 3) {
       const origin = (env.SITE_URL || 'https://nasquadras.online').replace(/\/$/, '');

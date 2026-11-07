@@ -10,6 +10,7 @@ const fakeDB = (rows) => ({
         results: /FROM articles/.test(sql) ? rows.articles
           : /FROM games/.test(sql) ? rows.games
           : /FROM columns/.test(sql) ? rows.columns
+          : /FROM podcast_episodes/.test(sql) ? (rows.pods || [])
           : /FROM episodes/.test(sql) ? rows.episodes
           : rows.pages,
       }),

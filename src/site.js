@@ -144,6 +144,7 @@ export const NAV = [
   ['blog', 'Blog', '/blog'],
   ['coluna', 'Coluna', '/coluna'],
   ['zona', 'Zona de Conforto', '/zona-de-conforto'],
+  ['podcast', 'Podcast', '/podcast'],
   ['conversar', 'Vamos conversar', '/conversar'],
   ['sobre', 'Sobre', '/sobre'],
 ];

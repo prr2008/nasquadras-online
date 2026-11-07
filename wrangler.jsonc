@@ -55,6 +55,8 @@
     "SITE_URL": "https://nasquadras.online",
     // Chave pública do IndexNow (servida em /<chave>.txt; não é segredo).
     "INDEXNOW_KEY": "c5ad33bc921b529e423874d4e2b8514d",
+    // Podcast (A Temporada): feed RSS do Spotify for Creators.
+    "PODCAST_FEED": "https://anchor.fm/s/23013e20/podcast/rss",
     // Mastodon: servidor da conta (o token fica no segredo MASTODON_TOKEN).
     "MASTODON_INSTANCE": "https://mastodon.social",
     // Caixa "Apoie" no site: Ko-fi e Pix (a chave Pix aparece para os leitores; não é segredo).

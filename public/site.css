@@ -282,3 +282,29 @@ img, video { max-width: 100%; display: block; }
 }
 .block-head { gap: 12px; }
 .block-head a { white-space: nowrap; }
+
+/* ---------- Podcast ---------- */
+.pod-head { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 8px; }
+.pod-show { width: 140px; height: 140px; flex: none; border-radius: 14px; object-fit: cover; }
+.pod-head .page-title { margin-top: 0; }
+.pod-links { color: var(--muted); font-size: 14px; }
+.pod-list { display: grid; gap: 14px; }
+.pod-ep { display: flex; gap: 14px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.pod-cover img { width: 96px; height: 96px; border-radius: 10px; object-fit: cover; display: block; }
+.pod-body { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.pod-body h2 { font-size: 18px; margin: 0; line-height: 1.25; }
+.pod-body h2 a { color: inherit; text-decoration: none; }
+.pod-body h2 a:hover { color: var(--accent); }
+.pod-audio { width: 100%; height: 40px; margin-top: 4px; }
+.pod-hero { display: flex; gap: 16px; align-items: center; margin: 12px 0 16px; }
+.pod-hero img { width: 120px; height: 120px; border-radius: 12px; object-fit: cover; flex: none; }
+.pod-hero .article-title { margin: 4px 0 0; }
+.pod-article .pod-audio { margin-bottom: 16px; }
+@media (max-width: 560px) {
+  .pod-head { flex-direction: column; }
+  .pod-show { width: 110px; height: 110px; }
+  .pod-ep { flex-direction: column; }
+  .pod-cover img { width: 100%; height: auto; aspect-ratio: 1; max-width: 160px; }
+  .pod-hero img { width: 84px; height: 84px; }
+}
+@media (min-width: 1000px) { .pod-list { grid-template-columns: 1fr 1fr; } .pod-article ~ .related .pod-list { grid-template-columns: 1fr 1fr 1fr; } }

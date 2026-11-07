@@ -103,3 +103,27 @@ CREATE TABLE IF NOT EXISTS episodes (
   updated_at    INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS episodes_by_date ON episodes (aired_at DESC);
+
+-- Podcast (feed RSS do Spotify for Creators): um registro por episódio.
+CREATE TABLE IF NOT EXISTS podcast_episodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guid TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  description_html TEXT NOT NULL DEFAULT '',
+  summary TEXT NOT NULL DEFAULT '',
+  audio_url TEXT NOT NULL,
+  audio_type TEXT NOT NULL DEFAULT 'audio/mpeg',
+  duration_s INTEGER,
+  image_url TEXT,
+  season INTEGER,
+  episode INTEGER,
+  link TEXT,
+  published_at INTEGER NOT NULL,
+  hidden INTEGER NOT NULL DEFAULT 0,
+  announced INTEGER NOT NULL DEFAULT 0,
+  announce_result TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS podcast_published ON podcast_episodes (published_at DESC);

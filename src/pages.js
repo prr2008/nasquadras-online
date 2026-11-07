@@ -3,6 +3,7 @@
 import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL, SUBSTACK, BOOKING } from './site.js';
 import { CATEGORIES, PAGES, categorySlug, excerpt, readingMinutes } from './blog.js';
 import { episodeLabel } from './zona.js';
+import { episodeTag, fmtDuration } from './podcast.js';
 
 const TZ = 'America/Sao_Paulo';
 const shortDate = (ms) => new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(ms)).replace('.', '');
@@ -82,7 +83,7 @@ function featureColumn(columns) {
   </section>`;
 }
 
-export function homePage({ games, articles, origin, home = '/', columns = [], latestEpisode = null, support = null }) {
+export function homePage({ games, articles, origin, home = '/', columns = [], latestEpisode = null, support = null, latestPodcast = null }) {
   const live = games.find((g) => g.status === 'live' && g.period !== 'FINAL');
   const liveBlock = live ? `<section class="live-hero">
       <a href="/c/${esc(live.slug)}" class="live-hero-link">
@@ -119,6 +120,7 @@ export function homePage({ games, articles, origin, home = '/', columns = [], la
       </div>
       <aside class="home-side">
       <section class="home-block promo">
+        <a class="promo-card" href="${latestPodcast ? `/podcast/${esc(latestPodcast.slug)}` : '/podcast'}"><strong>Podcast</strong><span>${latestPodcast ? `Episódio mais recente: ${esc(latestPodcast.title)}` : 'A Temporada, no Spotify'}</span></a>
         <a class="promo-card" href="/zona-de-conforto"><strong>Zona de Conforto</strong><span>${latestEpisode ? `Playlist mais recente: ${esc(episodeLabel(latestEpisode))}` : 'Música, cultura e esporte'}</span></a>
       </section>
       ${newsletterBox()}
@@ -318,15 +320,104 @@ ${items}
 </rss>`;
 }
 
-export function sitemap({ articles, games, origin }) {
+export function sitemap({ articles, games, origin, podcasts = [] }) {
   const url = (loc, ms) => `<url><loc>${xml(loc)}</loc>${ms ? `<lastmod>${new Date(ms).toISOString()}</lastmod>` : ''}</url>`;
-  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie', '/conversar'].map((p) => url(`${origin}${p}`));
+  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/podcast', '/sobre', '/apoie', '/conversar'].map((p) => url(`${origin}${p}`));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${[...fixed,
     ...articles.map((a) => url(`${origin}/blog/${a.slug}`, a.updated_at)),
-    ...games.map((g) => url(`${origin}/c/${g.slug}`, g.updated_at))].join('\n')}
+    ...games.map((g) => url(`${origin}/c/${g.slug}`, g.updated_at)),
+    ...podcasts.map((e) => url(`${origin}/podcast/${e.slug}`, e.updated_at))].join('\n')}
 </urlset>`;
+}
+
+// ---------- Podcast ----------
+
+const longDate = (ms) => new Date(ms).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' });
+const podMeta = (e) => [longDate(e.published_at), fmtDuration(e.duration_s), episodeTag(e)].filter(Boolean).join(' · ');
+const player = (e) => `<audio class="pod-audio" controls preload="none" src="${esc(e.audio_url)}" type="${esc(e.audio_type)}"></audio>`;
+
+function podcastCard(e, fallbackImg) {
+  const img = e.image_url || fallbackImg;
+  return `<article class="pod-ep">
+    ${img ? `<a href="/podcast/${esc(e.slug)}" class="pod-cover"><img loading="lazy" src="${esc(img)}" alt=""></a>` : ''}
+    <div class="pod-body">
+      <span class="card-date">${esc(podMeta(e))}</span>
+      <h2><a href="/podcast/${esc(e.slug)}">${esc(e.title)}</a></h2>
+      ${e.summary ? `<p class="card-excerpt">${esc(e.summary)}</p>` : ''}
+      ${player(e)}
+    </div>
+  </article>`;
+}
+
+function podcastLinks(channel, feed) {
+  return [channel?.link ? `<a href="${esc(channel.link)}" target="_blank" rel="noopener">Spotify ↗</a>` : '',
+    feed ? `<a href="${esc(feed)}" target="_blank" rel="noopener">RSS</a>` : ''].filter(Boolean).join(' · ');
+}
+
+export function podcastPage({ channel, episodes, origin, feed = '', home = '/' }) {
+  const title = channel?.title || 'Podcast';
+  return layout({
+    title: `${title} · Nas Quadras`,
+    description: channel?.description || 'O podcast de basquete de Pedro Rodrigues: NBA e NBB, dentro e fora da quadra.',
+    image: channel?.image || '',
+    url: `${origin}/podcast`,
+    type: 'website',
+    nav: 'podcast',
+    home,
+    body: `<header class="pod-head">
+        ${channel?.image ? `<img class="pod-show" src="${esc(channel.image)}" alt="Capa do podcast ${esc(title)}">` : ''}
+        <div>
+          <h1 class="page-title">${esc(title)}</h1>
+          ${channel?.description ? `<p class="lede">${esc(channel.description)}</p>` : ''}
+          <p class="pod-links">${podcastLinks(channel, feed)}</p>
+        </div>
+      </header>
+      ${episodes.length
+        ? `<h2 class="section-title">Episódios</h2><div class="pod-list">${episodes.map((e) => podcastCard(e, channel?.image)).join('')}</div>`
+        : '<p class="empty">Os episódios vão aparecer aqui.</p>'}`,
+  });
+}
+
+export function podcastEpisodePage({ e, channel, others = [], origin, feed = '', home = '/' }) {
+  const show = channel?.title || 'Podcast';
+  const img = e.image_url || channel?.image || '';
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'PodcastEpisode',
+    name: e.title,
+    datePublished: new Date(e.published_at).toISOString(),
+    description: e.summary,
+    url: `${origin}/podcast/${e.slug}`,
+    ...(e.duration_s ? { timeRequired: `PT${Math.round(e.duration_s / 60)}M` } : {}),
+    associatedMedia: { '@type': 'MediaObject', contentUrl: e.audio_url },
+    partOfSeries: { '@type': 'PodcastSeries', name: show, url: `${origin}/podcast` },
+  };
+  return layout({
+    title: `${e.title} · ${show}`,
+    description: e.summary,
+    image: img,
+    url: `${origin}/podcast/${e.slug}`,
+    type: 'article',
+    nav: 'podcast',
+    home,
+    head: `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
+    body: `<article class="article pod-article">
+        <a class="back" href="/podcast">← ${esc(show)}</a>
+        <div class="pod-hero">
+          ${img ? `<img src="${esc(img)}" alt="">` : ''}
+          <div>
+            <span class="card-date">${esc(podMeta(e))}</span>
+            <h1 class="article-title">${esc(e.title)}</h1>
+          </div>
+        </div>
+        ${player(e)}
+        <div class="prose">${e.description_html || ''}</div>
+        <p class="pod-links">Ouça também: ${podcastLinks(channel, feed)}</p>
+      </article>
+      ${others.length ? `<section class="related"><h2 class="section-title">Outros episódios</h2><div class="pod-list">${others.map((o) => podcastCard(o, channel?.image)).join('')}</div></section>` : ''}`,
+  });
 }
 
 // ---------- Coluna Nas Quadras (cards com link para o texto original) ----------

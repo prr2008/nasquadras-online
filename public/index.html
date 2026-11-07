@@ -44,6 +44,7 @@
       <a href="#blog" data-view="blog">Blog</a>
       <a href="#coluna" data-view="coluna">Coluna</a>
       <a href="#zona" data-view="zona">Zona</a>
+      <a href="#podcast" data-view="podcast">Podcast</a>
       <a href="#paginas" data-view="pages">Páginas</a>
       <a href="https://nasquadras.online/" target="_blank" rel="noopener" class="site-link">Ver site ↗</a>
     </nav>
@@ -375,6 +376,12 @@
     </section>
 
     <!-- COLUNA (links das colunas publicadas no JB) -->
+    <section id="view-podcast" class="view" hidden>
+      <div class="view-head"><h2>Podcast</h2><button id="pod-sync" type="button" class="ghost small">↻ Atualizar agora</button></div>
+      <p id="pod-info" class="pod-info"></p>
+      <ul id="pod-list" class="doc-list col-list"></ul>
+    </section>
+
     <section id="view-coluna" class="view" hidden>
       <div class="view-head"><h2>Coluna Nas Quadras</h2></div>
       <form id="col-fetch" class="paste-row col-paste" autocomplete="off">
@@ -427,7 +434,7 @@
     </section>
 
     <footer class="foot">
-      <button id="changelog-open" type="button" class="link small">Novidades · v1.22</button>
+      <button id="changelog-open" type="button" class="link small">Novidades · v1.23</button>
       <button id="logout" type="button" class="link small">Sair</button>
     </footer>
   </main>

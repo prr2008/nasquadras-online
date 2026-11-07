@@ -8,7 +8,7 @@ const siteOrigin = () => (location.hostname === 'app.nasquadras.online' ? 'https
 // ---------- Navegação entre Ao vivo / Blog / Páginas ----------
 
 function show(view) {
-  for (const v of ['live', 'blog', 'coluna', 'zona', 'pages']) $(`#view-${v}`).hidden = v !== view;
+  for (const v of ['live', 'blog', 'coluna', 'zona', 'podcast', 'pages']) $(`#view-${v}`).hidden = v !== view;
   document.querySelectorAll('.app-tabs a[data-view]').forEach((a) => a.classList.toggle('on', a.dataset.view === view));
 }
 
@@ -28,6 +28,10 @@ async function route() {
       show('zona');
       spotifyStatus().catch(() => {});
       return listEpisodes();
+    }
+    if (section === 'podcast') {
+      show('podcast');
+      return listPodcast();
     }
     if (section === 'coluna') {
       show('coluna');
@@ -1015,3 +1019,78 @@ $('#imp-go').addEventListener('click', async () => {
 
 // Primeira exibição (se o login já estiver feito).
 route();
+
+// ---------- Podcast (episódios lidos do feed do Spotify) ----------
+
+const podDur = (s) => (s ? (s >= 3600 ? `${Math.floor(s / 3600)} h ${String(Math.round((s % 3600) / 60)).padStart(2, '0')} min` : `${Math.round(s / 60)} min`) : '');
+function podStatus(e) {
+  if (e.hidden) return '<span class="pod-tag">escondido</span>';
+  if (!e.announced) return '<span class="pod-tag warn">divulgação na próxima rodada</span>';
+  if (e.announce_result) {
+    const r = JSON.parse(e.announce_result);
+    const ok = Object.entries(r).filter(([, v]) => typeof v === 'string').map(([k]) => k);
+    const bad = Object.entries(r).filter(([, v]) => v && typeof v === 'object').map(([k]) => k);
+    return `<span class="pod-tag">divulgado${ok.length ? `: ${ok.join(', ')}` : ''}</span>${bad.length ? ` <span class="pod-tag warn">falhou: ${bad.join(', ')}</span>` : ''}`;
+  }
+  return '';
+}
+
+async function listPodcast() {
+  const esc = NQ().esc;
+  const data = await NQ().api('/api/podcast');
+  const ch = data.channel;
+  $('#pod-info').innerHTML = !data.configured
+    ? 'Feed do podcast não configurado (PODCAST_FEED).'
+    : `${ch?.title ? `<strong>${esc(ch.title)}</strong> · ` : ''}${data.episodes.length} episódios${ch?.checkedAt ? ` · feed conferido em ${new Date(ch.checkedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : ''}. Episódios novos entram sozinhos (a cada hora) e são divulgados no Threads, Bluesky, Mastodon e X. <a href="${siteOrigin()}/podcast" target="_blank" rel="noopener">Ver no site ↗</a>`;
+  $('#pod-list').innerHTML = data.episodes.map((e) => `
+    <li data-id="${e.id}"${e.hidden ? ' class="pod-hidden"' : ''}>
+      ${e.image_url || ch?.image ? `<img class="thumb-sm" src="${esc(e.image_url || ch.image)}" alt="">` : '<div class="thumb-sm"></div>'}
+      <div class="info">
+        <strong>${esc(e.title)}</strong>
+        <span class="meta">${fmtDate(e.published_at)}${e.duration_s ? ` · ${podDur(e.duration_s)}` : ''}${e.season ? ` · T${e.season}` : ''}${e.episode ? ` · Ep. ${e.episode}` : ''} ${podStatus(e)}</span>
+        <span class="actions">
+          <a href="${siteOrigin()}/podcast/${esc(e.slug)}" target="_blank" rel="noopener">Página ↗</a>
+          <button type="button" data-act="announce">Divulgar</button>
+          <button type="button" data-act="hide">${e.hidden ? 'Mostrar' : 'Esconder'}</button>
+        </span>
+      </div>
+    </li>`).join('') || '<li class="empty-item" style="display:block;background:none;border:0">Nenhum episódio ainda. Toque em "Atualizar agora".</li>';
+}
+
+$('#pod-sync').addEventListener('click', async (ev) => {
+  const btn = ev.currentTarget;
+  btn.disabled = true;
+  try {
+    const r = await NQ().api('/api/podcast/sync', {});
+    NQ().toast(r.added.length ? `${r.added.length} episódio(s) novo(s).${r.firstRun ? ' Os que já existiam não serão divulgados.' : ' A divulgação sai na próxima rodada (até 1 hora).'}` : 'Nenhum episódio novo.', 5000);
+    await listPodcast();
+  } catch (err) {
+    NQ().toast(err.message, 6000);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('#pod-list').addEventListener('click', async (ev) => {
+  const btn = ev.target.closest('button[data-act]');
+  if (!btn) return;
+  const li = btn.closest('li');
+  const id = li.dataset.id;
+  try {
+    if (btn.dataset.act === 'hide') {
+      const hidden = btn.textContent.trim() === 'Esconder';
+      await NQ().api(`/api/podcast/${id}`, { hidden }, 'PUT');
+      NQ().toast(hidden ? 'Episódio escondido do site.' : 'Episódio de volta ao site.');
+    } else {
+      if (!confirm('Publicar agora o post deste episódio no Threads, Bluesky, Mastodon e X?')) return;
+      btn.disabled = true;
+      const { result } = await NQ().api(`/api/podcast/${id}/announce`, {});
+      const bad = Object.entries(result).filter(([, v]) => v && typeof v === 'object');
+      NQ().toast(bad.length ? `Divulgado, mas falhou em: ${bad.map(([k, v]) => `${k} (${v.error})`).join('; ')}` : 'Episódio divulgado.', 7000);
+    }
+    await listPodcast();
+  } catch (err) {
+    NQ().toast(err.message, 6000);
+    btn.disabled = false;
+  }
+});
