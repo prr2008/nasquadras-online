@@ -155,7 +155,7 @@ function renderThread() {
   if (c.bluesky?.rootUrl) links.push(`<a href="${esc(c.bluesky.rootUrl)}" target="_blank" rel="noopener">Bluesky (${c.bluesky.count})</a>`);
   if (c.mastodon?.rootUrl) links.push(`<a href="${esc(c.mastodon.rootUrl)}" target="_blank" rel="noopener">Mastodon (${c.mastodon.count})</a>`);
   const started = c.startedAt ? new Date(c.startedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-  if (c.slug) links.push(`<a href="/c/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener">Página no site ↗</a>`);
+  if (c.slug) links.push(`<a href="/c/${encodeURIComponent(c.slug)}" target="_blank" rel="noopener" title="Abre a página da cobertura, onde dá para escolher a foto de capa">Página e capa ↗</a>`);
   $('#thread-meta').innerHTML = links.length
     ? `desde ${started} · ${links.join(' · ')}`
     : 'o próximo post abre o fio';

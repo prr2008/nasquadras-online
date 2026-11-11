@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.24 — 10/11/2026
+
+- **Escolher a foto de capa da cobertura:** abra a cobertura pelo app (link **Página e capa ↗** na barra do fio, ou app.nasquadras.online/c/… para coberturas antigas). Cada foto ganha o botão **☆ Usar como capa**; a escolhida fica marcada com **★ Capa**. A capa aparece no Início, na lista de Coberturas e na prévia dos links compartilhados. Sem escolha, continua valendo a primeira foto.
+
 ## 1.23 — 07/11/2026
 
 - **Podcast no site** (menu **Podcast**): a página nasquadras.online/podcast mostra o A Temporada com a capa, a apresentação e os links do Spotify e do RSS, e todos os episódios, do mais novo ao mais antigo, cada um com **player de áudio** próprio, data, duração, temporada e número.

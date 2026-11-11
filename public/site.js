@@ -79,6 +79,22 @@ document.addEventListener('click', async (e) => {
     document.addEventListener('visibilitychange', () => { if (live) poll(); });
   }
 
+  // Escolher a foto de capa da cobertura (só no app, logado).
+  postsEl.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.set-cover');
+    if (!btn) return;
+    btn.disabled = true;
+    const slug = document.querySelector('.game')?.dataset.slug;
+    const res = await fetch(`/api/site/game/${slug}/cover`, { method: 'PUT', headers: { 'X-NQ': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ key: btn.dataset.key }) });
+    btn.disabled = false;
+    if (!res.ok) return alert('Não foi possível trocar a capa. Entre no app e tente de novo.');
+    document.querySelectorAll('.set-cover').forEach((b) => {
+      const on = b.dataset.key === btn.dataset.key;
+      b.classList.toggle('on', on);
+      b.textContent = on ? '★ Capa' : '☆ Usar como capa';
+    });
+  });
+
   // Apagar post (só aparece para o autor logado no app).
   postsEl.addEventListener('click', async (e) => {
     const btn = e.target.closest('.del');

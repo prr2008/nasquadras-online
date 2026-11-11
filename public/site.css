@@ -308,3 +308,9 @@ img, video { max-width: 100%; display: block; }
   .pod-hero img { width: 84px; height: 84px; }
 }
 @media (min-width: 1000px) { .pod-list { grid-template-columns: 1fr 1fr; } .pod-article ~ .related .pod-list { grid-template-columns: 1fr 1fr 1fr; } }
+
+/* Escolha da capa da cobertura (só no app) */
+.cover-pick { position: relative; }
+.cover-pick > a { display: block; }
+.set-cover { position: absolute; left: 8px; bottom: 8px; padding: 4px 10px; border-radius: 999px; border: 0; background: rgba(15,17,21,.85); color: #fff; font: 600 12px var(--body, sans-serif); cursor: pointer; }
+.set-cover.on { background: var(--accent); color: #111; }

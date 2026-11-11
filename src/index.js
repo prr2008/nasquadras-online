@@ -477,6 +477,11 @@ async function handleApi(request, env, url) {
       const pg = pathname.match(/^\/api\/pages\/([a-z-]+)$/);
       if (pg && method === 'PUT') return json(await blog.savePage(env, pg[1], await body(request)));
 
+      const cov = pathname.match(/^\/api\/site\/game\/([a-z0-9-]+)\/cover$/);
+      if (cov && method === 'PUT') {
+        const { key } = await body(request);
+        return (await site.setCover(env, cov[1], String(key || ''))) ? json({ ok: true }) : fail('Foto não encontrada nesta cobertura.', 404);
+      }
       const del = pathname.match(/^\/api\/site\/post\/(\d+)$/);
       if (del && method === 'DELETE') {
         return (await site.deletePost(env, Number(del[1]))) ? json({ ok: true }) : fail('Post não encontrado.', 404);

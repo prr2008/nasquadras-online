@@ -108,6 +108,15 @@ export async function addPost(env, slug, { text = '', media = [], game = null, l
   return { id: res.meta.last_row_id, slug };
 }
 
+/** Troca a foto de capa da cobertura (precisa ser uma foto dos posts dela). */
+export async function setCover(env, slug, key) {
+  const { results } = await env.DB.prepare('SELECT media FROM posts WHERE game_slug = ?').bind(slug).all();
+  const ok = results.some((r) => parseMedia(r.media).some((m) => m.kind === 'image' && m.key === key));
+  if (!ok) return false;
+  const r = await env.DB.prepare('UPDATE games SET cover_key = ?, updated_at = ? WHERE slug = ?').bind(key, Date.now(), slug).run();
+  return r.meta.changes > 0;
+}
+
 export async function deletePost(env, id) {
   const r = await env.DB.prepare('DELETE FROM posts WHERE id = ?').bind(id).run();
   return r.meta.changes > 0;
@@ -226,19 +235,23 @@ function scoreboard(g) {
   </div>`;
 }
 
-function mediaHtml(media) {
+function mediaHtml(media, { admin = false, cover = null } = {}) {
   if (!media.length) return '';
   const items = media.map((m) => {
     const ratio = m.width && m.height ? ` style="aspect-ratio:${m.width}/${m.height}"` : '';
     if (m.kind === 'video') {
       return `<video controls playsinline preload="metadata" src="/m/${esc(m.key)}"${ratio} aria-label="${esc(m.alt || 'Vídeo')}"></video>`;
     }
-    return `<a href="/m/${esc(m.key)}" target="_blank" rel="noopener"><img loading="lazy" src="/m/${esc(m.key)}" alt="${esc(m.alt)}"${ratio}></a>`;
+    const img = `<a href="/m/${esc(m.key)}" target="_blank" rel="noopener"><img loading="lazy" src="/m/${esc(m.key)}" alt="${esc(m.alt)}"${ratio}></a>`;
+    if (!admin) return img;
+    // Só no app (logado): escolher esta foto como capa da cobertura.
+    const on = m.key === cover;
+    return `<div class="cover-pick">${img}<button type="button" class="set-cover${on ? ' on' : ''}" data-key="${esc(m.key)}">${on ? '★ Capa' : '☆ Usar como capa'}</button></div>`;
   }).join('');
   return `<div class="media n${Math.min(media.length, 4)}">${items}</div>`;
 }
 
-export function postHtml(p, { admin = false } = {}) {
+export function postHtml(p, { admin = false, cover = null } = {}) {
   return `<article class="post" id="p${p.id}" data-id="${p.id}">
     <header class="post-meta">
       <time datetime="${new Date(p.created_at).toISOString()}">${fmtTime(p.created_at)}</time>
@@ -246,7 +259,7 @@ export function postHtml(p, { admin = false } = {}) {
       ${admin ? `<button type="button" class="del" data-id="${p.id}" title="Apagar do site">Apagar</button>` : ''}
     </header>
     ${p.text ? `<div class="post-text">${renderText(p.text)}</div>` : ''}
-    ${mediaHtml(p.media)}
+    ${mediaHtml(p.media, { admin, cover })}
   </article>`;
 }
 
@@ -303,7 +316,7 @@ export function gamePage(g, posts, origin, { admin = false, home = '/' } = {}) {
       </aside>
       <div class="game-main">
         <div id="new-posts" class="new-posts" hidden></div>
-        <div id="posts" class="posts">${posts.map((p) => postHtml(p, { admin })).join('') || '<p class="empty">A cobertura vai começar.</p>'}</div>
+        <div id="posts" class="posts">${posts.map((p) => postHtml(p, { admin, cover: g.cover_key })).join('') || '<p class="empty">A cobertura vai começar.</p>'}</div>
       </div>
     </div>`,
   });
