@@ -20,10 +20,14 @@ for s in srcs:
     except Exception as e: print('fail', s, e)
 
 
-import re as _re
-print('=== custom fns', sorted(set(_re.findall(r'fibaCustomFetch\("([A-Za-z]+)"', allc))))
-for needle in ['WebSocket', 'signalr', 'HubConnection', 'withUrl(', 'o.GameActions', 'o.Game,', 'o.CompDetails', 'unstableDetail:', 'playByPlay:', 'gdap-custom', 'lsi', 'eventsource', 'EventSource']:
-    for c in ctx(allc, needle, 400, 500, 2): print('###', needle, c, '\n---')
-# chunks dinâmicos: webpack runtime lista de chunks
-wp = [s for s in srcs if 'webpack-' in s]
-print('webpack', wp)
+
+for needle in ['joinGroup', 'negotiate', 'webpubsub', 'WebPubSubClient', 'getClientAccessUrl', 'clientAccessUrl', 'pubsub']:
+    for c in ctx(allc, needle, 500, 700, 2): print('###', needle, c, '\n---')
+KEY = '898cd5e7389140028ecb42943c47eb74'
+H = {'Ocp-Apim-Subscription-Key': KEY, 'Accept': 'application/json'}
+st, body = get('https://digital-api.fiba.basketball/hapi/getgdapgamesbycompetitionid?gdapCompetitionId=209059', H)
+games = json.loads(body)
+print('=== keys', sorted(games[0].keys()))
+for g in games:
+    if g['gameId'] >= 131152:
+        print(g['gameId'], g['teamA']['code'], g['teamB']['code'], g['gameDateTimeUTC'], g['isLive'], g['teamAScore'], g['teamBScore'], g['currentPeriod'], g['chrono'], g['liveGameStatus'], g['currentPeriodStatus'])
