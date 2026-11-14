@@ -31,7 +31,8 @@ for u in dyn:
     try: allc += '\n' + get('https://www.fiba.basketball' + u)
     except Exception as e: pass
 print('total size', len(allc))
-for needle in ['.joinGroup(', 'groupData"', '"serverData"', 'new q(', 'getClientAccessUrl:', 'negotiate', 'livegame', 'LiveGame', 'GameActions', 'COMPDETAILS', 'liveData', 'gameDetails:']:
-    for c in ctx(allc, needle, 500, 700, 3):
-        if 'web-pubsub-client' in c or 'Unsupported type' in c: continue
-        print('###', needle, c, '\n---')
+
+i = allc.find('65435:(e,t,a)=>{a.r(t),a.d(t,{WsClientProvider')
+print('=== module 65435'); print(allc[i:i+9000])
+j = allc.find('"/en/events/api/')
+print('=== other api routes', sorted(set(re.findall(r'"(/(?:en/)?(?:events/)?api/[a-zA-Z0-9/_-]+)', allc))))
