@@ -12,17 +12,12 @@ def ctx(text, needle, before=300, after=300, n=3):
         out.append(text[max(0, j-before): j+len(needle)+after]); i = j + 1
     return out
 _, html = get('https://www.fiba.basketball/en/events/liga-sudamericana-de-baloncesto-fiba-2026/games/131161-PAI-FLA')
-print('=== gateway in html'); [print(c, '\n---') for c in ctx(html, 'getcustomgateway', 400, 400, 2)]
-print('=== CurrentPeriod in html'); [print(c, '\n---') for c in ctx(html, 'CurrentPeriod', 2500, 800, 1)]
+
 srcs = sorted(set(re.findall(r'src="(/assets/[^"]+\.js)"', html)))
-chunks = {}
+allc = ''
 for s in srcs:
-    try: chunks[s] = get('https://www.fiba.basketball' + s)[1]
+    try: allc += '\n' + get('https://www.fiba.basketball' + s)[1]
     except Exception as e: print('fail', s, e)
-allc = '\n'.join(chunks.values())
-print('=== chunk urls')
-from collections import Counter
-for u, c in Counter(re.findall(r'https://[a-zA-Z0-9.-]*(?:api|cache|livestats|genius|sportresult)[a-zA-Z0-9./_-]*', allc)).most_common(40): print(c, u)
-for needle in ['Ocp-Apim', 'getcustomgateway', 'livecache', 'GAMEACTIONS', 'refetchInterval', 'hapi/']:
+for needle in ['APIM_FIBA_CUSTOM_URL', 'LSI_V2', '"GAMEACTIONS"', 'e.GameActions', 'CurrentPeriodStatus', 'getgdap', 'hapi', '.concat("GAME', 'FIBASTATS', 'livestats']:
     print('=== chunk ctx', needle)
-    for c in ctx(allc, needle, 250, 250, 4): print(c, '\n---')
+    for c in ctx(allc, needle, 600, 600, 3): print(c, '\n---')
