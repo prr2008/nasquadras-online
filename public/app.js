@@ -505,6 +505,25 @@ function lnbSnippet(kind) {
       const parts = [h && `${h.name} (${H}) ${h.value} pts`, a && `${a.name} (${A}) ${a.value} pts`].filter(Boolean);
       return parts.length ? `🏆 Cestinhas: ${parts.join(' e ')}\n` : '';
     }
+    case 'lideres': {
+      // Líder de cada time em pontos, rebotes, assistências e erros (turnovers).
+      // Empate no topo: os nomes aparecem juntos ("Fulano e Beltrano 3").
+      const lead = (list = []) => {
+        if (!list.length) return '';
+        const best = list.filter((p) => p.value === list[0].value).map((p) => p.name);
+        const names = best.length > 1 ? `${best.slice(0, -1).join(', ')} e ${best.at(-1)}` : best[0];
+        return `${names} ${list[0].value}`;
+      };
+      const line = (side, short) => {
+        const L = g.leaders[side];
+        const bits = [['Pts', L.pts], ['Reb', L.reb], ['Ast', L.ast], ['Erros', L.tov]]
+          .map(([k, v]) => { const t = lead(v); return t && `${k}: ${t}`; })
+          .filter(Boolean);
+        return bits.length ? `${short} — ${bits.join(' · ')}` : '';
+      };
+      const lines = [line('home', H), line('away', A)].filter(Boolean);
+      return lines.length ? `📋 Líderes\n${lines.join('\n')}\n` : '';
+    }
     case 'destaques': {
       // O mesmo jogador liderando mais de uma estatística aparece uma vez só:
       // "Vini Chagas 27 pts e 9 reb · Vithinho 8 ast".

@@ -120,6 +120,7 @@ function team(raw, side, names, byQuarter) {
       ast: n(s.AS),
       stl: n(s.ST),
       blk: n(s.BS),
+      tov: n(s.TO), // erros (turnovers)
       three: { made: n(s.FG3M), att: n(s.FG3A) },
       eff: n(s.EFF),
       byQuarter: byQuarter.get(pid) || [],
@@ -240,8 +241,8 @@ export function normalizeGame(raw, gameId) {
     away,
     quarters,
     leaders: {
-      home: { pts: top(home.players, 'pts'), reb: top(home.players, 'reb'), ast: top(home.players, 'ast') },
-      away: { pts: top(away.players, 'pts'), reb: top(away.players, 'reb'), ast: top(away.players, 'ast') },
+      home: { pts: top(home.players, 'pts'), reb: top(home.players, 'reb'), ast: top(home.players, 'ast'), tov: top(home.players, 'tov') },
+      away: { pts: top(away.players, 'pts'), reb: top(away.players, 'reb'), ast: top(away.players, 'ast'), tov: top(away.players, 'tov') },
     },
     quarterLeaders: {
       period: qIndex + 1,

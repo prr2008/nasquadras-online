@@ -116,6 +116,7 @@ function team(raw, side, players) {
       ast: first(at(p.ass)),
       stl: first(at(p.br)),
       blk: first(at(p.to)),
+      tov: first(at(p.er)), // erros (turnovers)
       three: madeAtt(at(p.p3)),
       eff: first(at(p.ef)),
       // por quarto: índice 0 = 1º quarto
@@ -204,8 +205,8 @@ export function normalizeGame(raw) {
     away,
     quarters,
     leaders: {
-      home: { pts: top(home.players, 'pts'), reb: top(home.players, 'reb'), ast: top(home.players, 'ast') },
-      away: { pts: top(away.players, 'pts'), reb: top(away.players, 'reb'), ast: top(away.players, 'ast') },
+      home: { pts: top(home.players, 'pts'), reb: top(home.players, 'reb'), ast: top(home.players, 'ast'), tov: top(home.players, 'tov') },
+      away: { pts: top(away.players, 'pts'), reb: top(away.players, 'reb'), ast: top(away.players, 'ast'), tov: top(away.players, 'tov') },
     },
     quarterLeaders: {
       period: qIndex + 1,

@@ -4,10 +4,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { first, madeAtt, rebTotal, normalizeGame, gameStatus, listToday, resolveMatchId } from '../src/lnb.js';
 
-const player = (id, nome, numero, equipe, { pts, reb, ast, p3 = ['0/0 (0.0)', '0/0 (0.0)', '0/0 (0.0)', '0/0 (0.0)', '0/0 (0.0)'], titular = false }) => ({
+const player = (id, nome, numero, equipe, { pts, reb, ast, er = ['0', '0', '0', '0', '0'], p3 = ['0/0 (0.0)', '0/0 (0.0)', '0/0 (0.0)', '0/0 (0.0)', '0/0 (0.0)'], titular = false }) => ({
   id, nome, numero, equipe, titular, em_quadra: false,
   tempo: ['25:06', '04:13', '07:52', '06:09', '06:52'],
-  pontos: pts, reb, ass: ast, p3,
+  pontos: pts, reb, ass: ast, p3, er,
   faltas: ['2', '0', '1', '1', '0'], br: ['1', '0', '0', '1', '0'], to: ['0', '0', '0', '0', '0'],
   pm: ['10', '0', '0', '0', '0'], ef: ['15', '0', '0', '0', '0'],
 });
@@ -90,6 +90,12 @@ test('jogadores ficam no time certo e os líderes saem dos totais', () => {
   assert.equal(g.leaders.home.reb[0].value, 7);
   assert.equal(g.leaders.home.ast[0].name, 'Gregate');
   assert.equal(g.leaders.away.pts[0].name, 'Renato');
+  assert.deepEqual(g.leaders.home.tov, [], 'sem erros, ninguém lidera');
+  const withEr = structuredClone(raw);
+  withEr.jogadores[0].er = ['4', '1', '1', '2', '0'];
+  const g2 = normalizeGame(withEr);
+  const side = String(withEr.jogadores[0].equipe) === String(withEr.equipe1.id) ? 'home' : 'away';
+  assert.deepEqual(g2.leaders[side].tov.map((p) => `${p.name} ${p.value}`), [`${withEr.jogadores[0].nome} 4`]);
   assert.ok(!g.leaders.away.pts.some((p) => p.name === 'Lucas'), 'quem não pontuou não entra');
   assert.deepEqual(g.home.players[0].three, { made: 3, att: 7 });
 });

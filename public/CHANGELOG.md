@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.26 — 14/11/2026
+
+- **Novo atalho 📋 Líderes** (LNB e LSA): mostra o líder de cada time em **pontos, rebotes, assistências e erros (turnovers)**, numa linha por time. Exemplo: "FLA — Pts: Yago Santos 26 · Reb: Ruan Miranda 10 · Ast: Yago Santos e Luis Montero 4 · Erros: Alexey Borges e Sammie Freeman 3". Quando há empate no topo, os nomes aparecem juntos.
+
 ## 1.25 — 14/11/2026
 
 - **Liga Sul-Americana (FIBA) no Ao vivo:** novo botão **📡 LSA**, ao lado do **📡 LNB**. Ele lista os jogos da competição de ontem até os próximos 3 dias (os ao vivo primeiro), com placar, horário de Brasília e fase. Também aceita o link da página do jogo no site da FIBA.
