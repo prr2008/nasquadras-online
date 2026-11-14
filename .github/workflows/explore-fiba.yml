@@ -5,29 +5,7 @@ on:
 jobs:
   explore:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Explore
-        run: |
-          UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
-          mkdir out && cd out
-          curl -sSL -A "$UA" -o game.html "https://www.fiba.basketball/en/events/liga-sudamericana-de-baloncesto-fiba-2026/games/131161-PAI-FLA"
-          echo '=== gateway context'
-          grep -oE '.{0,400}getcustomgateway.{0,400}' game.html | head -5
-          echo '=== hapi context'
-          grep -oE '.{0,200}digital-api.fiba.basketball/hapi[^g].{0,300}' game.html | head -5
-          echo '=== CurrentPeriod context'
-          grep -oE '.{0,1500}CurrentPeriod.{0,600}' game.html | head -2
-          for s in $(grep -oE 'src="(/assets/[^"]+\.js)"' game.html | sed -E 's/src="([^"]+)"/\1/' | sort -u); do
-            curl -sSL -A "$UA" "https://www.fiba.basketball$s" -o "c_$(basename "$s")"
-          done
-          ls | wc -l
-          echo '=== chunk urls'
-          grep -ohE 'https://[a-zA-Z0-9.-]*(api|cache|livestats|genius|sportresult)[a-zA-Z0-9./_-]*' c_*.js | sort | uniq -c | sort -rn | head -40
-          echo '=== subscription key'
-          grep -ohE '.{0,200}(Ocp-Apim-Subscription-Key|subscription-key|apim).{0,200}' c_*.js | head -10
-          echo '=== gateway in chunks'
-          grep -ohE '.{0,300}getcustomgateway.{0,300}' c_*.js | head -10
-          echo '=== livecache in chunks'
-          grep -ohE '.{0,200}(livecache|LIVECACHE|FIBASTATS|_JSON|GAMEACTIONS|BOXSCORE).{0,200}' c_*.js | head -15
-          echo '=== polling / refresh in game chunk'
-          grep -ohE '.{0,200}(refetchInterval|setInterval|polling).{0,200}' c_*page*.js | head -10
+      - uses: actions/checkout@v4
+      - run: python3 .github/scripts/explore_fiba.py
