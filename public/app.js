@@ -506,7 +506,7 @@ function lnbSnippet(kind) {
       return parts.length ? `🏆 Cestinhas: ${parts.join(' e ')}\n` : '';
     }
     case 'lideres': {
-      // Líder de cada time em pontos, rebotes, assistências e erros (turnovers).
+      // Líder de cada time em pontos, rebotes, assistências, roubos, tocos e erros (turnovers).
       // Empate no topo: os nomes aparecem juntos ("Fulano e Beltrano 3").
       const lead = (list = []) => {
         if (!list.length) return '';
@@ -516,7 +516,7 @@ function lnbSnippet(kind) {
       };
       const line = (side, short) => {
         const L = g.leaders[side];
-        const bits = [['Pts', L.pts], ['Reb', L.reb], ['Ast', L.ast], ['Erros', L.tov]]
+        const bits = [['Pts', L.pts], ['Reb', L.reb], ['Ast', L.ast], ['Roubos', L.stl], ['Tocos', L.blk], ['Erros', L.tov]]
           .map(([k, v]) => { const t = lead(v); return t && `${k}: ${t}`; })
           .filter(Boolean);
         return bits.length ? `${short} — ${bits.join(' · ')}` : '';

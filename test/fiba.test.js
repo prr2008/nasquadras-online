@@ -19,6 +19,7 @@ test('jogo ao vivo (Flamengo x Brasília, Liga Sul-Americana)', () => {
   assert.deepEqual(g.quarters.map((q) => `${q.home}-${q.away}`), ['20-15', '11-29', '35-21', '12-15']);
   assert.equal(g.leaders.home.reb[0].value, 16);
   assert.ok(g.leaders.home.tov.length > 0 && g.leaders.home.tov[0].value > 0, 'líderes em erros');
+  assert.ok(Array.isArray(g.leaders.home.stl) && Array.isArray(g.leaders.home.blk), 'líderes em roubos e tocos');
   assert.ok(g.leaders.away.pts[0].name.length > 3);
   assert.equal(g.quarterLeaders.period, 4);
   const last = g.plays.find((p) => p.scoring);

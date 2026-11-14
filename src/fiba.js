@@ -241,8 +241,8 @@ export function normalizeGame(raw, gameId) {
     away,
     quarters,
     leaders: {
-      home: { pts: top(home.players, 'pts'), reb: top(home.players, 'reb'), ast: top(home.players, 'ast'), tov: top(home.players, 'tov') },
-      away: { pts: top(away.players, 'pts'), reb: top(away.players, 'reb'), ast: top(away.players, 'ast'), tov: top(away.players, 'tov') },
+      home: { pts: top(home.players, 'pts'), reb: top(home.players, 'reb'), ast: top(home.players, 'ast'), tov: top(home.players, 'tov'), stl: top(home.players, 'stl'), blk: top(home.players, 'blk') },
+      away: { pts: top(away.players, 'pts'), reb: top(away.players, 'reb'), ast: top(away.players, 'ast'), tov: top(away.players, 'tov'), stl: top(away.players, 'stl'), blk: top(away.players, 'blk') },
     },
     quarterLeaders: {
       period: qIndex + 1,

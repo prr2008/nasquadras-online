@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.27 — 14/11/2026
+
+- **📋 Líderes** agora inclui também **roubos de bola** e **tocos**. Ordem: pontos, rebotes, assistências, roubos, tocos e erros.
+
 ## 1.26 — 14/11/2026
 
 - **Novo atalho 📋 Líderes** (LNB e LSA): mostra o líder de cada time em **pontos, rebotes, assistências e erros (turnovers)**, numa linha por time. Exemplo: "FLA — Pts: Yago Santos 26 · Reb: Ruan Miranda 10 · Ast: Yago Santos e Luis Montero 4 · Erros: Alexey Borges e Sammie Freeman 3". Quando há empate no topo, os nomes aparecem juntos.
