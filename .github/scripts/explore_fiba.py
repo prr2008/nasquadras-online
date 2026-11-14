@@ -24,3 +24,9 @@ st, hd, body = get('https://www.fiba.basketball/en/events/api/game-live-info/131
 open('out/live_detail_2.json', 'wb').write(body)
 d = json.loads(body); g = d.get('game', {}).get('content', {})
 print('second', g.get('CurrentPeriod'), g.get('RC'), g.get('status'))
+import gzip, base64
+for name in ['live_detail_2.json', 'final_detail.json', 'live_light.json']:
+    b64 = base64.b64encode(gzip.compress(open('out/' + name, 'rb').read())).decode()
+    print('BEGIN', name)
+    for i in range(0, len(b64), 3000): print('B64', b64[i:i+3000])
+    print('END', name)
