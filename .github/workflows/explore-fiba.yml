@@ -9,3 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 .github/scripts/explore_fiba.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fiba-samples
+          path: out/
