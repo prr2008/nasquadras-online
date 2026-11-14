@@ -2,6 +2,12 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.25 — 14/11/2026
+
+- **Liga Sul-Americana (FIBA) no Ao vivo:** novo botão **📡 LSA**, ao lado do **📡 LNB**. Ele lista os jogos da competição de ontem até os próximos 3 dias (os ao vivo primeiro), com placar, horário de Brasília e fase. Também aceita o link da página do jogo no site da FIBA.
+- Depois de vincular, funciona como a LNB: placar, times e período se atualizam sozinhos a cada 30 segundos, e os atalhos **Parciais**, **Cestinhas**, **Destaques**, **Do quarto** e **Última cesta** usam as estatísticas oficiais da FIBA. A página pública da cobertura também mostra o placar ao vivo.
+- A linha de status indica a fonte do jogo ("LNB" ou "LSA"). A estrutura já está pronta para outros campeonatos da FIBA Américas.
+
 ## 1.24 — 10/11/2026
 
 - **Escolher a foto de capa da cobertura:** abra a cobertura pelo app (link **Página e capa ↗** na barra do fio, ou app.nasquadras.online/c/… para coberturas antigas). Cada foto ganha o botão **☆ Usar como capa**; a escolhida fica marcada com **★ Capa**. A capa aparece no Início, na lista de Coberturas e na prévia dos links compartilhados. Sem escolha, continua valendo a primeira foto.

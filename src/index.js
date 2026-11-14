@@ -6,6 +6,7 @@ import * as bluesky from './bluesky.js';
 import * as mastodon from './mastodon.js';
 import * as coverage from './coverage.js';
 import * as lnb from './lnb.js';
+import * as fiba from './fiba.js';
 import * as site from './site.js';
 import * as blog from './blog.js';
 import * as pages from './pages.js';
@@ -267,7 +268,19 @@ async function handleApi(request, env, url) {
     }
 
     case 'GET /api/lnb/game':
-      return json(await lnb.getGame(url.searchParams.get('id')));
+      return json(await liveGame(url.searchParams.get('id')));
+
+    // ---------- FIBA (Liga Sul-Americana e outros campeonatos das Américas) ----------
+    case 'GET /api/fiba/events':
+      return json({ events: fiba.EVENTS.map(({ key, label, short }) => ({ key, label, short })) });
+
+    case 'GET /api/fiba/games':
+      return json({ games: await fiba.listGames(url.searchParams.get('event')) });
+
+    case 'POST /api/fiba/resolve': {
+      const { input } = await body(request);
+      return json({ id: fiba.resolveGameId(input) });
+    }
 
     case 'POST /api/lnb/resolve': {
       const { input = '' } = await body(request);
@@ -546,11 +559,14 @@ const html = (body, status = 200, extra = {}) => new Response(body, {
   headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', ...extra },
 });
 
+/** Jogo vinculado: LNB (número) ou FIBA ("fiba:<número>"). */
+const liveGame = (id) => (fiba.isFibaId(id) ? fiba.getGame(id) : lnb.getGame(id));
+
 /** Placar ao vivo: se a página está ligada a um jogo da LNB, usa o dado mais recente. */
 async function withLiveScore(g) {
   if (!g.lnb_id || g.status !== 'live' || g.period === 'FINAL') return g;
   try {
-    const live = await lnb.getGame(g.lnb_id);
+    const live = await liveGame(g.lnb_id);
     const period = live.status === 'final' ? 'FINAL' : live.period > 4 ? 'OT' : `${Math.max(1, live.period)}Q`;
     return { ...g, home: live.home.name, away: live.away.name, home_score: live.home.score, away_score: live.away.score, period };
   } catch {

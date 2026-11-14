@@ -304,7 +304,7 @@ $('#templates').addEventListener('click', (e) => {
 
 // ---------- Jogo vinculado à LNB (placar automático) ----------
 const LNB_POLL_MS = 30000;
-state.lnb = store.get('lnb', null); // { id, label }
+state.lnb = store.get('lnb', null); // { id, label, src } — id da LNB ou "fiba:<número>"
 state.lnbGame = null;
 let lnbTimer = null;
 
@@ -319,9 +319,14 @@ function periodValue(g) {
   return `${Math.max(1, g.period)}Q`;
 }
 
+const isFiba = () => String(state.lnb?.id || '').startsWith('fiba:');
+/** Nome da fonte do jogo vinculado: "LNB" ou o campeonato da FIBA ("LSA"). */
+const srcLabel = () => (isFiba() ? state.lnb?.src || 'FIBA' : 'LNB');
+
 function renderLnb() {
   const linked = Boolean(state.lnb);
-  $('#lnb-link').classList.toggle('on', linked);
+  $('#lnb-link').classList.toggle('on', linked && !isFiba());
+  $('#fiba-link').classList.toggle('on', linked && isFiba());
   $('#lnb-status').hidden = !linked;
   $('#lnb-chips').hidden = !state.lnbGame;
   if (!linked) return;
@@ -331,14 +336,14 @@ function renderLnb() {
   box.classList.toggle('final', g?.status === 'final');
   box.classList.toggle('error', Boolean(state.lnbError));
   if (state.lnbError) {
-    $('#lnb-text').textContent = `LNB: ${state.lnbError}`;
+    $('#lnb-text').textContent = `${srcLabel()}: ${state.lnbError}`;
   } else if (g) {
     const when = new Date(g.fetchedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const clock = g.status === 'live' && g.clock ? ` ${g.clock}` : '';
     const st = g.status === 'live' ? 'Ao vivo' : g.status === 'final' ? 'Encerrado' : 'Não começou';
-    $('#lnb-text').textContent = `${st} · ${g.label}${clock} · atualizado ${when}`;
+    $('#lnb-text').textContent = `${srcLabel()} · ${st} · ${g.label}${clock} · atualizado ${when}`;
   } else {
-    $('#lnb-text').textContent = 'Buscando dados na LNB…';
+    $('#lnb-text').textContent = `Buscando dados (${srcLabel()})…`;
   }
 }
 
@@ -378,8 +383,8 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && state.lnb && state.lnbGame?.status !== 'final') lnbRefresh();
 });
 
-async function linkGame(id, label = '') {
-  state.lnb = { id: String(id), label };
+async function linkGame(id, label = '', src = '') {
+  state.lnb = { id: String(id), label, src };
   state.lnbGame = null;
   store.set('lnb', state.lnb);
   $('#account-dialog').close();
@@ -437,6 +442,48 @@ $('#lnb-link').addEventListener('click', async () => {
     };
   } catch (err) {
     $('#lnb-games').innerHTML = `<li class="error">${esc(err.message)}</li>`;
+  }
+});
+
+// ---------- Jogo da FIBA (Liga Sul-Americana) ----------
+$('#fiba-link').addEventListener('click', async (ev) => {
+  const eventKey = ev.currentTarget.dataset.event || 'lsa';
+  const src = ev.currentTarget.textContent.replace(/[^A-Za-z]/g, '') || 'FIBA';
+  openDialog('Vincular jogo da Liga Sul-Americana', `
+    <p class="small" style="color:var(--muted);margin-top:0">Dados oficiais da FIBA. O placar passa a ser atualizado sozinho a cada 30 segundos, e os atalhos (Parciais, Cestinhas, Destaques…) usam as estatísticas do jogo.</p>
+    <ul id="fiba-games" class="game-list"><li class="small" style="color:var(--muted)">Carregando jogos…</li></ul>
+    <p class="small" style="color:var(--muted)">Ou cole o link da página do jogo no site da FIBA:</p>
+    <div class="paste-row">
+      <input id="fiba-input" type="url" inputmode="url" placeholder="https://www.fiba.basketball/…/games/…" aria-label="Link do jogo no site da FIBA">
+      <button type="button" id="fiba-go" class="ghost small">Vincular</button>
+    </div>
+    <p id="fiba-err" class="error"></p>`);
+
+  $('#fiba-go').onclick = async () => {
+    $('#fiba-err').textContent = '';
+    try {
+      const { id } = await api('/api/fiba/resolve', { input: $('#fiba-input').value });
+      linkGame(id, '', src);
+    } catch (err) { $('#fiba-err').textContent = err.message; }
+  };
+
+  try {
+    const { games } = await api(`/api/fiba/games?event=${encodeURIComponent(eventKey)}`);
+    const list = $('#fiba-games');
+    if (!games.length) { list.innerHTML = '<li class="small" style="color:var(--muted)">Nenhum jogo entre ontem e os próximos 3 dias.</li>'; return; }
+    list.innerHTML = games.map((g) => {
+      const score = g.status === 'scheduled' ? 'x' : `${g.homeScore} x ${g.awayScore}`;
+      const st = g.status === 'live' ? `● ${g.label} ${g.clock}` : g.status === 'final' ? `Encerrado · ${g.start}` : g.start;
+      return `<li><button type="button" data-id="${esc(g.id)}" data-label="${esc(`${g.home} x ${g.away}`)}">
+        <strong>${esc(g.home)} ${esc(score)} ${esc(g.away)}</strong>
+        <span class="st ${g.status === 'live' ? 'live' : ''}">${esc(st)}${g.round ? ` · ${esc(g.round)}` : ''}</span></button></li>`;
+    }).join('');
+    list.onclick = (e) => {
+      const b = e.target.closest('button[data-id]');
+      if (b) linkGame(b.dataset.id, b.dataset.label, src);
+    };
+  } catch (err) {
+    $('#fiba-games').innerHTML = `<li class="error">${esc(err.message)}</li>`;
   }
 });
 

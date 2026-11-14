@@ -6,6 +6,7 @@ Webapp para coberturas ao vivo: escreve uma vez e publica ao mesmo tempo no **Th
 
 - **Placar do jogo** digitável ou com botões +1/+2/+3, período e atalhos ("Cesta de 3", "Fim do quarto", "Final") que inserem o placar no texto.
 - **Placar automático pela LNB**: o botão *📡 LNB* lista os jogos do dia (ou aceita o link da página do jogo) e, depois de vincular, o placar, os times e o período se atualizam sozinhos a cada 30 segundos. Atalhos com dados reais: *Parciais*, *Cestinhas*, *Destaques* (pontos, rebotes e assistências), *Do quarto* e *Última cesta*. Os dados vêm dos mesmos arquivos que a página "Tempo real" do site da LNB usa.
+- **Placar automático pela FIBA (Liga Sul-Americana)**: o botão *📡 LSA* lista os jogos da competição (de ontem até 3 dias à frente) ou aceita o link do jogo em fiba.basketball. O vínculo usa o id `fiba:<número>` e passa pelos mesmos atalhos e pela mesma rota `/api/lnb/game`. Rotas: `GET /api/fiba/events`, `GET /api/fiba/games?event=lsa`, `POST /api/fiba/resolve`. Novos campeonatos entram na lista `EVENTS` de `src/fiba.js`.
 - **Fio da cobertura**: toque em *Iniciar fio do jogo* e o próximo post abre o fio; os seguintes saem como respostas ao anterior, no Threads e no Bluesky. A chave *Responder no fio* permite soltar um post avulso sem encerrar o fio. *Encerrar* volta aos posts soltos e zera placar, times e o vínculo com a LNB; um post publicado até 30 min depois pergunta se continua no mesmo fio (`POST /api/coverage/resume`).
 - **Site público das coberturas** (`/c`): cada cobertura vira uma página com placar (ao vivo pela LNB, quando vinculado), posts com horário e fotos, além de uma galeria. A página se atualiza sozinha durante o jogo e mostra prévia com placar e foto ao ser compartilhada. No app, a chave *Site* envia o post para a página da cobertura ativa. Logado no app, você vê o botão *Apagar* em cada post do site.
 - **Site principal** (`nasquadras.online`): Início (cobertura ao vivo em destaque, últimos textos e coberturas), Coberturas, **Blog**, Coluna Nas Quadras, Zona de Conforto e Sobre, com RSS (`/rss.xml`) e mapa do site (`/sitemap.xml`). No domínio principal o site fica na raiz (www redireciona; `/app` leva a app.nasquadras.online). Em app.nasquadras.online, o app fica em `/` e o início do site em `/inicio`. `SITE_URL` define o endereço oficial dos links.
@@ -114,6 +115,7 @@ src/pix.js       Pix estático (copia e cola) e QR Code em SVG
 src/indexnow.js  aviso aos buscadores (IndexNow) do que mudou no site
 src/blog.js      blog e páginas fixas: banco D1 e limpeza do HTML do editor
 src/lnb.js       leitura dos dados de tempo real da LNB
+src/fiba.js      jogos e estatísticas ao vivo da FIBA (Liga Sul-Americana)
 src/coverage.js  fio da cobertura (último post de cada rede)
 src/compose.js   texto de cada rede: hashtags/tema e menções
 src/text.js      contagem de caracteres, fio e links/hashtags do Bluesky
