@@ -1,0 +1,34 @@
+name: explore-fiba
+on:
+  push:
+    branches: [explore-fiba]
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch pages and grep for data endpoints
+        run: |
+          set -x
+          UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+          mkdir out && cd out
+          curl -sSL -A "$UA" -o game.html "https://www.fiba.basketball/en/events/liga-sudamericana-de-baloncesto-fiba-2026/games/131161-PAI-FLA"
+          curl -sSL -A "$UA" -o event.html "https://www.fiba.basketball/en/events/liga-sudamericana-de-baloncesto-fiba-2026"
+          ls -la
+          echo '--- hosts in game.html'
+          grep -oE 'https?://[a-zA-Z0-9.-]+' game.html | sort | uniq -c | sort -rn | head -40
+          echo '--- api-ish strings in game.html'
+          grep -oE '(digital-api|hapi|livecache|sportresult|geniussports|fibalivestats|Ocp-Apim|subscription|apiKey|api-key)[^"<> ]{0,160}' game.html | sort -u | head -60
+          echo '--- script srcs'
+          grep -oE '<script[^>]+src="[^"]+"' game.html | head -60
+          echo '--- self.__next_f size'
+          grep -c '__next_f' game.html || true
+          for s in $(grep -oE 'src="(/_next/static/[^"]+\.js)"' game.html | sed -E 's/src="([^"]+)"/\1/' | sort -u); do
+            curl -sSL -A "$UA" "https://www.fiba.basketball$s" -o "$(basename $s)"
+          done
+          echo '--- grep chunks'
+          grep -ohE '(https://[a-zA-Z0-9.-]*(api|cache|stats|genius|sportresult)[a-zA-Z0-9./_-]*)' *.js | sort | uniq -c | sort -rn | head -60
+          grep -ohE '.{0,120}(Ocp-Apim-Subscription-Key|subscription-key).{0,160}' *.js | head -20
+          grep -ohE '.{0,80}(getgdap|hapi/)[^"]{0,120}' *.js | sort -u | head -60
+          echo '--- game ids / livestats ids in game.html'
+          grep -oE '.{0,100}131161.{0,100}' game.html | head -20
+          grep -oE '.{0,60}(liveStats|livestats|LiveStats)[^"]{0,120}' game.html | head -20
