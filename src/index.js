@@ -659,6 +659,8 @@ async function handleMainSite(request, env, url) {
   }
 
   if (p === '/conversar') return html(pages.talkPage({ origin, home }));
+  if (p === '/privacidade') return html(pages.privacyPage({ origin, home }));
+  if (p === '/termos') return html(pages.termsPage({ origin, home }));
   if (p === '/apoie') return html(pages.supportPage({ support: supportInfo(env), origin, home }));
 
   const fixed = p.match(/^\/(sobre)$/);

@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.28 — 15/11/2026
+
+- **Política de privacidade** (nasquadras.online/privacidade) e **Termos de uso** (nasquadras.online/termos), com links no rodapé do site. Explicam, de acordo com a LGPD, o que o site, o app, a futura skill da Alexa e o atalho da Siri coletam: quase nada, sem cookies de rastreamento. Essas páginas são exigidas pela Amazon para publicar a skill.
+
 ## 1.27 — 14/11/2026
 
 - **📋 Líderes** agora inclui também **roubos de bola** e **tocos**. Ordem: pontos, rebotes, assistências, roubos, tocos e erros.

@@ -209,6 +209,112 @@ export function supportPage({ support, origin, home = '/' }) {
   });
 }
 
+const LEGAL_UPDATED = '15 de novembro de 2026';
+const CONTACT = 'pedro.rodrigues@nasquadras.online';
+
+function legalPage({ origin, home, path, title, description, html: content }) {
+  return layout({
+    title: `${title} · Nas Quadras`,
+    description,
+    url: `${origin}${path}`,
+    type: 'website',
+    home,
+    body: `<article class="article legal">
+      <h1 class="article-title">${title}</h1>
+      <p class="meta">Atualizado em ${LEGAL_UPDATED}</p>
+      ${content}
+    </article>`,
+  });
+}
+
+/** Página /privacidade: o que o site, o app e os assistentes de voz coletam (quase nada). */
+export function privacyPage({ origin, home = '/' }) {
+  return legalPage({
+    origin, home, path: '/privacidade', title: 'Política de privacidade',
+    description: 'Como o Nas Quadras trata dados pessoais no site, no app e nos assistentes de voz (Alexa e Siri).',
+    html: `
+      <p>O Nas Quadras (nasquadras.online) é o site de basquete do jornalista Pedro Rodrigues, responsável por este site e por esta política. Esta página explica, em linguagem simples, que dados pessoais circulam quando você usa o site, a skill do Nas Quadras na Alexa ou o atalho do Nas Quadras na Siri, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).</p>
+
+      <h2>Resumo</h2>
+      <ul>
+        <li>O Nas Quadras não pede cadastro, não vende dados e não usa cookies de publicidade ou de rastreamento.</li>
+        <li>A medição de audiência é feita sem cookies e sem identificar quem você é.</li>
+        <li>A skill da Alexa e o atalho da Siri só leem resultados e notícias. Não pedem nem guardam seu nome, e-mail, localização ou gravações de voz.</li>
+      </ul>
+
+      <h2>Site nasquadras.online</h2>
+      <ul>
+        <li><strong>Medição de audiência:</strong> usamos o Cloudflare Web Analytics, que conta visitas e páginas vistas sem cookies e sem montar perfil do visitante. Vemos apenas números agregados, como total de visitas, páginas mais lidas, país e tipo de aparelho.</li>
+        <li><strong>Hospedagem e segurança:</strong> o site roda na Cloudflare, que processa dados técnicos de cada acesso, como endereço IP e navegador, para entregar as páginas e bloquear ataques e robôs. Esses dados ficam com a Cloudflare, conforme a política dela, e não são usados pelo Nas Quadras para identificar leitores.</li>
+        <li><strong>Conteúdo de terceiros:</strong> algumas páginas mostram conteúdos de outros serviços, como o formulário da newsletter (Substack), a agenda de horários (Google Agenda), playlists e episódios (Spotify) e vídeos (YouTube, em modo de privacidade reforçada). Ao interagir com eles, valem as políticas de privacidade de cada serviço.</li>
+        <li><strong>Apoio:</strong> o Pix e o Ko-fi são processados pelo seu banco e pelo Ko-fi. O Nas Quadras recebe apenas o que essas plataformas informam sobre a contribuição, como o nome de quem enviou.</li>
+        <li><strong>Contato:</strong> se você escrever para o Nas Quadras ou marcar uma conversa, seu nome e e-mail serão usados só para responder ou para a conversa combinada.</li>
+      </ul>
+
+      <h2>App de cobertura (app.nasquadras.online)</h2>
+      <p>O app é uma ferramenta de trabalho de uso exclusivo do Pedro Rodrigues. O acesso exige senha, e o único cookie usado é o de sessão do próprio Pedro. Leitores não usam o app nem têm dados guardados nele.</p>
+
+      <h2>Alexa e Siri</h2>
+      <ul>
+        <li><strong>Skill do Nas Quadras na Alexa:</strong> responde com resultados de jogos e notícias de basquete. A skill não pede vinculação de conta, não coleta nome, e-mail, telefone ou localização e não guarda o que você fala. Para responder, a Amazon envia ao Nas Quadras apenas o pedido (por exemplo, "resultados de ontem") com identificadores técnicos anônimos da sessão, que não são guardados depois da resposta. As gravações de voz e o histórico ficam com a Amazon e podem ser gerenciados por você no app Alexa, conforme a política de privacidade da Amazon.</li>
+        <li><strong>Atalho do Nas Quadras na Siri:</strong> o atalho roda no seu iPhone e só baixa o texto público do resumo em nasquadras.online. Nenhum dado seu é enviado ao Nas Quadras além do acesso técnico à página.</li>
+      </ul>
+
+      <h2>Compartilhamento</h2>
+      <p>O Nas Quadras não vende, aluga nem compartilha dados pessoais. Os únicos terceiros envolvidos são os serviços citados acima, que operam o site e os conteúdos incorporados.</p>
+
+      <h2>Seus direitos</h2>
+      <p>Pela LGPD, você pode pedir confirmação, acesso, correção ou exclusão de dados pessoais seus que estejam com o Nas Quadras, como um e-mail que você tenha enviado. Basta escrever para <a href="mailto:${CONTACT}">${CONTACT}</a>. Respondemos em até 15 dias.</p>
+
+      <h2>Crianças</h2>
+      <p>O conteúdo é jornalístico e de interesse geral. O Nas Quadras não coleta intencionalmente dados de crianças.</p>
+
+      <h2>Mudanças nesta política</h2>
+      <p>Se algo mudar, esta página será atualizada, e a data no topo indica a última revisão.</p>
+
+      <h2>Contato</h2>
+      <p>Pedro Rodrigues, Nas Quadras · <a href="mailto:${CONTACT}">${CONTACT}</a></p>`,
+  });
+}
+
+/** Página /termos: termos de uso do site, da skill da Alexa e do atalho da Siri. */
+export function termsPage({ origin, home = '/' }) {
+  return legalPage({
+    origin, home, path: '/termos', title: 'Termos de uso',
+    description: 'Regras de uso do site Nas Quadras, da skill da Alexa e do atalho da Siri.',
+    html: `
+      <p>Ao usar o site nasquadras.online, a skill do Nas Quadras na Alexa ou o atalho do Nas Quadras na Siri, você concorda com estes termos.</p>
+
+      <h2>O que é o Nas Quadras</h2>
+      <p>Um projeto jornalístico independente do jornalista Pedro Rodrigues sobre basquete: coberturas ao vivo, coluna, blog, podcast e resumos de resultados, como os do NBB e da NBA.</p>
+
+      <h2>Resultados e estatísticas</h2>
+      <ul>
+        <li>Os placares e estatísticas vêm de fontes públicas das ligas e de serviços de dados esportivos e são usados com finalidade exclusivamente jornalística, com crédito à fonte. Os dados do NBB são da Liga Nacional de Basquete (LNB).</li>
+        <li>Fazemos o possível para que os resultados estejam corretos e atualizados, mas eles podem conter atrasos ou erros das fontes. Os resultados oficiais são os publicados pelas próprias ligas.</li>
+        <li>Os conteúdos não devem ser usados para apostas, e o Nas Quadras não se responsabiliza por decisões tomadas com base neles.</li>
+      </ul>
+
+      <h2>Marcas</h2>
+      <p>NBA, NBB, LNB, FIBA e os nomes e marcas de times pertencem aos seus titulares e são citados apenas como informação jornalística. O Nas Quadras não é afiliado a essas organizações nem endossado por elas.</p>
+
+      <h2>Direitos autorais</h2>
+      <p>Textos, áudios e fotos do Nas Quadras são de Pedro Rodrigues, salvo indicação em contrário. Você pode compartilhar links e citar trechos com crédito e link para a fonte. Para reproduzir conteúdo completo, peça autorização.</p>
+
+      <h2>Alexa e Siri</h2>
+      <p>A skill e o atalho são gratuitos e podem mudar, ficar fora do ar ou ser encerrados sem aviso, inclusive por mudanças nas plataformas da Amazon e da Apple. O uso da Alexa segue também os termos da Amazon, e o da Siri, os termos da Apple.</p>
+
+      <h2>Links e serviços de terceiros</h2>
+      <p>O site tem links e conteúdos de outros serviços, como Substack, Spotify, YouTube, Google Agenda e Ko-fi, que seguem seus próprios termos.</p>
+
+      <h2>Privacidade</h2>
+      <p>Veja a <a href="/privacidade">política de privacidade</a>.</p>
+
+      <h2>Contato</h2>
+      <p>Pedro Rodrigues, Nas Quadras · <a href="mailto:${CONTACT}">${CONTACT}</a></p>`,
+  });
+}
+
 /** Página /conversar: horários livres da agenda pública do Google. */
 export function talkPage({ origin, home = '/' }) {
   return layout({
@@ -322,7 +428,7 @@ ${items}
 
 export function sitemap({ articles, games, origin, podcasts = [] }) {
   const url = (loc, ms) => `<url><loc>${xml(loc)}</loc>${ms ? `<lastmod>${new Date(ms).toISOString()}</lastmod>` : ''}</url>`;
-  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/podcast', '/sobre', '/apoie', '/conversar'].map((p) => url(`${origin}${p}`));
+  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/podcast', '/sobre', '/apoie', '/conversar', '/privacidade', '/termos'].map((p) => url(`${origin}${p}`));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${[...fixed,

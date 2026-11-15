@@ -40,7 +40,7 @@ export async function changedUrls(env, origin, since) {
   for (const p of pages) if (PAGE_PATH[p.slug]) paths.add(PAGE_PATH[p.slug]);
   if (pods.length) paths.add('/').add('/podcast');
   for (const e of pods) paths.add(`/podcast/${e.slug}`);
-  if (!since) ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie'].forEach((p) => paths.add(p));
+  if (!since) ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/sobre', '/apoie', '/privacidade', '/termos'].forEach((p) => paths.add(p));
   return [...paths].slice(0, 10000).map((p) => `${origin}${p}`);
 }
 
