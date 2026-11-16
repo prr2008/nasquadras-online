@@ -276,22 +276,6 @@ async function handleApi(request, env, url) {
       const fresh = url.searchParams.get('fresh') === '1';
       return json(await briefing.get(env, { fresh }));
     }
-    case 'GET /api/briefing/probe': {
-      // Temporário: diagnóstico do acesso à ESPN a partir do servidor.
-      const q = 'dates=20261114';
-      const tries = [
-        ['sem UA', `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?${q}`, {}],
-        ['UA do app', `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?${q}`, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NasQuadrasOnline/1.0; +https://nasquadras.online)' } }],
-        ['cache cf', `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?${q}`, { cf: { cacheTtl: 300, cacheEverything: true } }],
-        ['site.web', `https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?${q}`, {}],
-      ];
-      const out = [];
-      for (const [name, u, opt] of tries) {
-        try { const r = await fetch(u, opt); const t = await r.text(); out.push({ name, status: r.status, len: t.length, head: t.slice(0, 120) }); }
-        catch (err) { out.push({ name, error: err.message }); }
-      }
-      return json(out);
-    }
     case 'GET /api/fiba/events':
       return json({ events: fiba.EVENTS.map(({ key, label, short }) => ({ key, label, short })) });
 

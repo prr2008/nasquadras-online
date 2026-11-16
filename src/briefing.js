@@ -11,7 +11,6 @@ import * as lnb from './lnb.js';
 const TZ = 'America/Sao_Paulo';
 const FLIP_HOURS = 6;
 const ESPN = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
-const UA = 'Mozilla/5.0 (compatible; NasQuadrasOnline/1.0; +https://nasquadras.online)';
 const CACHE_KEY = 'briefing:';
 
 const WEEKDAYS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
@@ -137,10 +136,11 @@ export function parseEspn(data) {
 }
 
 export async function nbaResults(date, { fetchImpl = fetch } = {}) {
-  const res = await fetchImpl(`${ESPN}?dates=${date.replace(/-/g, '')}`, {
-    headers: { 'User-Agent': UA, Accept: 'application/json' },
-    cf: { cacheTtl: 300, cacheEverything: true },
-  });
+  // Pedido simples: a ESPN recusa (403) pedidos com o cache da Cloudflare ou
+  // com identificação própria. O resultado já fica guardado no KV pelo get().
+  const url = `${ESPN}?dates=${date.replace(/-/g, '')}`;
+  let res = await fetchImpl(url);
+  if (res.status === 403 || res.status >= 500) res = await fetchImpl(url);
   if (!res.ok) throw new Error(`ESPN: HTTP ${res.status}`);
   return parseEspn(await res.json());
 }
