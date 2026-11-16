@@ -21,6 +21,7 @@ import * as indexnow from './indexnow.js';
 import { supportInfo } from './pix.js';
 import * as linkpreview from './linkpreview.js';
 import * as podcast from './podcast.js';
+import * as briefing from './briefing.js';
 import { applyMentions, compose, getMentions, saveMentions } from './compose.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
@@ -658,6 +659,20 @@ async function handleMainSite(request, env, url) {
     return html(pages.podcastEpisodePage({ e, channel, others, origin, feed: podcast.feedUrl(env), home }));
   }
 
+  // Resumo da noite anterior (NBB e NBA): página, texto do atalho da Siri e
+  // feed do Resumo de Notícias da Alexa.
+  if (p === '/resultados' || p === '/briefing.txt' || p === '/briefing.json') {
+    let b;
+    try { b = await briefing.get(env); } catch (err) {
+      console.error('briefing', err);
+      return p === '/resultados' ? html(site.notFoundPage({ home }), 503) : new Response('Resultados indisponíveis agora.', { status: 503 });
+    }
+    const cache = { 'Cache-Control': 'public, max-age=300' };
+    if (p === '/briefing.txt') return new Response(b.text, { headers: { 'Content-Type': 'text/plain; charset=utf-8', ...cache } });
+    if (p === '/briefing.json') return json(briefing.flashBriefing(b, origin), 200, cache);
+    return html(pages.resultsPage({ b, origin, home }));
+  }
+
   if (p === '/conversar') return html(pages.talkPage({ origin, home }));
   if (p === '/privacidade') return html(pages.privacyPage({ origin, home }));
   if (p === '/termos') return html(pages.termsPage({ origin, home }));
@@ -776,6 +791,20 @@ export default {
     if (new Date(event.scheduledTime).getUTCMinutes() % 10 === 3) {
       const origin = (env.SITE_URL || 'https://nasquadras.online').replace(/\/$/, '');
       ctx.waitUntil(indexnow.run(env, origin).then((r) => r.sent && console.log('indexnow enviado', r.sent, r.status, r.via)).catch((err) => console.error('indexnow', err.message)));
+    }
+    // A cada 10 minutos, das 11h às 3h (Brasília): guarda os jogos do NBB do dia
+    // para o resumo da manhã seguinte; às 6h05 já deixa o resumo pronto.
+    {
+      const t = new Date(event.scheduledTime);
+      const hBrt = (t.getUTCHours() + 21) % 24;
+      if (t.getUTCMinutes() % 10 === 5 && (hBrt >= 11 || hBrt < 3)) {
+        ctx.waitUntil(briefing.captureNbb(env, { now: t.getTime() })
+          .then((r) => r.saved && console.log('nbb guardado', JSON.stringify(r)))
+          .catch((err) => console.error('nbb captura', err.message)));
+      }
+      if (hBrt === 6 && t.getUTCMinutes() === 5) {
+        ctx.waitUntil(briefing.get(env, { now: t.getTime(), fresh: true }).catch((err) => console.error('briefing', err.message)));
+      }
     }
     if (event.cron !== DAILY_CRON) return;
 

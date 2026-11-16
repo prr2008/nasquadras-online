@@ -2,6 +2,15 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.29 — 15/11/2026
+
+- **Resumo da noite anterior (NBB e NBA)**, base da skill da Alexa e do atalho da Siri. Às 6h (Brasília) fica pronto o resumo da véspera: placar de cada jogo, com vencedor, prorrogação, mando e cestinha.
+  - Página **nasquadras.online/resultados**, com os placares em cartões.
+  - **nasquadras.online/briefing.txt**: o texto para o atalho da Siri ler em voz alta.
+  - **nasquadras.online/briefing.json**: o feed no formato do Resumo de Notícias da Alexa.
+- **NBB:** como a LNB só mostra os jogos do dia, o app guarda os resultados a cada 10 minutos, das 11h às 3h, e lê o cestinha quando o jogo termina. Só entram jogos do NBB.
+- **NBA:** placares da ESPN pela data do jogo. Os times são chamados pela cidade ("Denver venceu New Orleans"), menos os de Los Angeles ("Lakers", "Clippers"). Na voz da Alexa, nomes em inglês saem com pronúncia em inglês.
+
 ## 1.28 — 15/11/2026
 
 - **Política de privacidade** (nasquadras.online/privacidade) e **Termos de uso** (nasquadras.online/termos), com links no rodapé do site. Explicam, de acordo com a LGPD, o que o site, o app, a futura skill da Alexa e o atalho da Siri coletam: quase nada, sem cookies de rastreamento. Essas páginas são exigidas pela Amazon para publicar a skill.

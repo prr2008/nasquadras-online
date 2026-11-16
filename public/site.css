@@ -322,3 +322,13 @@ img, video { max-width: 100%; display: block; }
 .legal ul { padding-left: 20px; }
 .legal li { margin: 6px 0; }
 .legal a { color: inherit; text-decoration: underline; }
+
+/* Resultados da noite (/resultados) */
+.results .rs-league { margin: 24px 0; }
+.results .rs-league h2 { font-size: 22px; margin: 0 0 10px; }
+.results .rs-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.results .rs-game { border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 10px 14px; }
+.results .rs-team { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.results .rs-team.won { color: inherit; font-weight: 700; }
+.results .rs-note { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+.results .rs-empty, .results .rs-credit { color: var(--muted); }

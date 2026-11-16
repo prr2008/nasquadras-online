@@ -116,6 +116,7 @@ src/indexnow.js  aviso aos buscadores (IndexNow) do que mudou no site
 src/blog.js      blog e páginas fixas: banco D1 e limpeza do HTML do editor
 src/lnb.js       leitura dos dados de tempo real da LNB
 src/fiba.js      jogos e estatísticas ao vivo da FIBA (Liga Sul-Americana)
+src/briefing.js  resumo da noite anterior (NBB guardado no D1 + NBA pela ESPN): /resultados, /briefing.txt, /briefing.json
 src/coverage.js  fio da cobertura (último post de cada rede)
 src/compose.js   texto de cada rede: hashtags/tema e menções
 src/text.js      contagem de caracteres, fio e links/hashtags do Bluesky

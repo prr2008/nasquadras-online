@@ -315,6 +315,32 @@ export function termsPage({ origin, home = '/' }) {
   });
 }
 
+/** Página /resultados: resultados da noite anterior (NBB e NBA), o mesmo resumo da Alexa e da Siri. */
+export function resultsPage({ b, origin, home = '/' }) {
+  const score = (g) => {
+    const homeWon = g.homeScore >= g.awayScore;
+    const row = (name, pts, won) => `<div class="rs-team${won ? ' won' : ''}"><span>${esc(name)}</span><b>${pts}</b></div>`;
+    const note = [g.overtime ? 'Prorrogação' : '', !g.final ? 'Em andamento' : '', g.top?.name ? `Cestinha: ${esc(g.top.name)}, ${g.top.pts} pts` : ''].filter(Boolean).join(' · ');
+    return `<li class="rs-game">${row(g.away, g.awayScore, g.final && !homeWon)}${row(g.home, g.homeScore, g.final && homeWon)}${note ? `<p class="rs-note">${note}</p>` : ''}</li>`;
+  };
+  const block = (label, games, none) => `<section class="rs-league"><h2>${label}</h2>${games.length ? `<ul class="rs-list">${games.map(score).join('')}</ul>` : `<p class="rs-empty">${none}</p>`}</section>`;
+  const [y, m, d] = b.date.split('-');
+  return layout({
+    title: `Resultados de ${d}/${m} · Nas Quadras`,
+    description: `Resultados do NBB e da NBA de ${d}/${m}/${y}, com os cestinhas de cada jogo.`,
+    url: `${origin}/resultados`,
+    type: 'website',
+    home,
+    body: `<article class="article results">
+      <h1 class="article-title">Resultados da noite</h1>
+      <p class="lede">NBB e NBA de ${esc(b.title.replace(/^Nas Quadras: resultados de /, ''))}. Visitante em cima, mandante embaixo.</p>
+      ${block('NBB', b.nbb, 'Sem jogos do NBB.')}
+      ${block('NBA', b.nba, 'Sem jogos da NBA.')}
+      <p class="rs-credit">Dados: LNB e ESPN. Também na Alexa ("Alexa, abre Nas Quadras") e no atalho da Siri.</p>
+    </article>`,
+  });
+}
+
 /** Página /conversar: horários livres da agenda pública do Google. */
 export function talkPage({ origin, home = '/' }) {
   return layout({
@@ -428,7 +454,7 @@ ${items}
 
 export function sitemap({ articles, games, origin, podcasts = [] }) {
   const url = (loc, ms) => `<url><loc>${xml(loc)}</loc>${ms ? `<lastmod>${new Date(ms).toISOString()}</lastmod>` : ''}</url>`;
-  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/podcast', '/sobre', '/apoie', '/conversar', '/privacidade', '/termos'].map((p) => url(`${origin}${p}`));
+  const fixed = ['/', '/blog', '/c', '/coluna', '/zona-de-conforto', '/podcast', '/sobre', '/apoie', '/conversar', '/privacidade', '/termos', '/resultados'].map((p) => url(`${origin}${p}`));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${[...fixed,

@@ -127,3 +127,22 @@ CREATE TABLE IF NOT EXISTS podcast_episodes (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS podcast_published ON podcast_episodes (published_at DESC);
+
+-- Resultados do NBB guardados ao longo do dia (a LNB só mostra os jogos do dia),
+-- para o resumo da manhã seguinte (Alexa, Siri, /resultados).
+CREATE TABLE IF NOT EXISTS nbb_results (
+  id TEXT PRIMARY KEY,            -- id da partida na LNB
+  game_date TEXT NOT NULL,        -- AAAA-MM-DD (Brasília), dia em que o jogo começou
+  home TEXT NOT NULL,
+  away TEXT NOT NULL,
+  home_score INTEGER NOT NULL DEFAULT 0,
+  away_score INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL,           -- live | final
+  period INTEGER NOT NULL DEFAULT 1,
+  competition TEXT NOT NULL DEFAULT '',
+  top_name TEXT,                  -- cestinha do jogo
+  top_team TEXT,
+  top_pts INTEGER,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS nbb_results_by_date ON nbb_results (game_date);
