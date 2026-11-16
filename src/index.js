@@ -272,6 +272,10 @@ async function handleApi(request, env, url) {
       return json(await liveGame(url.searchParams.get('id')));
 
     // ---------- FIBA (Liga Sul-Americana e outros campeonatos das Américas) ----------
+    case 'GET /api/briefing': {
+      const fresh = url.searchParams.get('fresh') === '1';
+      return json(await briefing.get(env, { fresh }));
+    }
     case 'GET /api/fiba/events':
       return json({ events: fiba.EVENTS.map(({ key, label, short }) => ({ key, label, short })) });
 

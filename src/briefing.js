@@ -206,7 +206,7 @@ export async function get(env, { now = Date.now(), date = referenceDate(now), fr
   try { nba = await nbaResults(date); } catch (err) { nbaError = err.message; console.error('briefing nba', err.message); }
   const { text, ssml } = compose({ date, nbb, nba, nbaError });
   const done = !nbaError && nba.every((g) => g.final);
-  const out = { date, title: `Nas Quadras: resultados de ${spokenDate(date)}`, text, ssml, nbb, nba, updatedAt: new Date(now).toISOString(), complete: done };
+  const out = { nbaError, date, title: `Nas Quadras: resultados de ${spokenDate(date)}`, text, ssml, nbb, nba, updatedAt: new Date(now).toISOString(), complete: done };
   await env.KV.put(key, JSON.stringify(out), { expirationTtl: done ? 6 * 3600 : 600 });
   return out;
 }
