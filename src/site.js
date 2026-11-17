@@ -151,7 +151,7 @@ export const NAV = [
   ['inicio', 'Início', '/'],
   ['coberturas', 'Coberturas', '/c'],
   ['blog', 'Blog', '/blog'],
-  ['coluna', 'Coluna', '/coluna'],
+  ['coluna', 'Coluna JB', '/coluna'],
   ['zona', 'Zona de Conforto', '/zona-de-conforto'],
   ['podcast', 'Podcast', '/podcast'],
   ['conversar', 'Vamos conversar', '/conversar'],

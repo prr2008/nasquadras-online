@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.31 — 16/11/2026
+
+- O item **Coluna** do menu do site passou a se chamar **Coluna JB**.
+
 ## 1.30 — 16/11/2026
 
 - **"Minhas redes" na página Sobre:** botões para Threads, Bluesky, X, Instagram, YouTube, Mastodon, newsletter (Substack), podcast e RSS. O link do Mastodon vem da conta conectada ao app. Os links usam rel="me", que confirma no Mastodon que o site é seu.
