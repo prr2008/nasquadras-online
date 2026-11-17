@@ -274,7 +274,7 @@ async function handleApi(request, env, url) {
 
     // ---------- FIBA (Liga Sul-Americana e outros campeonatos das Américas) ----------
     case 'GET /api/alexa/last-error':
-      return json(JSON.parse((await env.KV.get('alexa:last-error')) || 'null'));
+      return json({ hit: await env.KV.get('alexa:last-hit'), error: JSON.parse((await env.KV.get('alexa:last-error')) || 'null') });
     case 'GET /api/briefing': {
       const fresh = url.searchParams.get('fresh') === '1';
       return json(await briefing.get(env, { fresh }));
@@ -759,6 +759,7 @@ export default {
       if (url.pathname.startsWith('/auth/')) return await handleAuth(request, env, url);
       // Skill da Alexa: só pedidos assinados pela Amazon.
       if (url.pathname === '/alexa' && request.method === 'POST') {
+        await env.KV.put('alexa:last-hit', new Date().toISOString(), { expirationTtl: 7 * 86400 });
         let body;
         try { body = await alexa.verify(request, env); } catch (err) {
           console.warn('alexa recusado', err.message);
