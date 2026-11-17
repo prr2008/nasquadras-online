@@ -72,7 +72,7 @@
           "slots": [
             {
               "name": "time",
-              "type": "TIME"
+              "type": "TIME_BASQUETE"
             }
           ],
           "samples": [
@@ -121,7 +121,7 @@
           ]
         },
         {
-          "name": "TIME",
+          "name": "TIME_BASQUETE",
           "values": [
             {
               "name": {

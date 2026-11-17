@@ -273,6 +273,8 @@ async function handleApi(request, env, url) {
       return json(await liveGame(url.searchParams.get('id')));
 
     // ---------- FIBA (Liga Sul-Americana e outros campeonatos das Américas) ----------
+    case 'GET /api/alexa/last-error':
+      return json(JSON.parse((await env.KV.get('alexa:last-error')) || 'null'));
     case 'GET /api/briefing': {
       const fresh = url.searchParams.get('fresh') === '1';
       return json(await briefing.get(env, { fresh }));
@@ -760,6 +762,7 @@ export default {
         let body;
         try { body = await alexa.verify(request, env); } catch (err) {
           console.warn('alexa recusado', err.message);
+          await env.KV.put('alexa:last-error', JSON.stringify({ at: new Date().toISOString(), error: String(err?.message || err), stack: String(err?.stack || '').slice(0, 800), headers: [...request.headers.keys()] }), { expirationTtl: 7 * 86400 });
           return json({ error: 'Pedido inválido.' }, 400);
         }
         return json(await alexa.handle(body, env));
