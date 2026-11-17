@@ -273,8 +273,10 @@ async function handleApi(request, env, url) {
       return json(await liveGame(url.searchParams.get('id')));
 
     // ---------- FIBA (Liga Sul-Americana e outros campeonatos das Américas) ----------
-    case 'GET /api/alexa/last-error':
-      return json({ hit: await env.KV.get('alexa:last-hit'), error: JSON.parse((await env.KV.get('alexa:last-error')) || 'null') });
+    case 'GET /api/alexa/log': {
+      const { results } = await env.DB.prepare('SELECT * FROM alexa_log ORDER BY id DESC LIMIT 20').all();
+      return json(results || []);
+    }
     case 'GET /api/briefing': {
       const fresh = url.searchParams.get('fresh') === '1';
       return json(await briefing.get(env, { fresh }));
@@ -759,14 +761,25 @@ export default {
       if (url.pathname.startsWith('/auth/')) return await handleAuth(request, env, url);
       // Skill da Alexa: só pedidos assinados pela Amazon.
       if (url.pathname === '/alexa' && request.method === 'POST') {
-        await env.KV.put('alexa:last-hit', new Date().toISOString(), { expirationTtl: 7 * 86400 });
+        // Registro curto de cada pedido (diagnóstico da skill; os 200 mais recentes).
+        const log = (ok, info) => env.DB.prepare('INSERT INTO alexa_log (at, colo, ok, info) VALUES (?, ?, ?, ?)')
+          .bind(new Date().toISOString(), request.cf?.colo || '', ok ? 1 : 0, String(info).slice(0, 1000)).run()
+          .then(() => env.DB.prepare('DELETE FROM alexa_log WHERE id <= (SELECT MAX(id) - 200 FROM alexa_log)').run())
+          .catch(() => {});
         let body;
         try { body = await alexa.verify(request, env); } catch (err) {
           console.warn('alexa recusado', err.message);
-          await env.KV.put('alexa:last-error', JSON.stringify({ at: new Date().toISOString(), error: String(err?.message || err), stack: String(err?.stack || '').slice(0, 800), headers: [...request.headers.keys()] }), { expirationTtl: 7 * 86400 });
+          await log(false, `${err?.message || err} | ${String(err?.stack || '').split('\n').slice(0, 3).join(' / ')} | headers: ${[...request.headers.keys()].join(',')}`);
           return json({ error: 'Pedido inválido.' }, 400);
         }
-        return json(await alexa.handle(body, env));
+        try {
+          const out = await alexa.handle(body, env);
+          await log(true, `${body.request?.type} ${body.request?.intent?.name || ''}`);
+          return json(out);
+        } catch (err) {
+          await log(false, `handle: ${err?.message || err}`);
+          throw err;
+        }
       }
       if (url.hostname === 'www.nasquadras.online') {
         return Response.redirect(`https://nasquadras.online${url.pathname}${url.search}`, 301);

@@ -146,3 +146,6 @@ CREATE TABLE IF NOT EXISTS nbb_results (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS nbb_results_by_date ON nbb_results (game_date);
+
+-- Skill da Alexa: registro curto dos pedidos recebidos (os 200 mais recentes), para diagnóstico.
+CREATE TABLE IF NOT EXISTS alexa_log (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, colo TEXT, ok INTEGER NOT NULL, info TEXT);
