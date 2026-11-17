@@ -22,6 +22,7 @@ import { supportInfo } from './pix.js';
 import * as linkpreview from './linkpreview.js';
 import * as podcast from './podcast.js';
 import * as briefing from './briefing.js';
+import * as alexa from './alexa.js';
 import { applyMentions, compose, getMentions, saveMentions } from './compose.js';
 
 const MAX_UPLOAD = 100 * 1024 * 1024; // limite de corpo de requisição dos Workers
@@ -754,6 +755,15 @@ export default {
         return await serveMedia(request, env, url.pathname.slice(3));
       }
       if (url.pathname.startsWith('/auth/')) return await handleAuth(request, env, url);
+      // Skill da Alexa: só pedidos assinados pela Amazon.
+      if (url.pathname === '/alexa' && request.method === 'POST') {
+        let body;
+        try { body = await alexa.verify(request, env); } catch (err) {
+          console.warn('alexa recusado', err.message);
+          return json({ error: 'Pedido inválido.' }, 400);
+        }
+        return json(await alexa.handle(body, env));
+      }
       if (url.hostname === 'www.nasquadras.online') {
         return Response.redirect(`https://nasquadras.online${url.pathname}${url.search}`, 301);
       }

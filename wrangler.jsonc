@@ -57,6 +57,8 @@
     "INDEXNOW_KEY": "c5ad33bc921b529e423874d4e2b8514d",
     // Podcast (A Temporada): feed RSS do Spotify for Creators.
     "PODCAST_FEED": "https://anchor.fm/s/23013e20/podcast/rss",
+    // Skill "Nas Quadras" da Alexa: só pedidos com este ID são respondidos (não é segredo).
+    "ALEXA_SKILL_ID": "amzn1.ask.skill.d7ee1af8-73bc-46c5-8b55-594868b328ee",
     // Mastodon: servidor da conta (o token fica no segredo MASTODON_TOKEN).
     "MASTODON_INSTANCE": "https://mastodon.social",
     // Caixa "Apoie" no site: Ko-fi e Pix (a chave Pix aparece para os leitores; não é segredo).

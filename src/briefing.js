@@ -125,6 +125,8 @@ export function parseEspn(data) {
       league: 'NBA',
       home: nbaTeamName(h.team || {}),
       away: nbaTeamName(a.team || {}),
+      homeNick: h.team?.shortDisplayName || '',
+      awayNick: a.team?.shortDisplayName || '',
       homeScore: Number(h.score) || 0,
       awayScore: Number(a.score) || 0,
       final: Boolean(type.completed),
@@ -188,6 +190,44 @@ export function compose({ date, nbb = [], nba = [], nbaError = null }) {
     return parts.join(ssml ? ' <break time="600ms"/> ' : '\n\n');
   };
   return { text: build(false), ssml: `<speak>${build(true)}</speak>` };
+}
+
+const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+/** O time pedido joga este jogo? Aceita cidade, apelido ("Lakers") ou parte do nome ("Flamengo"). */
+export function hasTeam(g, team) {
+  const t = norm(team);
+  if (!t) return true;
+  return [g.home, g.away, g.homeNick, g.awayNick].some((n) => {
+    const x = norm(n);
+    return x && (x === t || x.includes(t) || t.includes(x));
+  });
+}
+
+/**
+ * Resposta falada da skill: o resumo inteiro ou só uma liga e/ou um time.
+ * `found` diz se sobrou algum jogo depois do filtro.
+ */
+export function speech(b, { league = '', team = '' } = {}) {
+  const L = norm(league).toUpperCase();
+  const wantNbb = !L || L === 'NBB';
+  const wantNba = !L || L === 'NBA';
+  if (!L && !team) return { ssml: b.ssml, text: b.text, found: true };
+  const nbb = wantNbb ? (b.nbb || []).filter((g) => hasTeam(g, team)) : [];
+  const nba = wantNba ? (b.nba || []).filter((g) => hasTeam(g, team)) : [];
+  const when = spokenDate(b.date);
+  const build = (ssml) => {
+    const parts = [`Resultados de ${when}.`];
+    if (!nbb.length && !nba.length) {
+      const who = team ? `do ${ssml ? esc(team) : team}` : L === 'NBA' ? 'da NBA' : 'do NBB';
+      const where = team && L ? (L === 'NBA' ? ' na NBA' : ' no NBB') : '';
+      parts.push(`Não encontrei jogo ${who}${where} nessa noite.`);
+    }
+    if (nbb.length) parts.push(section('No NBB', nbb, ssml));
+    if (nba.length) parts.push(section('Na NBA', nba, ssml));
+    return parts.join(ssml ? ' <break time="600ms"/> ' : '\n\n');
+  };
+  return { text: build(false), ssml: `<speak>${build(true)}</speak>`, found: Boolean(nbb.length || nba.length) };
 }
 
 /**

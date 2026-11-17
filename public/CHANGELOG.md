@@ -2,6 +2,15 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.32 — 17/11/2026
+
+- **Skill "Nas Quadras" da Alexa ligada ao app** (endereço nasquadras.online/alexa):
+  - "Alexa, abre Nas Quadras" lê os resultados da noite anterior do NBB e da NBA, com o cestinha de cada jogo.
+  - Também entende pedidos como "Alexa, pergunta ao Nas Quadras como foi a NBA" e "Alexa, pergunta ao Nas Quadras como foi o Flamengo".
+  - No app Alexa e no Echo Show, o resumo aparece também por escrito.
+- **Segurança exigida pela Amazon:** cada pedido tem a assinatura, o certificado, o horário e o ID da skill conferidos antes da resposta. Pedidos que não passam recebem erro e nada é lido.
+- O modelo de conversa (frases, ligas e times) está em `alexa/interaction-model.pt-BR.json`.
+
 ## 1.31 — 16/11/2026
 
 - O item **Coluna** do menu do site passou a se chamar **Coluna JB**.

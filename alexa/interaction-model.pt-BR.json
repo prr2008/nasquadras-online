@@ -1,0 +1,477 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "nas quadras",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": [
+            "o que você faz",
+            "como funciona"
+          ]
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.YesIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NoIntent",
+          "samples": []
+        },
+        {
+          "name": "ResultadosIntent",
+          "slots": [
+            {
+              "name": "liga",
+              "type": "LIGA"
+            }
+          ],
+          "samples": [
+            "resultados",
+            "resultados de ontem",
+            "os resultados de ontem",
+            "quais os resultados",
+            "como foi a rodada",
+            "como foi a rodada de ontem",
+            "o que rolou ontem",
+            "placares de ontem",
+            "os placares",
+            "resultados da {liga}",
+            "resultados do {liga}",
+            "como foi a {liga}",
+            "como foi o {liga}",
+            "como foi a {liga} ontem",
+            "como foi o {liga} ontem",
+            "só a {liga}",
+            "só o {liga}",
+            "{liga}",
+            "placares da {liga}",
+            "placares do {liga}",
+            "o que rolou na {liga}",
+            "o que rolou no {liga}"
+          ]
+        },
+        {
+          "name": "TimeIntent",
+          "slots": [
+            {
+              "name": "time",
+              "type": "TIME"
+            }
+          ],
+          "samples": [
+            "como foi o {time}",
+            "como foi o jogo do {time}",
+            "como foram os {time}",
+            "como foi o jogo dos {time}",
+            "e o {time}",
+            "e os {time}",
+            "o {time} ganhou",
+            "os {time} ganharam",
+            "resultado do {time}",
+            "resultado dos {time}",
+            "placar do {time}",
+            "placar dos {time}",
+            "quanto foi o jogo do {time}",
+            "jogo do {time}"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "LIGA",
+          "values": [
+            {
+              "name": {
+                "value": "NBB",
+                "synonyms": [
+                  "novo basquete brasil",
+                  "basquete brasileiro",
+                  "liga brasileira",
+                  "nbb caixa"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "NBA",
+                "synonyms": [
+                  "liga americana",
+                  "basquete americano",
+                  "n b a"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TIME",
+          "values": [
+            {
+              "name": {
+                "value": "Flamengo"
+              }
+            },
+            {
+              "name": {
+                "value": "Franca"
+              }
+            },
+            {
+              "name": {
+                "value": "Minas"
+              }
+            },
+            {
+              "name": {
+                "value": "Pinheiros"
+              }
+            },
+            {
+              "name": {
+                "value": "Paulistano"
+              }
+            },
+            {
+              "name": {
+                "value": "Bauru"
+              }
+            },
+            {
+              "name": {
+                "value": "Brasília"
+              }
+            },
+            {
+              "name": {
+                "value": "Corinthians"
+              }
+            },
+            {
+              "name": {
+                "value": "São Paulo"
+              }
+            },
+            {
+              "name": {
+                "value": "Fortaleza"
+              }
+            },
+            {
+              "name": {
+                "value": "Unifacisa"
+              }
+            },
+            {
+              "name": {
+                "value": "Mogi"
+              }
+            },
+            {
+              "name": {
+                "value": "Vasco"
+              }
+            },
+            {
+              "name": {
+                "value": "Botafogo"
+              }
+            },
+            {
+              "name": {
+                "value": "Caxias do Sul"
+              }
+            },
+            {
+              "name": {
+                "value": "União Corinthians"
+              }
+            },
+            {
+              "name": {
+                "value": "Pato"
+              }
+            },
+            {
+              "name": {
+                "value": "Cerrado"
+              }
+            },
+            {
+              "name": {
+                "value": "Rio Claro"
+              }
+            },
+            {
+              "name": {
+                "value": "Joinville"
+              }
+            },
+            {
+              "name": {
+                "value": "Sesi Franca"
+              }
+            },
+            {
+              "name": {
+                "value": "Basquete Cearense"
+              }
+            },
+            {
+              "name": {
+                "value": "Atlanta",
+                "synonyms": [
+                  "Hawks"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Boston",
+                "synonyms": [
+                  "Celtics"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Brooklyn",
+                "synonyms": [
+                  "Nets"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Charlotte",
+                "synonyms": [
+                  "Hornets"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Chicago",
+                "synonyms": [
+                  "Bulls"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Cleveland",
+                "synonyms": [
+                  "Cavaliers"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Dallas",
+                "synonyms": [
+                  "Mavericks"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Denver",
+                "synonyms": [
+                  "Nuggets"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Detroit",
+                "synonyms": [
+                  "Pistons"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Golden State",
+                "synonyms": [
+                  "Warriors"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Houston",
+                "synonyms": [
+                  "Rockets"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Indiana",
+                "synonyms": [
+                  "Pacers"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Lakers",
+                "synonyms": []
+              }
+            },
+            {
+              "name": {
+                "value": "Clippers",
+                "synonyms": []
+              }
+            },
+            {
+              "name": {
+                "value": "Memphis",
+                "synonyms": [
+                  "Grizzlies"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Miami",
+                "synonyms": [
+                  "Heat"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Milwaukee",
+                "synonyms": [
+                  "Bucks"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Minnesota",
+                "synonyms": [
+                  "Timberwolves"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "New Orleans",
+                "synonyms": [
+                  "Pelicans"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "New York",
+                "synonyms": [
+                  "Knicks"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Oklahoma City",
+                "synonyms": [
+                  "Thunder"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Orlando",
+                "synonyms": [
+                  "Magic"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Philadelphia",
+                "synonyms": [
+                  "76ers"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Phoenix",
+                "synonyms": [
+                  "Suns"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Portland",
+                "synonyms": [
+                  "Trail Blazers"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Sacramento",
+                "synonyms": [
+                  "Kings"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "San Antonio",
+                "synonyms": [
+                  "Spurs"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Toronto",
+                "synonyms": [
+                  "Raptors"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Utah",
+                "synonyms": [
+                  "Jazz"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "Washington",
+                "synonyms": [
+                  "Wizards"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
