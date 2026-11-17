@@ -684,8 +684,10 @@ async function handleMainSite(request, env, url) {
 
   const fixed = p.match(/^\/(sobre)$/);
   if (fixed) {
-    const [page, admin] = await Promise.all([blog.getPage(env, fixed[1]), isLoggedIn(request, env)]);
-    return html(pages.staticPage({ page, slug: fixed[1], origin, admin, home, support: supportInfo(env) }));
+    const [page, admin, mst] = await Promise.all([blog.getPage(env, fixed[1]), isLoggedIn(request, env), mastodon.status(env).catch(() => null)]);
+    // Mastodon: o endereço vem da conta conectada ao app.
+    const social = mst?.connected && mst.url ? [['Mastodon', mst.url]] : [];
+    return html(pages.staticPage({ page, slug: fixed[1], origin, admin, home, support: supportInfo(env), social }));
   }
 
   if (p === '/rss.xml') {

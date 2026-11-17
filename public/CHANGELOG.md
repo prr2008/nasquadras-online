@@ -2,6 +2,11 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.30 — 16/11/2026
+
+- **"Minhas redes" na página Sobre:** botões para Threads, Bluesky, X, Instagram, YouTube, Mastodon, newsletter (Substack), podcast e RSS. O link do Mastodon vem da conta conectada ao app. Os links usam rel="me", que confirma no Mastodon que o site é seu.
+- **Instagram** (@prr2008) também entrou no rodapé de todas as páginas.
+
 ## 1.29 — 15/11/2026
 
 - **Resumo da noite anterior (NBB e NBA)**, base da skill da Alexa e do atalho da Siri. Às 6h (Brasília) fica pronto o resumo da véspera: placar de cada jogo, com vencedor, prorrogação, mando e cestinha.

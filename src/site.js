@@ -162,6 +162,7 @@ export const SOCIAL = [
   ['Threads', 'https://www.threads.net/@prr2008'],
   ['Bluesky', 'https://bsky.app/profile/prr2008.bsky.social'],
   ['X', 'https://x.com/prr2008'],
+  ['Instagram', 'https://www.instagram.com/prr2008'],
   ['YouTube', 'https://www.youtube.com/@prr2008'],
   ['Substack', 'https://prr2008.substack.com'],
 ];

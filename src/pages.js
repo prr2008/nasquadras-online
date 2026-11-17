@@ -404,7 +404,20 @@ export function articlePage({ a, origin, admin = false, related = [], home = '/'
 
 // ---------- Páginas fixas ----------
 
-export function staticPage({ page, slug, origin, admin = false, home = '/', support = null }) {
+/** Bloco "Minhas redes" da página Sobre. */
+function socialBox(extra = []) {
+  const links = [...SOCIAL.filter(([n]) => n !== 'Substack'), ...extra,
+    ['Newsletter (Substack)', SUBSTACK], ['Podcast', '/podcast'], ['RSS do site', '/rss.xml']];
+  return `<section class="social-box" aria-labelledby="redes">
+    <h2 id="redes">Minhas redes</h2>
+    <ul class="social-list">${links.map(([n, u]) => {
+      const ext = /^https?:/.test(u);
+      return `<li><a href="${esc(u)}"${ext ? ' target="_blank" rel="noopener me"' : ''}>${esc(n)}</a></li>`;
+    }).join('')}</ul>
+  </section>`;
+}
+
+export function staticPage({ page, slug, origin, admin = false, home = '/', support = null, social = [] }) {
   const navKey = { sobre: 'sobre', coluna: 'coluna', 'zona-de-conforto': 'zona' }[slug];
   const body = page.body_html?.trim()
     ? page.body_html
@@ -421,7 +434,7 @@ export function staticPage({ page, slug, origin, admin = false, home = '/', supp
       <div class="article-body prose">${body}</div>
       ${admin ? `<p class="admin-note"><a href="/app#paginas/${slug}">Editar no app</a></p>` : ''}
     </article>
-    ${slug === 'sobre' ? newsletterBox() + supportBox(support) : ''}`,
+    ${slug === 'sobre' ? socialBox(social) + newsletterBox() + supportBox(support) : ''}`,
   });
 }
 

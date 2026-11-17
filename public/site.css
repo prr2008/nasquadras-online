@@ -332,3 +332,11 @@ img, video { max-width: 100%; display: block; }
 .results .rs-team.won { color: inherit; font-weight: 700; }
 .results .rs-note { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
 .results .rs-empty, .results .rs-credit { color: var(--muted); }
+
+/* Sobre: "Minhas redes" */
+.social-box { max-width: 700px; margin: 28px auto 0; }
+.social-box h2 { font-size: 20px; margin: 0 0 12px; }
+.social-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.social-list a { display: inline-block; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: inherit; text-decoration: none; font-weight: 600; }
+.social-list a:hover, .social-list a:focus-visible { border-color: currentColor; }
+@media (min-width: 900px) { .social-box { max-width: 760px; } }
