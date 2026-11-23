@@ -114,13 +114,15 @@ document.addEventListener('click', async (e) => {
   const { url, title } = bar.dataset;
   if (e.target.closest('.share-copy')) {
     const btn = e.target.closest('.share-copy');
+    const status = bar.querySelector('.share-status');
     try {
       await navigator.clipboard.writeText(url);
-      btn.textContent = 'Link copiado ✓';
+      btn.classList.add('done');
+      if (status) status.textContent = 'Link copiado';
     } catch {
       window.prompt('Copie o link:', url);
     }
-    setTimeout(() => { btn.textContent = 'Copiar link'; }, 2500);
+    setTimeout(() => { btn.classList.remove('done'); if (status) status.textContent = ''; }, 2500);
   } else if (e.target.closest('.share-more')) {
     try { await navigator.share({ title, url }); } catch { /* cancelado */ }
   }

@@ -2,6 +2,10 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.34 — 23/11/2026
+
+- Os botões de compartilhar viraram **ícones redondos** com o símbolo de cada plataforma (X, Threads, Facebook, e-mail, link e compartilhamento do celular). Passando o mouse, aparece o nome; ao copiar o link, o ícone fica verde e aparece "Link copiado".
+
 ## 1.33 — 23/11/2026
 
 - **Botões de compartilhar** nos textos do blog (no topo e no fim do texto) e nas páginas das coberturas (abaixo do placar): **X** (com "via @prr2008"), **Threads**, **Facebook**, **E-mail** e **Copiar link**.

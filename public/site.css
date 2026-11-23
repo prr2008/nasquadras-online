@@ -341,9 +341,12 @@ img, video { max-width: 100%; display: block; }
 .social-list a:hover, .social-list a:focus-visible { border-color: currentColor; }
 @media (min-width: 900px) { .social-box { max-width: 760px; } }
 
-/* Barra "Compartilhar" (blog e coberturas) */
+/* Barra "Compartilhar" (blog e coberturas): ícones redondos */
 .share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 18px 0; }
 .share-label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin-right: 4px; }
-.share-btn { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: inherit; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
-.share-btn:hover, .share-btn:focus-visible { border-color: currentColor; }
+.share-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: inherit; cursor: pointer; transition: border-color .15s, transform .15s; }
+.share-btn svg { width: 17px; height: 17px; }
+.share-btn:hover, .share-btn:focus-visible { border-color: currentColor; transform: translateY(-1px); }
+.share-btn.done { border-color: #3ecf8e; color: #3ecf8e; }
+.share-status { color: #3ecf8e; font-size: 13px; font-weight: 600; }
 .game-side .share { margin: 14px 0 0; }
