@@ -105,3 +105,23 @@ document.addEventListener('click', async (e) => {
     else alert('Não foi possível apagar. Entre no app e tente de novo.');
   });
 })();
+
+// Barra "Compartilhar" (blog e coberturas): copiar link e compartilhamento do celular.
+document.querySelectorAll('.share-more').forEach((b) => { if (navigator.share) b.hidden = false; });
+document.addEventListener('click', async (e) => {
+  const bar = e.target.closest('.share');
+  if (!bar) return;
+  const { url, title } = bar.dataset;
+  if (e.target.closest('.share-copy')) {
+    const btn = e.target.closest('.share-copy');
+    try {
+      await navigator.clipboard.writeText(url);
+      btn.textContent = 'Link copiado ✓';
+    } catch {
+      window.prompt('Copie o link:', url);
+    }
+    setTimeout(() => { btn.textContent = 'Copiar link'; }, 2500);
+  } else if (e.target.closest('.share-more')) {
+    try { await navigator.share({ title, url }); } catch { /* cancelado */ }
+  }
+});

@@ -1,6 +1,6 @@
 // Páginas do site principal: Início, Blog, artigo, categoria, páginas fixas, RSS e sitemap.
 
-import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL, SUBSTACK, BOOKING } from './site.js';
+import { layout, esc, fmtDate, PERIOD_LABEL, SOCIAL, SUBSTACK, BOOKING, shareBar } from './site.js';
 import { CATEGORIES, PAGES, categorySlug, excerpt, readingMinutes } from './blog.js';
 import { episodeLabel } from './zona.js';
 import { episodeTag, fmtDuration } from './podcast.js';
@@ -392,7 +392,9 @@ export function articlePage({ a, origin, admin = false, related = [], home = '/'
       ${a.summary ? `<p class="lede">${esc(a.summary)}</p>` : ''}
       <p class="byline">Por <strong>Pedro Rodrigues</strong> · ${esc(when)}${updated} · ${readingMinutes(a.body_html)} min de leitura</p>
       ${a.cover_key ? `<img class="article-cover" src="/m/${esc(a.cover_key)}" alt="">` : ''}
+      ${draft ? '' : shareBar({ url: `${origin}/blog/${a.slug}`, title: a.title, text: a.summary || excerpt(a) })}
       <div class="article-body prose">${a.body_html}</div>
+      ${draft ? '' : shareBar({ url: `${origin}/blog/${a.slug}`, title: a.title, text: a.summary || excerpt(a) })}
       ${admin ? `<p class="admin-note"><a href="/app#blog/${a.id}">Editar no app</a></p>` : ''}
     </article>
     ${socialScripts(a.body_html)}

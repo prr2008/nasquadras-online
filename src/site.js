@@ -293,6 +293,28 @@ export function indexPage(games, origin, { home = '/' } = {}) {
   });
 }
 
+/**
+ * Barra "Compartilhar": X, Threads, Facebook, e-mail e copiar link. Os botões
+ * são links comuns (funcionam sem JavaScript); "Copiar link" e "Mais opções"
+ * (compartilhamento do celular, com WhatsApp etc.) usam o /site.js.
+ */
+export function shareBar({ url, title, text = '' }) {
+  const u = encodeURIComponent(url);
+  const t = encodeURIComponent(title);
+  const links = [
+    ['x', 'X', `https://x.com/intent/post?text=${encodeURIComponent(`${title} via @prr2008`)}&url=${u}`],
+    ['threads', 'Threads', `https://www.threads.net/intent/post?text=${encodeURIComponent(`${title} ${url}`)}`],
+    ['facebook', 'Facebook', `https://www.facebook.com/sharer/sharer.php?u=${u}`],
+    ['email', 'E-mail', `mailto:?subject=${t}&body=${encodeURIComponent(`${text ? `${text}\n\n` : ''}${url}`)}`],
+  ];
+  return `<div class="share" data-url="${esc(url)}" data-title="${esc(title)}">
+    <span class="share-label">Compartilhar</span>
+    ${links.map(([k, n, href]) => `<a class="share-btn share-${k}" href="${esc(href)}"${k === 'email' ? '' : ' target="_blank" rel="noopener"'}>${n}</a>`).join('')}
+    <button type="button" class="share-btn share-copy">Copiar link</button>
+    <button type="button" class="share-btn share-more" hidden>Mais opções…</button>
+  </div>`;
+}
+
 export function gamePage(g, posts, origin, { admin = false, home = '/' } = {}) {
   const live = g.status === 'live' && g.period !== 'FINAL';
   const photos = posts.reduce((n, p) => n + p.media.length, 0);
@@ -314,6 +336,7 @@ export function gamePage(g, posts, origin, { admin = false, home = '/' } = {}) {
       <aside class="game-side">
         ${scoreboard(g)}
         <nav class="tabs"><a class="on" href="/c/${esc(g.slug)}">Posts (${posts.length})</a>${photos ? `<a href="/c/${esc(g.slug)}/fotos">Fotos (${photos})</a>` : ''}</nav>
+        ${shareBar({ url: `${origin}/c/${g.slug}`, title: g.title, text: desc })}
       </aside>
       <div class="game-main">
         <div id="new-posts" class="new-posts" hidden></div>

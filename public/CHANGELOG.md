@@ -2,6 +2,11 @@
 
 Registro das mudanças no app e no site a partir da versão 1.0. A versão mais recente fica no topo.
 
+## 1.33 — 23/11/2026
+
+- **Botões de compartilhar** nos textos do blog (no topo e no fim do texto) e nas páginas das coberturas (abaixo do placar): **X** (com "via @prr2008"), **Threads**, **Facebook**, **E-mail** e **Copiar link**.
+- No celular aparece também **Mais opções…**, que abre o compartilhamento do próprio aparelho (WhatsApp, Telegram, Mensagens etc.).
+
 ## 1.32 — 17/11/2026
 
 - **Skill "Nas Quadras" da Alexa ligada ao app** (endereço nasquadras.online/alexa):
